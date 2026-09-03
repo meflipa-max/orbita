@@ -1,0 +1,9 @@
+node_modules/
+.vercel/
+.DS_Store
+Thumbs.db
+*.log
+
+# generati da build.mjs / build.ps1 — ricostruiti da Vercel a ogni deploy
+orbita.html
+dist/

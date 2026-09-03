@@ -1,0 +1,13 @@
+{
+  "name": "orbita",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Bullet heaven roguelite in cui la tua build e' un anello di rune che ti gira intorno: quelle vicine risuonano, tre di fila accendono un Risveglio.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs && node --eval \"import('node:http').then(async h=>{const {readFile}=await import('node:fs/promises');h.createServer(async(q,s)=>{s.setHeader('content-type','text/html; charset=utf-8');s.end(await readFile('dist/index.html'))}).listen(5173,()=>console.log('http://localhost:5173'))})\""
+  },
+  "keywords": ["game", "roguelite", "bullet-heaven", "canvas", "html5"],
+  "license": "MIT"
+}
