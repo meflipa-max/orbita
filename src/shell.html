@@ -212,6 +212,14 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .pips i.f{background:var(--c);box-shadow:0 0 7px color-mix(in srgb,var(--c) 80%,transparent)}
 .newtag{position:absolute;top:0;right:0;font:600 9px/1 var(--ui);letter-spacing:.18em;padding:4px 6px;
   background:var(--c);color:#0a0818}
+/* la trasformazione è il momento più raro della partita: si vede */
+.card.evo .face{border-color:var(--c);border-width:2px;
+  box-shadow:0 0 40px -8px color-mix(in srgb,var(--c) 70%,transparent);
+  animation:evoPulse 1.7s ease-in-out infinite}
+.card.evo .ico{background:color-mix(in srgb,var(--c) 26%,transparent)}
+.card.evo h3{color:var(--c)}
+@keyframes evoPulse{0%,100%{box-shadow:0 0 34px -10px color-mix(in srgb,var(--c) 60%,transparent)}
+  50%{box-shadow:0 0 52px -4px color-mix(in srgb,var(--c) 85%,transparent)}}
 
 /* ---------- anello ---------- */
 .ringwrap{position:relative;width:min(78vw,340px);aspect-ratio:1;margin:0 auto;flex:0 0 auto}
@@ -290,6 +298,24 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
 
+/* ascensioni */
+.ascrow{display:flex;flex-wrap:wrap;gap:5px}
+.asc{width:34px;height:34px;--cut:6px;cursor:pointer;font:700 13px/1 var(--disp);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  color:var(--dim);background:linear-gradient(160deg,rgba(26,21,60,.9),rgba(11,9,28,.9));
+  border:1px solid var(--line);transition:color .15s,border-color .15s,transform .12s}
+.asc:hover:not(:disabled){transform:translateY(-2px);color:#fff;border-color:var(--line-hot)}
+.asc.on{color:#0a0818;background:var(--gold);border-color:var(--gold);
+  box-shadow:0 0 22px -6px var(--gold)}
+.asc.lock{opacity:.3;cursor:not-allowed}
+.ascrules{margin:10px 0 0;padding:0 0 0 17px;font:400 12.5px/1.7 var(--ui);color:var(--dim)}
+.ascrules li{margin:0}
+.ascrules li::marker{color:var(--gold)}
+#ascchip{position:absolute;left:12px;top:calc(74px + var(--sat));display:none;align-items:center;gap:5px;
+  font:700 10px/1 var(--ui);letter-spacing:.16em;padding:4px 8px;--cut:5px;
+  color:var(--gold);background:rgba(12,10,30,.78);border:1px solid rgba(255,200,87,.4);backdrop-filter:blur(4px)}
+#ascchip.on{display:flex}
+
 /* avviso e backup dei progressi */
 .warn{font:500 11.5px/1.55 var(--ui);color:#ffc857;text-align:center;max-width:52ch;margin:0 auto;
   padding:9px 13px;background:rgba(255,200,87,.09);border:1px solid rgba(255,200,87,.34);--cut:7px}
@@ -351,6 +377,7 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
     </div>
     <div id="awake"></div>
     <div id="movehint" class="clip"></div>
+    <div id="ascchip"></div>
   </div>
 
   <div id="joy"><div class="ring"></div><div class="nub"></div></div>

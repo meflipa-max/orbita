@@ -68,6 +68,11 @@ const ICO = {
   prisma: 'M12 3.8 21 19H3Z|M1.8 12.4h6.6|M16.4 12 22.6 9.4|M16.8 13.6h5.8|M16.4 15.2 22 18.2',
   aureola: 'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0|M12 2.2v3|M12 18.8v3|M2.2 12h3|M18.8 12h3|M5.1 5.1 7.2 7.2|M16.8 16.8l2.1 2.1|M18.9 5.1l-2.1 2.1|M7.2 16.8l-2.1 2.1',
   iride: 'M12 2.4 14.5 9.5 21.6 12l-7.1 2.5L12 21.6l-2.5-7.1L2.4 12l7.1-2.5Z',
+  cometa: 'M18.6 7.4a3.9 3.9 0 1 1-7.8 0 3.9 3.9 0 0 1 7.8 0Z|M11.4 10.2 2.6 20.4|M14 12.1 7.4 20.6|M9.8 7.6 2.2 13.6',
+  glaciale: 'M12 2.2v19.6|M3.5 7 20.5 17|M20.5 7 3.5 17|M12 6.6 9.4 4M12 6.6l2.6-2.6|M12 17.4 9.4 20M12 17.4l2.6 2.6|M7.6 9.4 4.2 9M7.6 14.6l-3.4.4|M16.4 9.4l3.4-.4M16.4 14.6l3.4.4',
+  fulgore: 'M13.5 2.6 7.2 12h4.6l-1.5 9.4L17 11.2h-4.6Z|M3.4 6.6 1.4 5.2|M3.4 17.4 1.4 18.8|M20.6 6.6l2-1.4|M20.6 17.4l2 1.4',
+  mietitore: 'M4.4 4.4a11 11 0 0 1 15.2 15.2A14.4 14.4 0 0 0 4.4 4.4Z|M19.6 4.4a11 11 0 0 0-15.2 15.2A14.4 14.4 0 0 1 19.6 4.4Z',
+  alba: 'M6.4 17.2a5.6 5.6 0 0 1 11.2 0|M2.4 17.2h19.2|M12 3.6v2.8|M5.4 6.4 7.5 8.5|M18.6 6.4l-2.1 2.1|M2.6 11.6h2.8|M18.6 11.6h2.8',
   vigore: 'M12 20.8S4 16.2 4 10.6A4.8 4.8 0 0 1 12 6.8a4.8 4.8 0 0 1 8 3.8c0 5.6-8 10.2-8 10.2Z',
   impeto: 'M5 15.4 12 3.6l7 11.8|M8.4 20.6h7.2',
   celerita: 'M3 8h9|M3 12h12.5|M3 16h7|M15.5 7.6 20.4 12l-4.9 4.4',
@@ -121,9 +126,33 @@ const RUNES = {
   aureola: { n: 'Aureola', el: 'luce', tag: 'pulsazione', d: 'Pulsa luce: ferisce intorno e ti risana.',
     base: { dmg: 22, cd: 2.6, area: 126, heal: 1.6 }, g: { dmg: 9, cd: -.14, area: 12, heal: .5 } },
   iride: { n: 'Iride', el: 'iride', tag: 'jolly', d: 'Si accorda a ogni elemento vicino e ne prende la forza.',
-    base: { dmg: 17, cd: 1.0, spd: 500, count: 1, size: 8 }, g: { dmg: 7.2, cd: -.05, count: .3 } }
+    base: { dmg: 17, cd: 1.0, spd: 500, count: 1, size: 8 }, g: { dmg: 7.2, cd: -.05, count: .3 } },
+
+  /* ── trasformazioni ──────────────────────────────────────────
+     Non compaiono fra le carte normali: si ottengono solo portando la
+     runa a livello 8 mentre risuona da entrambi i lati e il suo elemento
+     è risvegliato. La condizione è POSIZIONALE: obbliga a progettare
+     l'anello dal primo minuto invece di prendere quel che capita.      */
+  cometa: { n: 'Cometa', el: 'fuoco', tag: 'trasformazione', evo: 1, d: 'Sfere enormi che lasciano una scia ardente e si frantumano su ogni uccisione.',
+    base: { dmg: 54, cd: .60, spd: 420, count: 2, pierce: 1, size: 13 }, g: { dmg: 23, cd: -.03, count: .3, spd: 12 } },
+  glaciale: { n: 'Glaciale', el: 'gelo', tag: 'trasformazione', evo: 1, d: 'Un anello di schegge che congela tutto ciò che tocca.',
+    base: { dmg: 60, cd: .5, count: 4, area: 132, spd: 2.4, size: 21 }, g: { dmg: 25, count: .4, spd: .1, size: 1.1 } },
+  fulgore: { n: 'Fulgore', el: 'fulmine', tag: 'trasformazione', evo: 1, d: 'La scarica rimbalza su tutto il campo e a ogni salto si sdoppia.',
+    base: { dmg: 46, cd: 1.0, count: 8, area: 340 }, g: { dmg: 19, cd: -.05, count: .8, area: 15 } },
+  mietitore: { n: 'Mietitore', el: 'vuoto', tag: 'trasformazione', evo: 1, d: 'Lame che spiraleggiano a lungo risucchiando i nemici lungo il cammino.',
+    base: { dmg: 76, cd: 1.25, spd: 320, count: 3, size: 27 }, g: { dmg: 31, cd: -.07, count: .3, spd: 10 } },
+  alba: { n: 'Alba', el: 'luce', tag: 'trasformazione', evo: 1, d: 'Due fasci opposti che spazzano l’arena senza fermarsi mai.',
+    base: { dmg: 8, cd: .09, area: 335, spd: 1.05 }, g: { dmg: 2.9, area: 17, spd: .04 } }
 };
-const RUNEIDS = Object.keys(RUNES);
+/* quale runa diventa cosa */
+const EVO = { scintilla: 'cometa', cristallo: 'glaciale', arco: 'fulgore', falce: 'mietitore', raggio: 'alba' };
+const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
+
+/* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
+   elemento risvegliato */
+function canEvolve(r) {
+  return !!(r && EVO[r.id] && r.lv >= 8 && r.res >= 2 && G.awaken[r.el] >= 1);
+}
 
 /* ── passivi ────────────────────────────────────────────────── */
 const PASSIVES = {
@@ -197,3 +226,41 @@ const META = [
   { id: 'rinascita', n: 'Rinascita',      max: 1, c: 1500, step: 1,   ico: 'rinascita',  d: 'Torni in vita una volta per partita' }
 ];
 const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
+
+/* ── ascensioni ─────────────────────────────────────────────────
+   Ogni livello aggiunge UNA regola, e le regole si sommano. Non è un
+   moltiplicatore generico: ricontestualizza il gioco che c'è già invece
+   di aggiungere contenuto. Si sblocca vincendo al livello precedente.  */
+const ASC = [
+  { d: 'La corsa base, senza modifiche.' },
+  { d: 'I nemici hanno il 25% di vita in più.', hp: 1.25 },
+  { d: 'Gli scrigni danno frammenti, non potenziamenti.', noChest: 1 },
+  { d: 'I nemici si muovono il 12% più veloci.', spd: 1.12 },
+  { d: 'I guardiani arrivano 30 secondi prima.', boss: -30 },
+  { d: 'Un alloggiamento in meno nell’anello.', slots: -1 },
+  { d: 'I nemici hanno un altro 50% di vita.', hp: 1.5 },
+  { d: 'Niente cuori né bombe sul terreno.', noDrops: 1 },
+  { d: 'Parti con metà vita.', startHp: .5 },
+  { d: 'I Risvegli richiedono quattro rune in fila.', chain: 4 },
+  { d: 'Le ondate sono più fitte del 25%.', rate: 1.25 },
+  { d: 'I guardiani arrivano in coppia dal terzo in poi.', twin: 1 },
+  { d: 'I nemici hanno il doppio della vita.', hp: 2 }
+];
+function ascMods(lv) {
+  const m = { hp: 1, spd: 1, slots: 0, boss: 0, rate: 1, chain: 3, startHp: 1, noChest: 0, noDrops: 0, twin: 0 };
+  const top = Math.min(lv | 0, ASC.length - 1);
+  for (let i = 1; i <= top; i++) {
+    const a = ASC[i];
+    if (a.hp) m.hp *= a.hp;
+    if (a.spd) m.spd *= a.spd;
+    if (a.slots) m.slots += a.slots;
+    if (a.boss) m.boss += a.boss;
+    if (a.rate) m.rate *= a.rate;
+    if (a.chain) m.chain = a.chain;
+    if (a.startHp) m.startHp *= a.startHp;
+    if (a.noChest) m.noChest = 1;
+    if (a.noDrops) m.noDrops = 1;
+    if (a.twin) m.twin = 1;
+  }
+  return m;
+}

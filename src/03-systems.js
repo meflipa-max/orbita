@@ -143,6 +143,57 @@ const FIRE = {
       shoot({ x: r.wx, y: r.wy, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg * (1 + .22 * r.res), el, c: col, pierce: 1, kind: 'orb', life: 2.2, homing: 1.6, trail: 1 });
     }
     AU.play('shoot');
+  },
+
+  /* ── forme evolute ──────────────────────────────────────── */
+  cometa(r, s) {
+    const t = nearest(G.p.x, G.p.y, 1000);
+    const a0 = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
+    for (let i = 0; i < s.count; i++) {
+      const a = a0 + (i - (s.count - 1) / 2) * .2;
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
+        el: 'fuoco', c: EL.fuoco.c, pierce: s.pierce, kind: 'orb', life: 2.6, homing: 3.2, trail: 1,
+        scia: 1, splitKill: 3 });
+    }
+    AU.play('blast');
+  },
+  glaciale(r, s) {
+    if (!r.st.orb || r.st.n !== s.count) { r.st.n = s.count; r.st.orb = []; for (let i = 0; i < s.count; i++) r.st.orb.push({ p: i / s.count * TAU }); }
+  },
+  fulgore(r, s) {
+    const t = nearest(G.p.x, G.p.y, s.area * 1.6);
+    if (!t) { r.cd = .16; return; }
+    G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .18, c: EL.fulmine.c });
+    hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
+    /* due catene che partono dallo stesso bersaglio: si sdoppia */
+    chainFrom(t, s.dmg * .8, Math.ceil(s.count / 2), s.area);
+    chainFrom(t, s.dmg * .8, Math.floor(s.count / 2), s.area);
+    G.zones.push({ k: 'ring', x: t.x, y: t.y, r0: 6, r1: 90, t: 0, dur: .3, c: EL.fulmine.c });
+    AU.play('blast');
+  },
+  mietitore(r, s) {
+    const t = nearest(G.p.x, G.p.y, 900);
+    const a0 = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : r.wa;
+    for (let i = 0; i < s.count; i++) {
+      const a = a0 + i * (TAU / s.count);
+      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
+        el: 'vuoto', c: EL.vuoto.c, pierce: 99, kind: 'scythe', life: 4.2, spin: rand(11, 7),
+        retime: 1.5, risucchio: 150, hitRate: .1 });
+    }
+    AU.play('shoot');
+  },
+  alba(r, s) {
+    const a = r.st.a || 0;
+    for (let k = 0; k < 2; k++) {
+      const aa = a + k * PI;
+      const x2 = G.p.x + Math.cos(aa) * s.area, y2 = G.p.y + Math.sin(aa) * s.area;
+      G.zones.push({ k: 'beam', x1: G.p.x, y1: G.p.y, x2, y2, t: 0, dur: .1, c: EL.luce.c, w: 11 });
+      const steps = Math.ceil(s.area / 44);
+      for (let i = 1; i <= steps; i++) {
+        const f = i / steps;
+        areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 34, s.dmg, { color: EL.luce.c, noCrit: Math.random() > .25, el: 'luce' });
+      }
+    }
   }
 };
 
@@ -154,9 +205,10 @@ function updateRunes(dt) {
     const a = G.ringRot + i / sl * TAU;
     r.wa = a; r.wx = G.p.x + Math.cos(a) * RING_R; r.wy = G.p.y + Math.sin(a) * RING_R;
     const s = runeStats(r);
-    if (r.id === 'raggio') { r.st.a = (r.st.a || 0) + dt * s.spd; }
-    if (r.id === 'cristallo') {
-      FIRE.cristallo(r, s);
+    if (r.id === 'raggio' || r.id === 'alba') { r.st.a = (r.st.a || 0) + dt * s.spd; }
+    if (r.id === 'cristallo' || r.id === 'glaciale') {
+      const gelido = r.id === 'glaciale';
+      FIRE[r.id](r, s);
       const orbR = s.area, sp = s.spd * P.projMul;
       for (const o of r.st.orb) {
         o.p += dt * sp;
@@ -166,9 +218,10 @@ function updateRunes(dt) {
           const e = list[n]; if (e.hp <= 0 || (e.cryCd || 0) > 0) continue;
           const dx = e.x - o.x, dy = e.y - o.y, rr = e.r + s.size;
           if (dx * dx + dy * dy < rr * rr) {
-            e.cryCd = .34;
+            e.cryCd = gelido ? .26 : .34;
             const m = Math.hypot(dx, dy) || 1;
             hitEnemy(e, s.dmg, { color: EL.gelo.c, kb: 170, kbx: dx / m, kby: dy / m, el: 'gelo' });
+            if (gelido && !e.boss) e.froze = Math.max(e.froze, 1.1);   /* congela al tocco */
           }
         }
       }
@@ -209,6 +262,23 @@ function updateBullets(dt) {
     b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.ang !== undefined) b.ang = Math.atan2(b.vy, b.vx);
     if (b.trail && b.t % .04 < dt) addPart(b.x, b.y, rand(20, -20), rand(20, -20), .26, b.r * .7, b.c);
+    /* Cometa: la scia brucia davvero, non è solo grafica */
+    if (b.scia) {
+      b.sciaT = (b.sciaT || 0) - dt;
+      if (b.sciaT <= 0) {
+        b.sciaT = .13;
+        G.zones.push({ k: 'pool', x: b.x, y: b.y, r: b.r * 2.6, t: 0, dur: 1.5, dps: b.dmg * .5, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
+      }
+    }
+    /* Mietitore: le lame risucchiano lungo il cammino */
+    if (b.risucchio) {
+      const near = GRID.near(b.x, b.y, b.risucchio, []);
+      for (let n = 0; n < near.length; n++) {
+        const e = near[n]; if (e.hp <= 0 || e.boss) continue;
+        const dx = b.x - e.x, dy = b.y - e.y, d = Math.hypot(dx, dy) || 1;
+        if (d < b.risucchio) { const f = (1 - d / b.risucchio) * 210; e.x += dx / d * f * dt; e.y += dy / d * f * dt; }
+      }
+    }
 
     if (b.life <= 0 || Math.abs(b.x) > ARENA + 400 || Math.abs(b.y) > ARENA + 400) { B.splice(i, 1); continue; }
 
@@ -217,10 +287,18 @@ function updateBullets(dt) {
       const e = list[n]; if (e.hp <= 0) continue;
       const dx = e.x - b.x, dy = e.y - b.y, rr = e.r + b.r;
       if (dx * dx + dy * dy > rr * rr) continue;
-      if (b.kind === 'scythe') { if (b.hitCd > 0) continue; b.hitCd = .16; }
+      if (b.kind === 'scythe') { if (b.hitCd > 0) continue; b.hitCd = b.hitRate || .16; }
       else { if (!b.hitIds) b.hitIds = []; if (b.hitIds.indexOf(e) >= 0) continue; b.hitIds.push(e); }
       const m = Math.hypot(dx, dy) || 1;
       hitEnemy(e, b.dmg, { color: b.c, kb: 120, kbx: dx / m, kby: dy / m, el: b.el });
+      /* Cometa: ogni uccisione frantuma la sfera in schegge nuove */
+      if (b.splitKill && e.hp <= 0) {
+        for (let k = 0; k < b.splitKill; k++) {
+          const a = rand(TAU);
+          shoot({ x: e.x, y: e.y, vx: Math.cos(a) * 420, vy: Math.sin(a) * 420, r: b.r * .5,
+            dmg: b.dmg * .45, el: b.el, c: b.c, pierce: 0, kind: 'orb', life: .9, homing: 2, trail: 1 });
+        }
+      }
       if (b.split) {
         for (let k = 0; k < b.split; k++) {
           const a = rand(TAU);
@@ -524,7 +602,7 @@ function updateSpawns(dt) {
   const cap = (W < 700 ? 200 : 300);
   const maxE = Math.round(cap * clamp(.42 + G.t / 900 + G.diff, .42, 1));
   /* apertura tranquilla (impari a muoverti), pressione vera dal sesto minuto */
-  const rate = Math.min(11, .8 + G.t / 26 + G.diff * 2.4);
+  const rate = Math.min(13, (.8 + G.t / 26 + G.diff * 2.4) * G.asc.rate);
   G.spawnAcc += dt * rate;
   const pool = currentPool();
   while (G.spawnAcc >= 1) {
@@ -537,8 +615,16 @@ function updateSpawns(dt) {
     const e = spawnRing(pick(pool), { elite: true, rMul: 1.55, spdMul: .88 });
     if (e) { e.c = '#ffc857'; }
   }
-  if (G.bossIdx < BOSSES.length && G.t >= BOSSES[G.bossIdx].t) {
-    spawnBoss(BOSSES[G.bossIdx]); G.bossIdx++;
+  if (G.bossIdx < BOSSES.length && G.t >= Math.max(45, BOSSES[G.bossIdx].t + G.asc.boss)) {
+    const def = BOSSES[G.bossIdx];
+    spawnBoss(def);
+    /* in coppia dal terzo guardiano: il gemello è più fragile, ma raddoppia
+       le cose da schivare contemporaneamente */
+    if (G.asc.twin && G.bossIdx >= 2) {
+      const g = spawnBoss(def);
+      g.hp = g.maxHp = g.maxHp * .55; g.r *= .82;
+    }
+    G.bossIdx++;
   }
   if (G.t > RUN_LEN && !G.victory) { G.diff += dt * .006; }
 }

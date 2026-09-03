@@ -5,7 +5,7 @@
 const SCR = $('#screens'), HUD = $('#hud');
 const elLv = $('#lvnum'), elXp = $('#xpfill'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
-  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss');
+  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip');
 
 /* dito o tastiera? Deciso a ogni partita, non al caricamento:
    così regge anche i portatili con schermo touch e i cambi di contesto. */
@@ -69,6 +69,8 @@ const UI = {
       elNext.className = left < 25 ? 'on soon' : 'on';
       elNext.innerHTML = '<i></i>' + nb.n + ' ' + fmtTime(left);
     } else elNext.className = '';
+    if (G.ascLv > 0) { elAsc.className = 'clip on'; elAsc.textContent = 'ASCENSIONE ' + G.ascLv; }
+    else elAsc.className = 'clip';
   },
 
   renderAwake() {
@@ -145,6 +147,7 @@ const UI = {
       '<div class="reward">' + shardIcon() + SAVE.shards + '</div></div>' +
       '<div class="eyebrow" style="text-align:left">Nucleo</div>' +
       '<div class="chars">' + chars + '</div>' +
+      this.ascHTML() +
       '<div class="eyebrow" style="text-align:left;margin-top:4px">Potenziamenti permanenti</div>' +
       '<div class="grid2">' + ups + '</div>' +
       '<div class="btnrow" style="max-width:420px;margin:8px auto 0">' +
@@ -161,6 +164,28 @@ const UI = {
       '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
       '</details>'
     );
+  },
+
+  /* ── ascensioni ─────────────────────────────────────────── */
+  ascHTML() {
+    const max = SAVE.asc | 0, sel = Math.min(SAVE.ascSel | 0, max);
+    if (max === 0 && !SAVE.wins) {
+      return '<div class="eyebrow" style="text-align:left;margin-top:4px">Ascensione</div>' +
+        '<div class="hint" style="text-align:left">Vinci una partita per sbloccare il primo livello. Ogni livello aggiunge una regola nuova, e le regole si sommano.</div>';
+    }
+    let pips = '';
+    for (let i = 0; i <= ASC.length - 1; i++) {
+      const bloc = i > max;
+      pips += '<button class="asc' + (i === sel ? ' on' : '') + (bloc ? ' lock' : '') + '"' +
+        (bloc ? ' disabled' : ' data-a="asc" data-i="' + i + '"') + '>' + i + '</button>';
+    }
+    const attive = [];
+    for (let i = 1; i <= sel; i++) attive.push('<li>' + ASC[i].d + '</li>');
+    return '<div class="eyebrow" style="text-align:left;margin-top:4px">Ascensione ' + sel + ' di ' + (ASC.length - 1) + '</div>' +
+      '<div class="ascrow">' + pips + '</div>' +
+      (attive.length
+        ? '<ul class="ascrules">' + attive.join('') + '</ul>'
+        : '<div class="hint" style="text-align:left">Nessuna regola aggiuntiva. Vinci per sbloccare il livello successivo.</div>');
   },
 
   /* ── anello (compatto, informativo) ─────────────────────── */
@@ -220,6 +245,14 @@ const UI = {
   },
 
   cardHTML(c, i) {
+    if (c.t === 'evo') {
+      const from = RUNES[c.id], to = RUNES[c.to], el = EL[to.el];
+      return '<button class="card evo clip" data-a="pick" data-i="' + i + '" style="--c:' + el.c + '"><span class="face">' +
+        '<span class="newtag" style="--c:' + el.c + '">TRASFORMA</span>' +
+        '<span class="ico clip">' + svg(c.to) + '</span><span class="body">' +
+        '<span class="kicker">' + from.n + ' → ' + to.n + '</span><h3>' + to.n + '</h3><p>' + to.d + '</p>' +
+        '</span></span></button>';
+    }
     if (c.t === 'gold') {
       return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:#ffc857"><span class="face">' +
         '<span class="ico clip">' + svg('frammento') + '</span><span class="body">' +
@@ -343,6 +376,9 @@ function rollChoices(n) {
   for (let i = 0; i < G.slots; i++) if (!G.ring[i]) empty = true;
   /* Con l'anello mezzo vuoto le rune nuove hanno la precedenza: senza rune
      adiacenti non esistono risonanze né Risvegli, cioè manca il gioco. */
+  /* una trasformazione disponibile domina le altre carte: è il momento
+     che ripaga tutta la pianificazione dell'anello, non va sprecato */
+  for (const r of inRing) if (canEvolve(r)) pool.push({ t: 'evo', id: r.id, to: EVO[r.id], w: 26 });
   const vuoti = G.slots - inRing.length;
   const wNew = 3.6 + vuoti * 1.3;
   for (const r of inRing) if (r.lv < 8) pool.push({ t: 'rup', id: r.id, w: 3.4 });
@@ -363,6 +399,18 @@ function rollChoices(n) {
 }
 
 function applyChoice(c) {
+  if (c.t === 'evo') {
+    const i = G.ring.findIndex(x => x && x.id === c.id);
+    if (i >= 0) {
+      const el = RUNES[c.to].el;
+      G.ring[i] = { id: c.to, el, lv: 5, cd: 0, res: 0, slot: i, st: {} };
+      recalcRing(true);
+      UI.toast('TRASFORMAZIONE', RUNES[c.to].n, EL[el].c);
+      AU.play('awake'); G.shake = Math.max(G.shake, 16); G.hitstop = .12;
+      G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 460, t: 0, dur: .7, c: EL[el].c });
+    }
+    return false;
+  }
   if (c.t === 'gold') { G.shards += 120; UI.toast('+120', 'Frammenti', '#ffc857'); return false; }
   if (c.t === 'pas') {
     G.passives[c.id] = (G.passives[c.id] | 0) + 1;
@@ -388,7 +436,9 @@ function placeRune(id, slot) {
 function resetRun(charId) {
   const c = CHARS.find(x => x.id === charId) || CHARS[0];
   G.char = c;
-  G.slots = 6 + mlv('orbita');
+  G.ascLv = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
+  G.asc = ascMods(G.ascLv);
+  G.slots = Math.max(4, 6 + mlv('orbita') + G.asc.slots);
   G.ring = new Array(G.slots).fill(null);
   G.passives = {};
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
@@ -402,7 +452,7 @@ function resetRun(charId) {
   G.revives = mlv('rinascita');
   G.demo = false;
   hideMoveHint();
-  P.hp = undefined; recalc(); P.hp = P.maxHp;
+  P.hp = undefined; recalc(); P.hp = P.maxHp * G.asc.startHp;
   placeRune(c.start, 0);
   recalcRing(false);
   UI.renderAwake();
@@ -417,7 +467,8 @@ function startRun(charId) {
   SAVE.runs = (SAVE.runs | 0) + 1; storeSave();
 }
 function payout() {
-  const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul) + G.shards;
+  const asc = 1 + (G.ascLv || 0) * .18;   /* salire di ascensione deve convenire */
+  const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul * asc) + G.shards;
   return Math.max(1, g);
 }
 function endRun(win) {
@@ -425,7 +476,15 @@ function endRun(win) {
   SAVE.shards += g;
   if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t);
   if (G.kills > (SAVE.bestKills || 0)) SAVE.bestKills = G.kills;
-  if (win) SAVE.wins = (SAVE.wins | 0) + 1;
+  if (win) {
+    SAVE.wins = (SAVE.wins | 0) + 1;
+    /* si sblocca il livello dopo solo vincendo al proprio massimo:
+       non si scala l'ascensione rigiocando quelle facili */
+    if (G.ascLv >= (SAVE.asc | 0) && SAVE.asc < ASC.length - 1) {
+      SAVE.asc = G.ascLv + 1; SAVE.ascSel = SAVE.asc;
+      setTimeout(() => UI.toast('ASCENSIONE ' + SAVE.asc, ASC[SAVE.asc].d, '#ffc857'), 800);
+    }
+  }
   storeSave();
   G.state = 'over';
   HUD.classList.remove('on');
@@ -464,6 +523,11 @@ SCR.addEventListener('click', ev => {
       if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
       else if (SAVE.shards >= c.cost) { SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave(); AU.play('buy'); UI.hub(); UI.toast(c.n, 'Nucleo sbloccato', c.c); }
       else UI.toast('FRAMMENTI INSUFFICIENTI', null, '#ff3d6e');
+      break;
+    }
+    case 'asc': {
+      const i = +b.dataset.i;
+      if (i <= (SAVE.asc | 0)) { SAVE.ascSel = i; storeSave(); UI.hub(); }
       break;
     }
     case 'copy': {

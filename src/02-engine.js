@@ -25,7 +25,7 @@ window.addEventListener('resize', resize);
    sicurezza i progressi sparirebbero in silenzio, che per un gioco
    costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
-const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0 };
+const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0 };
 let SAVE = Object.assign({}, DEFAULT_SAVE);
 let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
 const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
@@ -57,7 +57,9 @@ function sanitizeSave(o) {
   if (!s.chars.length) s.chars = ['vega'];
   if (!s.meta || typeof s.meta !== 'object' || Array.isArray(s.meta)) s.meta = {};
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
-  for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs']) {
+  s.asc = Math.min(s.asc | 0, ASC.length - 1);
+  s.ascSel = Math.min(Math.max(s.ascSel | 0, 0), s.asc);
+  for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs', 'asc', 'ascSel']) {
     const n = Number(s[k]); s[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   }
   return s;
@@ -319,7 +321,7 @@ const G = {
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
-  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0
+  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0
 };
 const P = {}; /* statistiche derivate */
 
@@ -383,7 +385,8 @@ function recalcRing(announce) {
       isE[i] = !!r && r.el === e;
     }
     const run = maxRun(ok, isE, n);
-    const tier = run >= 7 ? 3 : run >= 5 ? 2 : run >= 3 ? 1 : 0;
+    const c0 = G.asc.chain;
+    const tier = run >= c0 + 4 ? 3 : run >= c0 + 2 ? 2 : run >= c0 ? 1 : 0;
     const prev = G.awaken[e];
     G.awaken[e] = tier;
     if (announce && tier > prev) {
@@ -439,7 +442,7 @@ function spawnEnemy(type, x, y, opts) {
   const hpScale = (1 + mins * .33 + mins * mins * .020) * (o.hpMul || 1);
   const e = {
     type, x, y, vx: 0, vy: 0, r: d.r * (o.rMul || 1), c: d.c, shape: d.shape,
-    hp: d.hp * hpScale, maxHp: d.hp * hpScale, spd: d.spd * (o.spdMul || 1) * (1 + mins * .012),
+    hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * (1 + mins * .012) * G.asc.spd,
     dmg: d.dmg * (1 + mins * .07), xp: d.xp * (o.xpMul || 1), flash: 0, slow: 0, slowT: 0,
     burn: 0, burnT: 0, froze: 0, elite: !!o.elite, boss: null, ph: rand(TAU),
     atk: d.ranged ? rand(d.ranged.cd) : 0, kb: 0, kbx: 0, kby: 0
@@ -455,7 +458,7 @@ function spawnBoss(def) {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss',
-    hp: def.hp * (1 + G.diff * .55), maxHp: def.hp * (1 + G.diff * .55), spd: def.spd,
+    hp: def.hp * (1 + G.diff * .55) * G.asc.hp, maxHp: def.hp * (1 + G.diff * .55) * G.asc.hp, spd: def.spd * G.asc.spd,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 2, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
   };
@@ -559,9 +562,9 @@ function killEnemy(e, opt) {
 
   const n = e.boss ? 26 : e.elite ? 9 : 1;
   for (let i = 0; i < n; i++) addGem(e.x + rand(30, -30), e.y + rand(30, -30), Math.max(1, Math.round(e.xp / n)));
-  if (e.elite || e.boss) { G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
-  else if (Math.random() < .012) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
-  else if (Math.random() < .006) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
+  if (e.elite || e.boss) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
+  else if (!G.asc.noDrops && Math.random() < .012) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
+  else if (!G.asc.noDrops && Math.random() < .006) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
   if (Math.random() < .05 || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);
 
   if (e.type === 'scissore' && !e.small && !e.elite && G.enemies.length < 330) {
@@ -573,7 +576,8 @@ function killEnemy(e, opt) {
   if (e.boss) {
     G.boss = null; G.shake = 26; G.hitstop = .16;
     UI.toast('ABBATTUTO', e.boss.n, e.boss.c);
-    for (let i = 0; i < 2; i++) G.drops.push({ x: e.x + rand(60, -60), y: e.y + rand(60, -60), k: 'chest', t: 0 });
+    if (G.asc.noChest) addGem(e.x, e.y, 140, 1);
+    else for (let i = 0; i < 2; i++) G.drops.push({ x: e.x + rand(60, -60), y: e.y + rand(60, -60), k: 'chest', t: 0 });
     if (e.boss.id === 'eclissi') winRun();
   }
 }
