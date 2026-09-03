@@ -18,19 +18,78 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-/* ── salvataggio ────────────────────────────────────────────── */
+/* ── salvataggio ──────────────────────────────────────────────
+   localStorage non è garantito: è bloccato nelle URL data:, in alcuni
+   contesti file:// e in navigazione privata — e in quei casi lancia già
+   sull'accesso alla proprietà, non solo in lettura. Senza rete di
+   sicurezza i progressi sparirebbero in silenzio, che per un gioco
+   costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
 const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0 };
 let SAVE = Object.assign({}, DEFAULT_SAVE);
-function loadSave() {
+let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
+const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
+
+function probeStore() {
   try {
-    const raw = localStorage.getItem(SAVEKEY);
-    if (raw) SAVE = Object.assign({}, DEFAULT_SAVE, JSON.parse(raw));
-    if (!Array.isArray(SAVE.chars) || !SAVE.chars.length) SAVE.chars = ['vega'];
-    if (!SAVE.meta || typeof SAVE.meta !== 'object') SAVE.meta = {};
-  } catch (e) { SAVE = Object.assign({}, DEFAULT_SAVE); }
+    const k = '__orbita_probe';
+    localStorage.setItem(k, '1');
+    const ok = localStorage.getItem(k) === '1';
+    localStorage.removeItem(k);
+    STORE_OK = ok;
+  } catch (e) { STORE_OK = false; }
+  return STORE_OK;
 }
-function storeSave() { try { localStorage.setItem(SAVEKEY, JSON.stringify(SAVE)); } catch (e) { } }
+function storeGet(k) {
+  if (STORE_OK) { try { return localStorage.getItem(k); } catch (e) { STORE_OK = false; } }
+  return k in MEM ? MEM[k] : null;
+}
+function storeSet(k, v) {
+  MEM[k] = v;
+  if (STORE_OK) { try { localStorage.setItem(k, v); return true; } catch (e) { STORE_OK = false; } }
+  return false;
+}
+
+function sanitizeSave(o) {
+  const s = Object.assign({}, DEFAULT_SAVE, o || {});
+  if (!Array.isArray(s.chars) || !s.chars.length) s.chars = ['vega'];
+  s.chars = s.chars.filter(id => CHARS.some(c => c.id === id));
+  if (!s.chars.length) s.chars = ['vega'];
+  if (!s.meta || typeof s.meta !== 'object' || Array.isArray(s.meta)) s.meta = {};
+  if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
+  for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs']) {
+    const n = Number(s[k]); s[k] = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+  }
+  return s;
+}
+function loadSave() {
+  probeStore();
+  try {
+    const raw = storeGet(SAVEKEY);
+    SAVE = sanitizeSave(raw ? JSON.parse(raw) : null);
+  } catch (e) { SAVE = sanitizeSave(null); }
+}
+function storeSave() { try { storeSet(SAVEKEY, JSON.stringify(SAVE)); } catch (e) { } }
+
+/* codice di backup: l'unico modo di non perdere i progressi dove il
+   browser non concede memoria, e di spostarli fra dispositivi */
+function exportSave() {
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(SAVE)))).replace(/=+$/, ''); }
+  catch (e) { return ''; }
+}
+function importSave(code) {
+  try {
+    const s = (code || '').trim().replace(/\s+/g, '');
+    if (!s) return false;
+    const json = decodeURIComponent(escape(atob(s + '==='.slice(0, (4 - s.length % 4) % 4))));
+    const o = JSON.parse(json);
+    /* un array o un oggetto senza nessuna chiave nota non è un salvataggio:
+       meglio dire "codice non valido" che annunciare un ripristino finto */
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
+    if (!['shards', 'meta', 'chars', 'best', 'wins'].some(k => k in o)) return false;
+    SAVE = sanitizeSave(o); storeSave(); return true;
+  } catch (e) { return false; }
+}
 const mlv = id => SAVE.meta[id] | 0;
 
 /* ── audio procedurale ──────────────────────────────────────── */

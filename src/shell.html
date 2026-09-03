@@ -290,6 +290,22 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
 
+/* avviso e backup dei progressi */
+.warn{font:500 11.5px/1.55 var(--ui);color:#ffc857;text-align:center;max-width:52ch;margin:0 auto;
+  padding:9px 13px;background:rgba(255,200,87,.09);border:1px solid rgba(255,200,87,.34);--cut:7px}
+.backup{border:1px solid var(--line);--cut:9px;padding:12px 14px;background:rgba(11,9,28,.7)}
+.backup summary{font:600 10px/1 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+  cursor:pointer;list-style:none}
+.backup summary::-webkit-details-marker{display:none}
+.backup summary::before{content:"▸ ";color:var(--faint)}
+.backup[open] summary::before{content:"▾ "}
+.backup[open] summary{margin-bottom:11px}
+.backup textarea,.backup input{width:100%;font:400 11px/1.5 ui-monospace,Consolas,monospace;
+  color:var(--txt);background:rgba(5,3,16,.75);border:1px solid var(--line);padding:8px 10px;
+  resize:vertical;word-break:break-all}
+.backup input{margin-top:10px;font-size:12px}
+.backup textarea:focus,.backup input:focus{outline:none;border-color:var(--line-hot)}
+
 .hint{font:400 11.5px/1.5 var(--ui);color:var(--faint);text-align:center}
 .hint kbd{font:600 11px var(--ui);background:rgba(255,255,255,.08);border:1px solid var(--line);padding:2px 5px;color:var(--dim)}
 .legend{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}

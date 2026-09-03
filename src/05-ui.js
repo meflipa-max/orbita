@@ -100,6 +100,7 @@ const UI = {
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
       '</div></div>' +
       '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
+      (STORE_OK ? '' : '<div class="warn clip">Questo browser non concede memoria: i progressi durano solo finché la scheda resta aperta. Nell’Osservatorio trovi il codice di backup.</div>') +
       '</div>'
     );
   },
@@ -149,7 +150,16 @@ const UI = {
       '<div class="btnrow" style="max-width:420px;margin:8px auto 0">' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
       '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
-      '</div>'
+      '</div>' +
+      (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
+      '<details class="backup"><summary>Backup dei progressi</summary>' +
+      '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
+      '<textarea id="savecode" readonly rows="3" spellcheck="false">' + exportSave() + '</textarea>' +
+      '<div class="btnrow" style="margin-top:8px">' +
+      '<button class="btn ghost clip" data-a="copy"><span class="face">Copia codice</span></button></div>' +
+      '<input id="loadcode" placeholder="Incolla qui un codice da ripristinare" spellcheck="false" autocomplete="off">' +
+      '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
+      '</details>'
     );
   },
 
@@ -454,6 +464,26 @@ SCR.addEventListener('click', ev => {
       if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
       else if (SAVE.shards >= c.cost) { SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave(); AU.play('buy'); UI.hub(); UI.toast(c.n, 'Nucleo sbloccato', c.c); }
       else UI.toast('FRAMMENTI INSUFFICIENTI', null, '#ff3d6e');
+      break;
+    }
+    case 'copy': {
+      const ta = SCR.querySelector('#savecode'); if (!ta) return;
+      ta.select(); ta.setSelectionRange(0, 99999);
+      let done = false;
+      try { done = document.execCommand && document.execCommand('copy'); } catch (e) { }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(
+          () => UI.toast('COPIATO', 'Codice negli appunti', '#6ff2c4'),
+          () => { if (!done) UI.toast('SELEZIONATO', 'Copia a mano con Ctrl+C', '#ffc857'); }
+        );
+      } else UI.toast(done ? 'COPIATO' : 'SELEZIONATO', done ? 'Codice negli appunti' : 'Copia a mano con Ctrl+C', done ? '#6ff2c4' : '#ffc857');
+      break;
+    }
+    case 'import': {
+      const inp = SCR.querySelector('#loadcode'); if (!inp) return;
+      if (!inp.value.trim()) { UI.toast('NESSUN CODICE', 'Incolla prima un codice', '#ff3d6e'); return; }
+      if (importSave(inp.value)) { AU.play('buy'); UI.hub(); UI.toast('RIPRISTINATO', SAVE.shards + ' frammenti', '#6ff2c4'); }
+      else UI.toast('CODICE NON VALIDO', 'Controlla di averlo copiato tutto', '#ff3d6e');
       break;
     }
     case 'meta': {
