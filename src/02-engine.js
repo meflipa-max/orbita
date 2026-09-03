@@ -41,15 +41,21 @@ const AU = {
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     try { this.ctx = new C(); } catch (e) { return; }
     const c = this.ctx;
-    this.master = c.createGain(); this.master.gain.value = .85; this.master.connect(c.destination);
-    this.sfxG = c.createGain(); this.sfxG.gain.value = SAVE.sfx ? .34 : 0; this.sfxG.connect(this.master);
-    this.musG = c.createGain(); this.musG.gain.value = SAVE.mus ? .17 : 0; this.musG.connect(this.master);
+    /* Limitatore sul bus principale: con dodici rune che sparano insieme
+       le somme saturavano e il mix diventava una poltiglia distorta. */
+    this.comp = c.createDynamicsCompressor();
+    this.comp.threshold.value = -14; this.comp.knee.value = 26;
+    this.comp.ratio.value = 9; this.comp.attack.value = .004; this.comp.release.value = .22;
+    this.comp.connect(c.destination);
+    this.master = c.createGain(); this.master.gain.value = .9; this.master.connect(this.comp);
+    this.sfxG = c.createGain(); this.sfxG.gain.value = SAVE.sfx ? .30 : 0; this.sfxG.connect(this.master);
+    this.musG = c.createGain(); this.musG.gain.value = SAVE.mus ? .26 : 0; this.musG.connect(this.master);
     const len = c.sampleRate * .5, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     this.noise = buf; this.ready = true;
     this.mNext = c.currentTime + .1; this.mStep = 0;
   },
-  vol() { if (!this.ready) return; this.sfxG.gain.value = SAVE.sfx ? .34 : 0; this.musG.gain.value = SAVE.mus ? .17 : 0; },
+  vol() { if (!this.ready) return; this.sfxG.gain.value = SAVE.sfx ? .30 : 0; this.musG.gain.value = SAVE.mus ? .26 : 0; },
   tone(f, d, type, gain, f2, dest) {
     if (!this.ready) return;
     const c = this.ctx, t = c.currentTime;
@@ -73,12 +79,14 @@ const AU = {
   _last: {},
   play(k) {
     if (!this.ready || !SAVE.sfx) return;
-    const t = this.ctx.currentTime, gate = { shoot: .045, hit: .035, kill: .05, pick: .05 }[k];
+    /* Griglia anti-mitraglia: senza, con l'anello pieno si sovrappongono
+       decine di suoni al secondo e la musica sparisce sotto il rumore. */
+    const t = this.ctx.currentTime, gate = { shoot: .10, hit: .07, kill: .085, pick: .075, crit: .09 }[k];
     if (gate) { if (t - (this._last[k] || 0) < gate) return; this._last[k] = t; }
     switch (k) {
-      case 'shoot': this.tone(620 + rand(80), .07, 'triangle', .1, 300); break;
-      case 'hit': this.burst(.05, .11, 2000, 1.4); break;
-      case 'kill': this.burst(.13, .16, 900, .8); this.tone(180, .1, 'sawtooth', .05, 60); break;
+      case 'shoot': this.tone(620 + rand(80), .07, 'triangle', .07, 300); break;
+      case 'hit': this.burst(.05, .09, 2000, 1.4); break;
+      case 'kill': this.burst(.13, .13, 900, .8); this.tone(180, .1, 'sawtooth', .045, 60); break;
       case 'crit': this.tone(1180, .1, 'square', .1, 700); this.burst(.08, .12, 3200, 2); break;
       case 'hurt': this.tone(160, .26, 'sawtooth', .2, 52); this.burst(.18, .16, 420, .7); break;
       case 'pick': this.tone(880 + rand(200), .06, 'sine', .09, 1300); break;
@@ -91,44 +99,72 @@ const AU = {
       case 'awake': [0, 7, 12, 19].forEach((n, i) => setTimeout(() => this.tone(330 * Math.pow(2, n / 12), .55, 'sawtooth', .09), i * 55)); break;
     }
   },
-  /* musica generativa: arpeggio in la minore + basso + cassa */
-  mNext: 0, mStep: 0,
-  ARP: [0, 7, 12, 15, 12, 7, 10, 3],
-  tick(intensity) {
+  /* ── musica generativa ──────────────────────────────────────
+     Quattro strati che entrano con l'intensità: cassa, basso, arpeggio, pad.
+     La progressione di accordi la tiene viva per venti minuti; con un
+     guardiano in campo passa a una cadenza tesa e più veloce.            */
+  mNext: 0, mStep: 0, mBoss: 0,
+  PROG:  [0, -4, 3, -2],   /* La minore · Fa · Do · Sol */
+  PROGB: [0, 1, 0, -5],    /* boss: La minore · Sib · La minore · Mi */
+  ARP:   [0, 7, 12, 15, 12, 7, 3, 10],
+  TRIAD: [0, 3, 7, 10],
+  note(t, freq, dur, type, peak, cutoff, atk) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = cutoff; f.Q.value = 2;
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + (atk || .012));
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(f); f.connect(g); g.connect(this.musG);
+    o.start(t); o.stop(t + dur + .02);
+  },
+  tick(intensity, boss) {
     if (!this.ready || !SAVE.mus) return;
     const c = this.ctx;
-    const bpm = 92 + intensity * 34, spb = 60 / bpm / 4;
+    /* Se la scheda è rimasta in secondo piano il sequencer è indietro di secondi:
+       si riparte dalla battuta successiva invece di sparare tutte le note arretrate. */
+    if (this.mNext < c.currentTime - .4) {
+      this.mNext = c.currentTime + .05;
+      this.mStep = Math.ceil(this.mStep / 16) * 16;
+    }
+    /* la transizione a/da modalità boss è morbida, non uno scatto */
+    this.mBoss += ((boss ? 1 : 0) - this.mBoss) * .04;
+    const bpm = 92 + intensity * 30 + this.mBoss * 14, spb = 60 / bpm / 4;
     let guard = 0;
-    while (this.mNext < c.currentTime + .18 && guard++ < 40) {
+    while (this.mNext < c.currentTime + .18 && guard++ < 48) {
       const t = this.mNext, s = this.mStep;
-      const g = this.musG;
-      if (s % 4 === 0) { /* cassa */
+      const bar = (s / 16 | 0) % 4;
+      const root = (this.mBoss > .5 ? this.PROGB : this.PROG)[bar];
+      const hz = n => 55 * Math.pow(2, n / 12);
+
+      if (s % 4 === 0) {                                   /* cassa */
         const o = c.createOscillator(), gg = c.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t + .12);
+        o.type = 'sine'; o.frequency.setValueAtTime(125, t); o.frequency.exponentialRampToValueAtTime(40, t + .12);
         gg.gain.setValueAtTime(.5, t); gg.gain.exponentialRampToValueAtTime(.001, t + .16);
-        o.connect(gg); gg.connect(g); o.start(t); o.stop(t + .18);
+        o.connect(gg); gg.connect(this.musG); o.start(t); o.stop(t + .18);
       }
-      if (s % 16 === 0 || s % 16 === 10) { /* basso */
-        const n = (s % 32 < 16) ? 0 : (intensity > .45 ? -2 : 5);
-        const o = c.createOscillator(), gg = c.createGain(), f = c.createBiquadFilter();
-        f.type = 'lowpass'; f.frequency.value = 420;
-        o.type = 'sawtooth'; o.frequency.value = 55 * Math.pow(2, n / 12);
-        gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(.34, t + .02); gg.gain.exponentialRampToValueAtTime(.001, t + .55);
-        o.connect(f); f.connect(gg); gg.connect(g); o.start(t); o.stop(t + .6);
+      if (s % 16 === 0 || s % 16 === 6 || s % 16 === 11) {  /* basso sulla fondamentale */
+        this.note(t, hz(root), .5, 'sawtooth', .30, 400 + intensity * 260);
       }
-      if (intensity > .12 && s % 2 === 0) { /* arpeggio */
-        const n = this.ARP[(s / 2 | 0) % 8] + (s % 64 < 32 ? 0 : 3);
-        const o = c.createOscillator(), gg = c.createGain(), f = c.createBiquadFilter();
-        f.type = 'lowpass'; f.frequency.value = 900 + intensity * 2600; f.Q.value = 3;
-        o.type = 'square'; o.frequency.value = 220 * Math.pow(2, n / 12);
-        gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(.075, t + .01); gg.gain.exponentialRampToValueAtTime(.001, t + .22);
-        o.connect(f); f.connect(gg); gg.connect(g); o.start(t); o.stop(t + .25);
+      if (intensity > .10 && s % 2 === 0) {                /* arpeggio sull'accordo */
+        const n = root + this.ARP[(s / 2 | 0) % 8] + 12;
+        this.note(t, hz(n), .22, 'square', .062, 900 + intensity * 2800);
       }
-      if (intensity > .55 && s % 4 === 2) { /* charleston */
+      if (intensity > .34 && s % 16 === 0) {               /* pad: la triade tenuta */
+        for (const iv of this.TRIAD)
+          this.note(t, hz(root + iv + 24), spb * 15, 'sawtooth', .022, 700 + intensity * 900, .18);
+      }
+      if (intensity > .5 && s % 4 === 2) {                 /* charleston */
         const sN = c.createBufferSource(); sN.buffer = this.noise;
         const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7200;
-        const gg = c.createGain(); gg.gain.setValueAtTime(.09, t); gg.gain.exponentialRampToValueAtTime(.001, t + .05);
-        sN.connect(f); f.connect(gg); gg.connect(g); sN.start(t); sN.stop(t + .06);
+        const gg = c.createGain(); gg.gain.setValueAtTime(.075, t); gg.gain.exponentialRampToValueAtTime(.001, t + .05);
+        sN.connect(f); f.connect(gg); gg.connect(this.musG); sN.start(t); sN.stop(t + .06);
+      }
+      if (this.mBoss > .5 && s % 8 === 4) {                /* rullante: solo coi guardiani */
+        const sN = c.createBufferSource(); sN.buffer = this.noise;
+        const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = .7;
+        const gg = c.createGain(); gg.gain.setValueAtTime(.17, t); gg.gain.exponentialRampToValueAtTime(.001, t + .12);
+        sN.connect(f); f.connect(gg); gg.connect(this.musG); sN.start(t); sN.stop(t + .14);
       }
       this.mNext += spb; this.mStep++;
     }

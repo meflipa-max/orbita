@@ -67,12 +67,12 @@ function frame(t) {
   let rdt = (t - last) / 1000; last = t;
   if (rdt > .06) rdt = .06;
 
+  let intensity = .1;
   if (G.state === 'play') {
     let dt = rdt;
     if (G.hitstop > 0) { G.hitstop -= rdt; dt *= .18; }
     step(dt);
-    const intensity = clamp(G.t / 780 * .55 + G.enemies.length / 190 * .35 + (G.boss ? .3 : 0), 0, 1);
-    AU.tick(intensity);
+    intensity = clamp(G.t / 780 * .55 + G.enemies.length / 190 * .35 + (G.boss ? .3 : 0), 0, 1);
   } else if (G.state === 'menu') {
     G.t += rdt * .5; G.ringRot += rdt * .55;
     G.cam.x = Math.sin(G.t * .085) * 300; G.cam.y = Math.cos(G.t * .062) * 230;
@@ -84,8 +84,13 @@ function frame(t) {
     }
     updateParts(rdt);
     G.shake = Math.max(0, G.shake - rdt * 42);
-    AU.tick(.1);
+  } else {
+    /* scelta potenziamento, anello, pausa, fine: la musica NON si interrompe.
+       Prima il sequencer veniva alimentato solo in gioco e con i livelli
+       frequenti la colonna sonora singhiozzava a ogni schermata. */
+    intensity = G.state === 'over' ? .06 : clamp(G.t / 780 * .4 + .2, 0, .6);
   }
+  AU.tick(intensity, G.state === 'play' && !!G.boss);
   if (cv.width > 0 && cv.height > 0) render();
   adapt(performance.now() - t);
 }
