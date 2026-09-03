@@ -373,7 +373,9 @@ function addGem(x, y, v, kind) {
 
 function spawnEnemy(type, x, y, opts) {
   const d = MOBS[type], o = opts || {};
-  const mins = G.t / 60;
+  /* nella vetrina del menu il tempo scorre ma la difficoltà resta ferma:
+     altrimenti dopo dieci minuti sul titolo comparirebbero mostri corazzati */
+  const mins = G.demo ? 1.1 : G.t / 60;
   /* proporzionato alla crescita del giocatore, ora più lenta */
   const hpScale = (1 + mins * .33 + mins * mins * .020) * (o.hpMul || 1);
   const e = {

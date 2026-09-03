@@ -74,16 +74,8 @@ function frame(t) {
     step(dt);
     intensity = clamp(G.t / 780 * .55 + G.enemies.length / 190 * .35 + (G.boss ? .3 : 0), 0, 1);
   } else if (G.state === 'menu') {
-    G.t += rdt * .5; G.ringRot += rdt * .55;
-    G.cam.x = Math.sin(G.t * .085) * 300; G.cam.y = Math.cos(G.t * .062) * 230;
-    G.p.x = G.cam.x; G.p.y = G.cam.y;
-    for (let n = 0; n < G.slots; n++) {
-      const r = G.ring[n]; if (!r) continue;
-      const a = G.ringRot + n / G.slots * TAU;
-      r.wa = a; r.wx = G.p.x + Math.cos(a) * RING_R; r.wy = G.p.y + Math.sin(a) * RING_R;
-    }
-    updateParts(rdt);
-    G.shake = Math.max(0, G.shake - rdt * 42);
+    menuStep(rdt);
+    intensity = .16;
   } else {
     /* scelta potenziamento, anello, pausa, fine: la musica NON si interrompe.
        Prima il sequencer veniva alimentato solo in gioco e con i livelli
@@ -95,28 +87,78 @@ function frame(t) {
   adapt(performance.now() - t);
 }
 
-/* ── avvio ──────────────────────────────────────────────────── */
+/* ── vetrina del menu ───────────────────────────────────────────
+   Dietro al titolo gira il gioco vero: stesse rune, stessi nemici,
+   stessi effetti. Un logo su fondo nero non dice cos'è Orbita. */
 function demoRing() {
   G.slots = 8;
   G.ring = new Array(8).fill(null);
-  const ids = shuffle(['scintilla', 'cristallo', 'arco', 'falce', 'aureola', 'scheggia', 'prisma', 'tempesta']).slice(0, 6);
-  const order = [0, 1, 2, 4, 5, 6];
-  ids.forEach((id, i) => {
-    G.ring[order[i]] = { id, el: RUNES[id].el, lv: 1, cd: 999, res: 0, slot: order[i], st: {} };
+  /* catena di fuoco, Iride come ponte, catena di gelo: due Risvegli accesi,
+     così si vedono subito gli archi di risonanza attorno al nucleo */
+  const set = ['scintilla', 'pira', 'nova', 'iride', 'scheggia', 'cristallo', 'bruma', 'arco'];
+  set.forEach((id, i) => {
+    G.ring[i] = { id, el: RUNES[id].el, lv: 4 + (i % 3), cd: rand(.6), res: 0, slot: i, st: {} };
   });
-  for (let i = 0; i < 8; i++) {
-    const a = G.ring[i], b = G.ring[(i + 1) % 8];
-    if (a && b && compat(a, b)) { a.res++; b.res++; }
+  recalcRing(false);
+}
+
+function enterMenu() {
+  G.demo = true;
+  G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
+  G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
+  G.boss = null; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
+  G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+  G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
+  G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;
+  demoRing();
+  P.hp = undefined; recalc(); P.hp = P.maxHp;
+}
+
+const DEMO_POOL = ['sciamante', 'sciamante', 'vagante', 'scissore', 'spettro'];
+function menuStep(dt) {
+  G.t += dt;
+  const p = G.p;
+  /* percorso di Lissajous: non torna mai sullo stesso giro, non sembra un loop */
+  const tx = Math.sin(G.t * .27) * 560 + Math.sin(G.t * .113) * 190;
+  const ty = Math.cos(G.t * .19) * 400 + Math.cos(G.t * .071) * 150;
+  const k = Math.min(1, dt * 1.7);
+  const nx = lerp(p.x, tx, k), ny = lerp(p.y, ty, k);
+  p.vx = (nx - p.x) / Math.max(dt, 1e-4); p.vy = (ny - p.y) / Math.max(dt, 1e-4);
+  p.x = nx; p.y = ny;
+
+  /* il nucleo sta nella metà bassa: il titolo occupa quella alta */
+  const ck = Math.min(1, dt * 3);
+  G.cam.x += (p.x - G.cam.x) * ck;
+  G.cam.y += (p.y - H * .15 - G.cam.y) * ck;
+
+  /* flusso generoso: con otto rune e due Risvegli i nemici durano un istante,
+     e una vetrina mezza vuota non mostra niente */
+  G.spawnAcc += dt * 7;
+  while (G.spawnAcc >= 1) {
+    G.spawnAcc -= 1;
+    if (G.enemies.length < 75) spawnRing(pick(DEMO_POOL));
   }
+
+  GRID.clear();
+  for (let i = 0; i < G.enemies.length; i++) if (G.enemies[i].hp > 0) GRID.add(G.enemies[i]);
+  updateRunes(dt);
+  updateBullets(dt);
+  updateZones(dt);
+  updateEnemies(dt);
+  updateGems(dt);
+  updateParts(dt);
+
+  /* la vetrina non fa progredire niente */
+  G.pending = 0; G.drops.length = 0; P.hp = P.maxHp; p.inv = 999;
+  G.shake = Math.max(0, G.shake - dt * 42);
 }
 
 function boot() {
   loadSave();
   resize();
   buildStars();
-  G.q = 1; G.diff = 0; G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
-  P.hp = undefined; recalc();
-  demoRing();
+  G.q = 1;
+  enterMenu();
   G.state = 'menu';
   UI.title();
   requestAnimationFrame(frame);

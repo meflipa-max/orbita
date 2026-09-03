@@ -1,0 +1,4 @@
+# Line ending LF ovunque: il build concatena i sorgenti, e su un checkout
+# Windows il CRLF cambierebbe i byte dell'output rispetto a Vercel (Linux).
+* text=auto eol=lf
+*.ps1 text eol=crlf

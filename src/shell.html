@@ -134,10 +134,36 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 .screen>*{width:100%;max-width:760px}
 
+/* ---------- titolo: il gioco gira dietro, il velo tiene leggibile il testo ---------- */
+.screen[data-s="title"]{
+  background:linear-gradient(180deg,rgba(5,3,16,.95) 0%,rgba(5,3,16,.86) 30%,
+    rgba(5,3,16,.34) 58%,rgba(5,3,16,.10) 74%,rgba(5,3,16,.62) 100%);
+  backdrop-filter:blur(1.5px)}
+.screen[data-s="title"].on{justify-content:flex-start}
+.hero{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;max-width:760px;
+  padding-top:clamp(8px,4vh,54px)}
+.hero>*{animation:riseIn .85s cubic-bezier(.2,1,.3,1) backwards}
+.hero>*:nth-child(1){animation-delay:.06s}
+.hero>*:nth-child(3){animation-delay:.44s}
+.hero>*:nth-child(4){animation-delay:.58s}
+.hero>*:nth-child(5){animation-delay:.70s}
+.hero>*:nth-child(6){animation-delay:.86s}
+@keyframes riseIn{from{opacity:0;transform:translateY(20px);filter:blur(7px)}}
+.hero .sub em{color:#ece8ff;font-style:normal;font-weight:600}
+.hero .elrow{gap:6px}
+.hero .el{animation:riseIn .7s cubic-bezier(.2,1,.3,1) backwards}
+.hero .cta{display:flex;flex-direction:column;gap:9px;width:100%;max-width:340px}
+.hero .hint{margin-top:2px}
+
+h1.logo{animation:logoIn 1s cubic-bezier(.16,1,.3,1) backwards .12s,shimmer 9s linear infinite 1.1s}
+@keyframes logoIn{from{opacity:0;transform:scale(.82);filter:blur(22px)}}
+@keyframes shimmer{to{background-position:-200% 0}}
+
 .eyebrow{font:600 11px/1 var(--ui);letter-spacing:.34em;text-transform:uppercase;color:var(--faint);text-align:center}
 h1.logo{font:800 clamp(48px,15vw,104px)/0.86 var(--disp);letter-spacing:-.03em;margin:0;text-align:center;
-  background:linear-gradient(178deg,#fff 8%,#a5d8ff 42%,#7a5bff 96%);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 34px rgba(122,91,255,.45))}
+  background:linear-gradient(100deg,#ffffff 0%,#bfe4ff 16%,#7a5bff 32%,#ffffff 46%,#7a5bff 60%,#bfe4ff 80%,#ffffff 100%);
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 40px rgba(122,91,255,.55))}
 h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin:0;text-align:center;text-wrap:balance}
 .sub{font:400 14px/1.6 var(--ui);color:var(--dim);text-align:center;max-width:60ch;margin:0 auto;text-wrap:balance}
 

@@ -35,7 +35,10 @@ const UI = {
   /* ── infrastruttura ─────────────────────────────────────── */
   open(name, html) {
     this.cur = name;
-    if (name === 'title' || name === 'hub' || name === 'guide') { G.state = 'menu'; HUD.classList.remove('on'); }
+    if (name === 'title' || name === 'hub' || name === 'guide') {
+      if (G.state !== 'menu') enterMenu();
+      G.state = 'menu'; HUD.classList.remove('on');
+    }
     SCR.innerHTML = '<section class="screen on" data-s="' + name + '">' + html + '</section>';
     const s = SCR.firstElementChild; if (s) s.scrollTop = 0;
   },
@@ -81,17 +84,23 @@ const UI = {
   /* ── titolo ─────────────────────────────────────────────── */
   title() {
     const best = SAVE.best ? fmtTime(SAVE.best) : '—';
+    const chips = ELKEYS.map((e, i) =>
+      '<span class="el clip" style="--c:' + EL[e].c + ';animation-delay:' + (.7 + i * .09).toFixed(2) + 's"><b></b>' + EL[e].n + '</span>'
+    ).join('');
     this.open('title',
+      '<div class="hero">' +
       '<div class="eyebrow">Sopravvivenza · Roguelite</div>' +
       '<h1 class="logo">ORBITA</h1>' +
-      '<p class="sub">Le tue rune ti girano intorno. Quelle vicine dello stesso elemento <em style="color:#ece8ff;font-style:normal">risuonano</em>: tre di fila accendono un Risveglio che cambia le regole della partita.</p>' +
-      '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:6px auto 0">' +
+      '<p class="sub">Le tue rune ti girano intorno. Quelle vicine dello stesso elemento <em>risuonano</em>: tre di fila accendono un Risveglio che cambia le regole della partita.</p>' +
+      '<div class="legend elrow">' + chips + '</div>' +
+      '<div class="cta">' +
       '<button class="btn primary clip" data-a="go"><span class="face">Gioca</span></button>' +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="guide"><span class="face">Guida</span></button>' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
       '</div></div>' +
-      '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>'
+      '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
+      '</div>'
     );
   },
 
@@ -381,6 +390,7 @@ function resetRun(charId) {
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');
+  G.demo = false;
   hideMoveHint();
   P.hp = undefined; recalc(); P.hp = P.maxHp;
   placeRune(c.start, 0);
