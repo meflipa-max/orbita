@@ -145,6 +145,7 @@ const UI = {
         '<li><b>Chi sta in mezzo conta.</b> In una catena di tre, solo quella centrale ottiene risonanza da entrambi i lati. Mettici la runa che vuoi trasformare, o quella che picchia di più.</li>' +
         '<li><b>L’Iride dipende da cosa vuoi.</b> Sul confine fra due gruppi accende un secondo Risveglio, utile contro la folla. Dentro il tuo gruppo principale fa più danno puro, meglio contro i guardiani.</li>' +
         '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento. E la carta <b>Dissolvi</b> ti libera un alloggiamento: non sei legato per sempre alla runa di partenza.</li>' +
+        '<li><b>Non sei obbligato a prendere.</b> Se nessuna delle tre carte ti convince, <b>Rilancia</b> per pescarne altre tre, o <b>Salta</b>: rinunci al potenziamento ma recuperi vita e frammenti. Una runa che non vuoi ti costa un alloggiamento per sempre, quindi saltare spesso è la scelta giusta.</li>' +
         '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune risuonano anche saltando un alloggiamento, quindi alternare funziona. Con Lyra ogni runa conta doppia: due bastano per un Risveglio.</li>' +
         '</ol>') +
 
@@ -338,6 +339,15 @@ const UI = {
       '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + G.level) + '</div>' +
       '<h2 class="ttl">' + (chest ? 'Un dono dal vuoto' : 'Il nucleo cresce') + '</h2>' +
       '<div id="cards">' + cards + '</div>' +
+      /* Nessuna delle tre va bene? Due verbi diversi: Rilancia se speri in
+         qualcosa di meglio, Salta se preferisci non toccare la build. In
+         Orbita saltare conta davvero, perché una runa nuova ti mangia un
+         alloggiamento per sempre. */
+      '<div class="btnrow" style="max-width:400px;margin:0 auto">' +
+      '<button class="btn ghost clip" data-a="reroll"' + (G.rerolls > 0 ? '' : ' disabled') + '>' +
+      '<span class="face">Rilancia' + (G.rerolls > 0 ? ' · ' + G.rerolls : '') + '</span></button>' +
+      '<button class="btn ghost clip" data-a="skip"><span class="face">Salta</span></button>' +
+      '</div>' +
       '<div class="hint" style="margin-top:2px">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       '<button class="btn ghost clip" style="max-width:280px;margin:0 auto" data-a="ringedit"><span class="face">Riordina l’anello</span></button>'
     );
@@ -581,6 +591,7 @@ function resetRun(charId, seed) {
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');
+  G.rerolls = 2 + mlv('ripensamento');
   genRocks();
   G.demo = false;
   hideMoveHint();
@@ -714,6 +725,23 @@ SCR.addEventListener('click', ev => {
       const cost = metaCost(m, lv);
       if (SAVE.shards < cost) { UI.toast('FRAMMENTI INSUFFICIENTI', null, '#ff3d6e'); return; }
       SAVE.shards -= cost; SAVE.meta[m.id] = lv + 1; storeSave(); AU.play('buy'); UI.hub();
+      break;
+    }
+    case 'reroll': {
+      if (G.rerolls <= 0) return;
+      G.rerolls--; AU.play('ui'); UI.levelup();
+      break;
+    }
+    case 'skip': {
+      /* saltare non è pura rinuncia: cura e frammenti rendono la
+         rinuncia una scelta fra potenza e sopravvivenza */
+      const cura = Math.round(P.maxHp * .15);
+      P.hp = Math.min(P.maxHp, P.hp + cura);
+      G.shards += 40;
+      UI.toast('SALTATO', '+' + cura + ' vita · +40 frammenti', '#6ff2c4');
+      AU.play('buy');
+      G.pending--;
+      if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
       break;
     }
     case 'pick': {

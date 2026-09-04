@@ -340,7 +340,7 @@ const G = {
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
-  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0
+  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2
 };
 const P = {}; /* statistiche derivate */
 
