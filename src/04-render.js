@@ -285,11 +285,34 @@ function drawBarreVita() {
   }
 }
 
+/* una zona fuori campo costa quanto una dentro: gradiente, arco, contorno.
+   Con le pozze a decine erano tutte disegnate comunque */
+function zonaVisibile(z, r) {
+  const mx = W / 2 + r + 40, my = H / 2 + r + 40;
+  if (z.x === undefined) {                     /* zone a segmento: saetta, fascio */
+    return Math.max(z.x1, z.x2) > G.cam.x - mx && Math.min(z.x1, z.x2) < G.cam.x + mx &&
+           Math.max(z.y1, z.y2) > G.cam.y - my && Math.min(z.y1, z.y2) < G.cam.y + my;
+  }
+  return Math.abs(z.x - G.cam.x) < mx && Math.abs(z.y - G.cam.y) < my;
+}
+
 function drawZonesUnder() {
   ctx.globalCompositeOperation = 'lighter';
   for (const z of G.zones) {
     if (z.k === 'pool') {
+      if (!zonaVisibile(z, z.r)) continue;
       const f = 1 - z.t / z.dur, a = clamp(f * 1.6, 0, .55);
+      if (z.scia) {
+        /* La scia è un alone morbido che pulsa, non un cerchio col contorno:
+           erano quei cerchi netti, accavallati a centinaia, a fare il muro di
+           bolle arancioni. Lo sprite pre-renderizzato costa anche molto meno
+           di un gradiente nuovo per pozza a ogni fotogramma. */
+        const t = glowTex(z.c, 48), s = z.r * 1.4;
+        ctx.globalAlpha = clamp(a * 1.5, 0, .8) * (.86 + Math.sin(G.t * 9 + z.x * .05) * .14);
+        ctx.drawImage(t, z.x - s, z.y - s, s * 2, s * 2);
+        ctx.globalAlpha = 1;
+        continue;
+      }
       const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
       g.addColorStop(0, rgba(z.c, a)); g.addColorStop(.6, rgba(z.c, a * .4)); g.addColorStop(1, rgba(z.c, 0));
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, TAU); ctx.fill();
@@ -313,6 +336,7 @@ function drawZonesUnder() {
 function drawZonesOver() {
   ctx.globalCompositeOperation = 'lighter';
   for (const z of G.zones) {
+    if (!zonaVisibile(z, Math.max(z.r || 0, z.r1 || 0, 60))) continue;
     const f = z.t / z.dur;
     if (z.k === 'nova' || z.k === 'ring') {
       const r = z.k === 'nova' ? z.r : lerp(z.r0, z.r1, Math.sqrt(f));

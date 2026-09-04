@@ -266,10 +266,9 @@ function updateBullets(dt) {
     if (b.trail && b.t % .04 < dt) addPart(b.x, b.y, crand(20, -20), crand(20, -20), .26, b.r * .7, b.c);
     /* Cometa: la scia brucia davvero, non è solo grafica */
     if (b.scia) {
-      b.sciaT = (b.sciaT || 0) - dt;
-      if (b.sciaT <= 0) {
-        b.sciaT = .13;
-        G.zones.push({ k: 'pool', x: b.x, y: b.y, r: b.r * 2.6, t: 0, dur: 1.5, dps: b.dmg * .5, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
+      if (b.sx === undefined) { b.sx = b.x; b.sy = b.y; posaScia(b); }
+      else if ((b.x - b.sx) * (b.x - b.sx) + (b.y - b.sy) * (b.y - b.sy) > b.r * b.r * 2.4) {
+        b.sx = b.x; b.sy = b.y; posaScia(b);
       }
     }
     /* Mietitore: le lame risucchiano lungo il cammino */
@@ -314,6 +313,36 @@ function updateBullets(dt) {
       }
     }
   }
+}
+
+/* La scia della Cometa si posa per distanza percorsa, non a tempo, e le
+   pozze si FONDONO: se il punto brucia già, la fiamma si ravviva invece di
+   nascerne una sopra. Le sfere inseguono tutte il bersaglio più vicino,
+   quindi le loro scie convergono sullo stesso metro quadro: ne restavano
+   vive più di cinquecento, che riempivano lo schermo di cerchi e — siccome
+   ogni pozza colpisce per conto suo — moltiplicavano il danno per quante se
+   ne accavallavano. Fondendole la scia resta una scia e il danno torna
+   quello dichiarato; il tetto garantisce che l'arena non diventi un tappeto
+   di fuoco qualunque sia la cadenza. */
+const SCIA_MAX = 72;
+function posaScia(b) {
+  const r = b.r * 2.6, dur = 1.2, dps = b.dmg * 1.6, vicino = r * r * 1.15;
+  let vive = 0, iv = -1, tv = -1;
+  const Z = G.zones;
+  for (let i = 0; i < Z.length; i++) {
+    const z = Z[i];
+    if (!z.scia) continue;
+    vive++;
+    const dx = z.x - b.x, dy = z.y - b.y;
+    if (dx * dx + dy * dy < vicino) {            /* brucia già: ravviva */
+      z.t = 0; z.dur = dur;
+      if (dps > z.dps) z.dps = dps;
+      return;
+    }
+    if (z.t > tv) { tv = z.t; iv = i; }
+  }
+  if (vive >= SCIA_MAX && iv >= 0) Z.splice(iv, 1);   /* tetto: muore la più vecchia */
+  Z.push({ k: 'pool', scia: 1, x: b.x, y: b.y, r, t: 0, dur, dps, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
 }
 
 /* ── zone ed effetti persistenti ────────────────────────────── */

@@ -173,7 +173,7 @@ const RUNES = {
      è risvegliato. La condizione è POSIZIONALE: obbliga a progettare
      l'anello dal primo minuto invece di prendere quel che capita.      */
   cometa: { n: 'Cometa', el: 'fuoco', tag: 'trasformazione', evo: 1, d: 'Sfere enormi che lasciano una scia ardente e si frantumano su ogni uccisione.',
-    base: { dmg: 54, cd: .60, spd: 420, count: 2, pierce: 1, size: 13 }, g: { dmg: 23, cd: -.03, count: .3, spd: 12 } },
+    base: { dmg: 28, cd: .60, spd: 420, count: 2, pierce: 1, size: 13 }, g: { dmg: 10, cd: -.03, count: .3, spd: 12 } },
   glaciale: { n: 'Glaciale', el: 'gelo', tag: 'trasformazione', evo: 1, d: 'Un anello di schegge che congela tutto ciò che tocca.',
     base: { dmg: 60, cd: .5, count: 4, area: 132, spd: 2.4, size: 21 }, g: { dmg: 25, count: .4, spd: .1, size: 1.1 } },
   fulgore: { n: 'Fulgore', el: 'fulmine', tag: 'trasformazione', evo: 1, d: 'La scarica rimbalza su tutto il campo e a ogni salto si sdoppia.',
