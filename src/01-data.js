@@ -171,14 +171,23 @@ const PASSIVES = {
 const PASSIDS = Object.keys(PASSIVES);
 
 /* ── nemici ─────────────────────────────────────────────────── */
+/* Gerarchia visiva. Prima ogni nemico aveva la sua tinta satura — sette
+   arcobaleni che urlavano tutti uguale — e due erano verde e oro, cioè
+   esattamente i colori delle gemme e dei frammenti: i nemici sembravano
+   roba da raccogliere. Ora vale una regola sola:
+     · verde e oro sono RISERVATI a ciò che si raccoglie
+     · rosso è RISERVATO a ciò che fa male (colpi nemici)
+     · i nemici comuni stanno in una famiglia fredda viola-ardesia
+     · la LUMINOSITÀ misura la minaccia: più è chiaro e caldo, più pesa
+   L'identità la porta la forma, non la tinta.                          */
 const MOBS = {
-  sciamante: { n: 'Sciamante', hp: 9,   spd: 126, r: 9,  dmg: 6,  xp: 1, c: '#7dd3fc', shape: 'tri' },
-  vagante:   { n: 'Vagante',   hp: 24,  spd: 80,  r: 13, dmg: 10, xp: 2, c: '#c084fc', shape: 'dia' },
-  dardo:     { n: 'Dardo',     hp: 30,  spd: 66,  r: 14, dmg: 9,  xp: 4, c: '#fbbf24', shape: 'tri', ranged: { cd: 2.9, spd: 210, dmg: 9, n: 1, spread: 0 } },
-  scissore:  { n: 'Scissore',  hp: 52,  spd: 74,  r: 18, dmg: 13, xp: 4, c: '#4ade80', shape: 'sq', split: 2 },
-  spettro:   { n: 'Spettro',   hp: 20,  spd: 158, r: 12, dmg: 14, xp: 3, c: '#e879f9', shape: 'gho' },
-  bruto:     { n: 'Bruto',     hp: 120, spd: 50,  r: 25, dmg: 22, xp: 8, c: '#f472b6', shape: 'hex' },
-  lancia:    { n: 'Lanciere',  hp: 44,  spd: 58,  r: 15, dmg: 11, xp: 5, c: '#fb7185', shape: 'dia', ranged: { cd: 1.9, spd: 265, dmg: 12, n: 3, spread: .34 } }
+  sciamante: { n: 'Sciamante', hp: 9,   spd: 126, r: 9,  dmg: 6,  xp: 1, c: '#6d78b8', shape: 'tri' },
+  vagante:   { n: 'Vagante',   hp: 24,  spd: 80,  r: 13, dmg: 10, xp: 2, c: '#8b7ddb', shape: 'dia' },
+  scissore:  { n: 'Scissore',  hp: 52,  spd: 74,  r: 18, dmg: 13, xp: 4, c: '#7f96d8', shape: 'sq', split: 2 },
+  spettro:   { n: 'Spettro',   hp: 20,  spd: 158, r: 12, dmg: 14, xp: 3, c: '#b9a6f5', shape: 'gho' },
+  dardo:     { n: 'Dardo',     hp: 30,  spd: 66,  r: 14, dmg: 9,  xp: 4, c: '#d98fd6', shape: 'tri', ranged: { cd: 2.9, spd: 210, dmg: 9, n: 1, spread: 0 } },
+  lancia:    { n: 'Lanciere',  hp: 44,  spd: 58,  r: 15, dmg: 11, xp: 5, c: '#f08ab0', shape: 'dia', ranged: { cd: 1.9, spd: 265, dmg: 12, n: 3, spread: .34 } },
+  bruto:     { n: 'Bruto',     hp: 120, spd: 50,  r: 25, dmg: 22, xp: 8, c: '#ff7aa8', shape: 'hex' }
 };
 const WAVES = [
   { t: 0,    pool: ['sciamante', 'sciamante', 'vagante'] },

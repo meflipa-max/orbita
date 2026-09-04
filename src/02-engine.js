@@ -422,7 +422,7 @@ function runeStats(r) {
 
 /* ── entità: creazione ──────────────────────────────────────── */
 function addPart(x, y, vx, vy, life, size, color, kind) {
-  if (G.parts.length > 620) return;
+  if (G.parts.length > 460) return;
   G.parts.push({ x, y, vx, vy, life, max: life, size, c: color, k: kind || 0 });
 }
 function burstPart(x, y, n, color, spd, size, life) {
@@ -433,7 +433,7 @@ function burstPart(x, y, n, color, spd, size, life) {
   }
 }
 function addFloat(x, y, txt, color, big) {
-  if (G.floats.length > 46) return;
+  if (G.floats.length > 24) return;
   G.floats.push({ x: x + rand(14, -14), y, t: 0, txt, c: color, big: !!big });
 }
 function addGem(x, y, v, kind) {
@@ -446,7 +446,9 @@ function spawnEnemy(type, x, y, opts) {
      altrimenti dopo dieci minuti sul titolo comparirebbero mostri corazzati */
   const mins = G.demo ? 1.1 : G.t / 60;
   /* proporzionato alla crescita del giocatore, ora più lenta */
-  const hpScale = (1 + mins * .33 + mins * mins * .020) * (o.hpMul || 1);
+  /* compensa i nemici ridotti a schermo: meno bersagli, ognuno più duro,
+     così la pressione resta quella ma il campo si legge */
+  const hpScale = (1 + mins * .37 + mins * mins * .023) * (o.hpMul || 1);
   const e = {
     type, x, y, vx: 0, vy: 0, r: d.r * (o.rMul || 1), c: d.c, shape: d.shape,
     hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * (1 + mins * .012) * G.asc.spd,
@@ -499,10 +501,14 @@ function _hit(e, amount, opt) {
   G.dmgDone += Math.max(0, Math.min(dmg, e.hp));
   e.hp -= dmg;
   e.flash = .13;
-  addFloat(e.x, e.y - e.r - 4, Math.round(dmg), crit ? '#ffffff' : (opt.color || '#ffd2e4'), crit);
+  /* Un numero per ogni colpo, con otto rune e trecento nemici, era una
+     bufera di cifre che copriva l'azione. Restano i colpi che dicono
+     qualcosa: critici, bersagli importanti, e le mazzate vere. */
+  if (crit || e.boss || e.elite || dmg >= e.maxHp * .22)
+    addFloat(e.x, e.y - e.r - 4, Math.round(dmg), crit ? '#ffffff' : (opt.color || '#ffd2e4'), crit);
   if (crit) {
     AU.play('crit');
-    burstPart(e.x, e.y, 5, '#fff', 190, 3, .3);
+    burstPart(e.x, e.y, 4, '#fff', 190, 3, .28);
     if (G.awaken.luce && G.healCd <= 0) {
       G.healCd = .55; const h = [0, 1, 2, 3.5][G.awaken.luce];
       P.hp = Math.min(P.maxHp, P.hp + h); addFloat(G.p.x, G.p.y - 26, '+' + h, '#6ff2c4');
@@ -510,7 +516,7 @@ function _hit(e, amount, opt) {
   } else AU.play('hit');
 
   if (opt.kb) { e.kbx += (opt.kbx || 0) * opt.kb; e.kby += (opt.kby || 0) * opt.kb; e.kb = .18; }
-  burstPart(e.x, e.y, crit ? 6 : 3, opt.color || e.c, 140, 2.6, .3);
+  burstPart(e.x, e.y, crit ? 5 : 2, opt.color || e.c, 140, 2.6, .26);
 
   /* risvegli: regole globali del run */
   const aw = G.awaken;
@@ -552,7 +558,7 @@ function killEnemy(e, opt) {
   e.hp = 0; e.dead = true;
   G.kills++;
   AU.play('kill');
-  burstPart(e.x, e.y, e.boss ? 60 : (e.elite ? 26 : 9), e.c, e.boss ? 420 : 230, e.boss ? 6 : 3.6, e.boss ? 1.1 : .55);
+  burstPart(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 6), e.c, e.boss ? 420 : 230, e.boss ? 6 : 3.4, e.boss ? 1.1 : .48);
   G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c });
 
   if (G.awaken.vuoto) {

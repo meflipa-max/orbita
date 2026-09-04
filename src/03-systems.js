@@ -650,7 +650,7 @@ function updateEventi(dt) {
     v.acc += dt * 9;
     while (v.acc >= 1) {
       v.acc -= 1;
-      if (G.enemies.length < 320) {
+      if (G.enemies.length < 260) {
         const a = v.a + rand(.5, -.5), d = Math.max(560, Math.hypot(W, H) * .55);
         spawnEnemy(pick(currentPool()),
           clamp(G.p.x + Math.cos(a) * d, -ARENA, ARENA),
@@ -684,7 +684,7 @@ function updateEventi(dt) {
 
 function updateSpawns(dt) {
   /* la pressione cresce nel tempo: né un vuoto iniziale né un muro al 4° minuto */
-  const cap = (W < 700 ? 200 : 300);
+  const cap = (W < 700 ? 165 : 245);
   const maxE = Math.round(cap * clamp(.42 + G.t / 900 + G.diff, .42, 1));
   /* apertura tranquilla (impari a muoverti), pressione vera dal sesto minuto */
   const rate = Math.min(13, (.8 + G.t / 26 + G.diff * 2.4) * G.asc.rate);

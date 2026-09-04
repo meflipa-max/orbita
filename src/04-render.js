@@ -120,8 +120,10 @@ function drawEnemies() {
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
     if (Math.abs(e.x - cx) > mw || Math.abs(e.y - cy) > mh) continue;
-    const gs = e.r * 2.6, t = glowTex(e.froze > 0 ? '#8fe6ff' : e.c, 48);
-    ctx.globalAlpha = e.boss ? .62 : e.elite ? .5 : .34;
+    /* trecento aloni additivi facevano un muro di luce in cui non si
+       distingueva più niente: l'alone resta a chi conta davvero */
+    const gs = e.r * (e.boss || e.elite ? 2.6 : 1.7), t = glowTex(e.froze > 0 ? '#8fe6ff' : e.c, 48);
+    ctx.globalAlpha = e.boss ? .62 : e.elite ? .5 : .15;
     ctx.drawImage(t, e.x - gs, e.y - gs, gs * 2, gs * 2);
   }
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
@@ -319,10 +321,16 @@ function drawPickups() {
     const raro = m.k === 1 || m.big;
     const c = m.k === 1 ? '#ffc857' : '#6ff2c4', s = (m.k === 1 ? 6.5 : 4.2) * (m.big ? 1.9 : 1);
     const pul = 1 + Math.sin(G.t * 3.4 + m.t * 5) * .14;
-    ctx.globalAlpha = raro ? .5 : .28;
+    /* Centinaia di gemme accese tutte uguali diventavano la cosa più
+       rumorosa dello schermo. Brillano quelle che stai per raccogliere,
+       le altre restano una polvere di fondo. */
+    const dx = m.x - G.p.x, dy = m.y - G.p.y, pr = P.pickR * 1.7;
+    const vicino = dx * dx + dy * dy < pr * pr;
+    const fade = vicino ? 1 : .42;
+    ctx.globalAlpha = (raro ? .5 : .26) * fade;
     const gr = s * (raro ? 3.4 : 2.4);
     ctx.drawImage(glowTex(c, 32), m.x - gr, m.y - gr, gr * 2, gr * 2);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = raro ? 1 : .55 + fade * .45;
     ctx.fillStyle = c;
     ctx.beginPath(); ctx.arc(m.x, m.y, s * .66 * pul, 0, TAU); ctx.fill();
     if (raro) {
@@ -335,6 +343,7 @@ function drawPickups() {
     }
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(m.x, m.y, s * .3, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
   for (const d of G.drops) {
@@ -413,16 +422,26 @@ function drawPlayer() {
   }
 
   /* nucleo */
+  /* Il nucleo deve restare l'unica cosa bianca e piena dello schermo:
+     doppio contorno e centro pieno, così non si perde nella mischia. */
   ctx.save(); ctx.translate(p.x, p.y);
   const inv = p.inv > 0 && (Math.floor(G.t * 22) % 2 === 0);
-  ctx.globalAlpha = inv ? .4 : 1;
+  ctx.globalAlpha = inv ? .45 : 1;
   ctx.rotate(G.t * .7);
-  ctx.fillStyle = p.hurt > 0 ? '#ff8fae' : '#ffffff';
-  ctx.beginPath(); ctx.arc(0, 0, p.r * .52, 0, TAU); ctx.fill();
-  ctx.strokeStyle = G.char.c; ctx.lineWidth = 2.4;
+  ctx.fillStyle = 'rgba(6,4,18,.85)';
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * (p.r + 3), Math.sin(a) * (p.r + 3)); }
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = G.char.c; ctx.lineWidth = 3;
   ctx.beginPath();
   for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * p.r, Math.sin(a) * p.r); }
   ctx.closePath(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * (p.r - 4), Math.sin(a) * (p.r - 4)); }
+  ctx.closePath(); ctx.stroke();
+  ctx.fillStyle = p.hurt > 0 ? '#ff8fae' : '#ffffff';
+  ctx.beginPath(); ctx.arc(0, 0, p.r * .46, 0, TAU); ctx.fill();
   ctx.globalAlpha = 1;
   ctx.restore();
 }
