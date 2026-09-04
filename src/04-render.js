@@ -118,6 +118,13 @@ function drawArena() {
     }
     ctx.closePath(); ctx.stroke();
     ctx.restore();
+    /* velo di campo: appena percettibile da fermo, ma dice che la roccia
+       è qualcosa di attivo e non solo un sasso. Ruota lentamente. */
+    ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(G.t * .12);
+    ctx.strokeStyle = 'rgba(158,198,255,.13)'; ctx.lineWidth = 1;
+    ctx.setLineDash([6, 9]);
+    ctx.beginPath(); ctx.arc(0, 0, k.r + 7, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
   }
 
   ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
@@ -231,6 +238,14 @@ function drawZonesOver() {
       } else { ctx.moveTo(z.x1, z.y1); ctx.lineTo(z.x2, z.y2); }
       ctx.stroke();
       ctx.strokeStyle = rgba('#ffffff', a * .75); ctx.lineWidth = (z.w || 4) * .35; ctx.stroke();
+    } else if (z.k === 'scudo') {
+      /* il colpo nemico si spegne contro il campo: arco luminoso nel punto
+         d'impatto, l'unico momento in cui il riparo deve farsi notare */
+      const a = 1 - f, rr = z.r + 4 + f * 12, mez = .58 - f * .22;
+      ctx.strokeStyle = rgba('#9ec6ff', a * .85); ctx.lineWidth = 3 + a * 5;
+      ctx.beginPath(); ctx.arc(z.x, z.y, rr, z.a - mez, z.a + mez); ctx.stroke();
+      ctx.strokeStyle = rgba('#ffffff', a * .7); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(z.x, z.y, rr, z.a - mez * .6, z.a + mez * .6); ctx.stroke();
     } else if (z.k === 'bolt') {
       if (z.t < .17) {
         ctx.strokeStyle = rgba(z.c, .55); ctx.lineWidth = 1.6;

@@ -493,8 +493,15 @@ function updateEBullets(dt) {
     const b = B[i]; b.t += dt; b.life -= dt;
     b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.life <= 0 || Math.abs(b.x) > ARENA + 500 || Math.abs(b.y) > ARENA + 500) { B.splice(i, 1); continue; }
-    /* la roccia è riparo: assorbe i colpi nemici */
-    if (dentroRoccia(b.x, b.y, b.r)) { burstPart(b.x, b.y, 4, b.c, 120, 2.6, .3); B.splice(i, 1); continue; }
+    /* La roccia è riparo: assorbe i colpi nemici. E lo deve far VEDERE,
+       altrimenti l'asimmetria coi tuoi colpi sembra un difetto. */
+    const roc = dentroRoccia(b.x, b.y, b.r);
+    if (roc) {
+      G.zones.push({ k: 'scudo', x: roc.x, y: roc.y, r: roc.r,
+        a: Math.atan2(b.y - roc.y, b.x - roc.x), t: 0, dur: .45 });
+      burstPart(b.x, b.y, 5, '#9ec6ff', 150, 2.8, .34);
+      B.splice(i, 1); continue;
+    }
     const dx = G.p.x - b.x, dy = G.p.y - b.y, rr = b.r + G.p.r * .8;
     if (dx * dx + dy * dy < rr * rr) { hurtPlayer(b.dmg); B.splice(i, 1); }
   }

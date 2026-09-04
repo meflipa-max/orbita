@@ -146,8 +146,13 @@ const UI = {
       sec('Trasformazioni',
         p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. L’anello ti dice quando è pronta e cosa manca.')) +
 
+      sec('Gli asteroidi sono riparo',
+        p('Gli asteroidi fermano te e i nemici, e <b>assorbono i colpi nemici</b>: quando ne bloccano uno lampeggiano nel punto d’impatto. Mettitici dietro quando il fuoco si fa fitto.') +
+        p('<em>I tuoi colpi invece li attraversano</em>, ed è voluto: tu non miri, sparano le rune. E metà del tuo arsenale — aure, onde d’urto, pozze — non sarebbe comunque fermabile da un masso. Così la regola è una sola: l’asteroide è riparo tuo, non ostacolo tuo.') +
+        p('I guardiani li sfondano.')) +
+
       sec('Sopravvivere',
-        p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli asteroidi fermano i colpi nemici: sono riparo. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
         p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e sfide.')) +
 
       '</div></div>' +
