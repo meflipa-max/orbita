@@ -268,11 +268,20 @@ function joyStart(e) {
 function joyMove(e) {
   if (e.pointerId !== IN.touchId) return;
   let dx = e.clientX - IN.ox, dy = e.clientY - IN.oy;
-  const d = Math.hypot(dx, dy), max = 52;
-  if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+  const d = Math.hypot(dx, dy), max = 46;
+  if (d > max) {
+    /* L'origine insegue il dito invece di restare inchiodata dov'era il
+       primo tocco. Tenendo premuto a lungo la mano scivola: prima la
+       levetta restava indietro e il dito finiva chissà dove, spesso in
+       mezzo allo schermo. Così resta sempre sotto il pollice. */
+    const f = 1 - max / d;
+    IN.ox += dx * f; IN.oy += dy * f;
+    joyEl.style.left = IN.ox + 'px'; joyEl.style.top = IN.oy + 'px';
+    dx = dx / d * max; dy = dy / d * max;
+  }
   joyNub.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
   const n = Math.min(d, max) / max, a = Math.atan2(dy, dx);
-  const s = d < 7 ? 0 : n;
+  const s = d < 6 ? 0 : n;
   IN.ax = Math.cos(a) * s; IN.ay = Math.sin(a) * s;
 }
 function joyEnd(e) {
@@ -331,7 +340,7 @@ const G = {
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
-  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null
+  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0
 };
 const P = {}; /* statistiche derivate */
 

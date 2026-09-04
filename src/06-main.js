@@ -19,9 +19,22 @@ function step(dt) {
   if (G.healCd > 0) G.healCd -= dt;
   if (P.regen) P.hp = Math.min(P.maxHp, P.hp + P.regen * dt);
 
+  /* Il dito copre lo schermo e non si può togliere: si può però spostare
+     l'azione dall'altra parte. La telecamera scivola verso il pollice,
+     così il nucleo viene disegnato dal lato opposto e ti restituisce
+     proprio la porzione di schermo che la mano ti stava rubando. */
+  let bx = 0, by = 0;
+  if (IN.touchId !== null) {
+    const m = Math.min(W, H) * .13;
+    bx = clamp((IN.ox - W / 2) / (W / 2), -1, 1) * m;
+    by = clamp((IN.oy - H / 2) / (H / 2), -1, 1) * m;
+  }
+  const bk = Math.min(1, dt * 2.6);
+  G.biasX += (bx - G.biasX) * bk; G.biasY += (by - G.biasY) * bk;
+
   const ck = Math.min(1, dt * 7);
-  G.cam.x += (p.x + p.vx * .2 - G.cam.x) * ck;
-  G.cam.y += (p.y + p.vy * .2 - G.cam.y) * ck;
+  G.cam.x += (p.x + p.vx * .2 + G.biasX - G.cam.x) * ck;
+  G.cam.y += (p.y + p.vy * .2 + G.biasY - G.cam.y) * ck;
   const mx = Math.max(0, ARENA - W / 2 + 70), my = Math.max(0, ARENA - H / 2 + 70);
   G.cam.x = clamp(G.cam.x, -mx, mx); G.cam.y = clamp(G.cam.y, -my, my);
 
