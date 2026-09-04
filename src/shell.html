@@ -319,6 +319,31 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
 
+/* ---------- guida ---------- */
+.frame.guide{max-width:620px;margin:0 auto}
+.frame.guide>.inner{padding:20px 22px;display:flex;flex-direction:column;gap:20px}
+.gsec .eyebrow{text-align:left;margin-bottom:8px}
+.gsec p{font:400 13.5px/1.62 var(--ui);color:var(--dim);margin:0 0 8px}
+.gsec p:last-child{margin-bottom:0}
+.gsec p em{color:var(--txt);font-style:normal;font-weight:600}
+.gsec p b{color:#fff;font-weight:600}
+.gsec kbd{font:600 11px var(--ui);background:rgba(255,255,255,.08);border:1px solid var(--line);
+  padding:2px 5px;color:var(--dim)}
+/* i cinque Risvegli */
+.awlist{display:flex;flex-direction:column;gap:5px;margin:12px 0}
+.awrow{display:grid;grid-template-columns:auto auto 1fr;gap:4px 10px;align-items:baseline;
+  padding:8px 11px;--cut:6px;border-left:2px solid var(--c);background:rgba(255,255,255,.035);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.awrow .awn{font:700 13px/1.2 var(--disp);color:var(--c)}
+.awrow .awe{font:600 8.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.awrow .awd{grid-column:1 / -1;font:400 12px/1.45 var(--ui);color:var(--dim)}
+@media(min-width:520px){.awrow .awd{grid-column:auto;text-align:right}}
+/* tecniche */
+ol.tips{margin:0;padding:0 0 0 20px;display:flex;flex-direction:column;gap:9px}
+ol.tips li{font:400 13px/1.55 var(--ui);color:var(--dim)}
+ol.tips li::marker{color:var(--xp);font-weight:700}
+ol.tips b{color:#fff;font-weight:600}
+
 /* semenza */
 .seedrow{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;
   padding:11px 13px;--cut:8px;border:1px solid var(--line);background:rgba(11,9,28,.7);

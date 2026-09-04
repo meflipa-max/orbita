@@ -108,14 +108,48 @@ const UI = {
   },
 
   guide() {
-    const legend = ELKEYS.map(e => '<span class="el clip" style="--c:' + EL[e].c + '"><b></b>' + EL[e].n + '</span>').join('');
+    /* la tabella dei Risvegli nasce dai dati veri: non può andare fuori sincrono */
+    const awRows = ELKEYS.map(e =>
+      '<div class="awrow" style="--c:' + EL[e].c + '">' +
+      '<span class="awn">' + EL[e].aw + '</span>' +
+      '<span class="awe">' + EL[e].n + '</span>' +
+      '<span class="awd">' + EL[e].awd[0] + '</span></div>').join('');
+    const sec = (t, body) => '<div class="gsec"><div class="eyebrow">' + t + '</div>' + body + '</div>';
+    const p = s => '<p>' + s + '</p>';
+
     this.open('guide',
       '<h2 class="ttl">Come si gioca</h2>' +
-      '<div class="frame clip" style="max-width:600px;margin:0 auto"><div class="inner clip" style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">' +
-      '<div><div class="eyebrow" style="text-align:left">Comandi</div><p class="sub" style="text-align:left;margin-top:6px">Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> per la pausa. Le rune sparano da sole: l’unica cosa che fai con le mani è schivare.</p></div>' +
-      '<div><div class="eyebrow" style="text-align:left">L’anello</div><p class="sub" style="text-align:left;margin-top:6px">Ogni livello scegli una runa e <em style="color:#ece8ff;font-style:normal">dove metterla</em> nell’anello. Due rune adiacenti compatibili guadagnano <b style="color:#fff">+30% danno ciascuna</b>. L’Iride fa da ponte fra elementi diversi.</p></div>' +
-      '<div><div class="eyebrow" style="text-align:left">Risvegli</div><p class="sub" style="text-align:left;margin-top:6px">Tre rune dello stesso elemento in fila accendono un Risveglio che vale per <em style="color:#ece8ff;font-style:normal">tutti</em> i tuoi colpi. A cinque e a sette di fila diventa più forte.</p><div class="legend" style="margin-top:10px">' + legend + '</div></div>' +
-      '<div><div class="eyebrow" style="text-align:left">Sopravvivere</div><p class="sub" style="text-align:left;margin-top:6px">Cinque guardiani nell’arco di venti minuti. Gli scrigni dorati regalano potenziamenti. I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio.</p></div>' +
+      '<div class="frame clip guide"><div class="inner clip">' +
+
+      sec('Comandi',
+        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> per la pausa. Le rune sparano da sole: l’unica cosa che fai con le mani è schivare.')) +
+
+      sec('L’anello',
+        p('Ogni livello scegli una runa e <em>dove metterla</em>. Due rune vicine dello stesso elemento <em>risuonano</em>: <b>+30% danno a ciascuna</b>. Lontane fra loro, zero. L’anello è <b>circolare</b>: l’ultimo alloggiamento confina col primo.')) +
+
+      sec('Che cos’è un Risveglio',
+        p('Tre rune dello stesso elemento <b>una di fila all’altra</b> accendono un Risveglio: una regola nuova che vale per <em>tutti</em> i tuoi colpi fino a fine partita — anche quelli delle rune di altri elementi.') +
+        p('Non è un potenziamento della runa: è un potere aggiunto alla partita. E se ne possono tenere accesi più d’uno insieme.') +
+        '<div class="awlist">' + awRows + '</div>' +
+        p('A <b>cinque</b> rune in fila il Risveglio sale al secondo grado, a <b>sette</b> al terzo: stesso effetto, molto più forte.')) +
+
+      sec('Tecniche',
+        '<ol class="tips">' +
+        '<li><b>Raggruppa, non alternare.</b> Con le stesse sei rune, disporle a gruppi invece che alternate vale <b>+27% di danno</b> e due Risvegli invece di nessuno.</li>' +
+        '<li><b>Il numero magico è tre.</b> Due rune danno risonanza ma nessun Risveglio: la terza dello stesso elemento vale più di un potenziamento su una runa che hai già.</li>' +
+        '<li><b>Chi sta in mezzo conta.</b> In una catena di tre, solo quella centrale ottiene risonanza da entrambi i lati. Mettici la runa che vuoi trasformare, o quella che picchia di più.</li>' +
+        '<li><b>L’Iride dipende da cosa vuoi.</b> Sul confine fra due gruppi accende un secondo Risveglio, utile contro la folla. Dentro il tuo gruppo principale fa più danno puro, meglio contro i guardiani.</li>' +
+        '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento.</li>' +
+        '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune risuonano anche saltando un alloggiamento, quindi alternare funziona. Con Lyra ogni runa conta doppia: due bastano per un Risveglio.</li>' +
+        '</ol>') +
+
+      sec('Trasformazioni',
+        p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. L’anello ti dice quando è pronta e cosa manca.')) +
+
+      sec('Sopravvivere',
+        p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli asteroidi fermano i colpi nemici: sono riparo. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e sfide.')) +
+
       '</div></div>' +
       '<button class="btn clip" style="max-width:280px;margin:0 auto" data-a="title"><span class="face">Indietro</span></button>'
     );
