@@ -224,7 +224,7 @@ function drawZonesOver() {
       if (z.k === 'spark') {
         const seg = 5; ctx.moveTo(z.x1, z.y1);
         for (let i = 1; i < seg; i++) {
-          const t = i / seg, jx = rand(16, -16), jy = rand(16, -16);
+          const t = i / seg, jx = crand(16, -16), jy = crand(16, -16);
           ctx.lineTo(lerp(z.x1, z.x2, t) + jx, lerp(z.y1, z.y2, t) + jy);
         }
         ctx.lineTo(z.x2, z.y2);
@@ -238,8 +238,8 @@ function drawZonesOver() {
       } else {
         const a = 1 - (z.t - .17) / (z.dur - .17);
         ctx.strokeStyle = rgba(z.c, a); ctx.lineWidth = 7 * a + 2;
-        ctx.beginPath(); ctx.moveTo(z.x + rand(20, -20), z.y - 460);
-        for (let i = 1; i <= 4; i++) ctx.lineTo(z.x + rand(26, -26) * (1 - i / 5), z.y - 460 + 460 * i / 4);
+        ctx.beginPath(); ctx.moveTo(z.x + crand(20, -20), z.y - 460);
+        for (let i = 1; i <= 4; i++) ctx.lineTo(z.x + crand(26, -26) * (1 - i / 5), z.y - 460 + 460 * i / 4);
         ctx.stroke();
         ctx.fillStyle = rgba(z.c, a * .45); ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, TAU); ctx.fill();
       }
@@ -525,7 +525,7 @@ function drawScreenUI() {
 function render() {
   const p = G.p;
   let sx = 0, sy = 0;
-  if (G.shake > .1) { sx = rand(G.shake, -G.shake); sy = rand(G.shake, -G.shake); }
+  if (G.shake > .1) { sx = crand(G.shake, -G.shake); sy = crand(G.shake, -G.shake); }
   drawBG(G.cam.x + sx, G.cam.y + sy);
   ctx.save();
   ctx.translate(Math.round(W / 2 - G.cam.x + sx), Math.round(H / 2 - G.cam.y + sy));

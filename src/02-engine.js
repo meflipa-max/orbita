@@ -154,12 +154,12 @@ const AU = {
     const t = this.ctx.currentTime, gate = { shoot: .10, hit: .07, kill: .085, pick: .075, crit: .09 }[k];
     if (gate) { if (t - (this._last[k] || 0) < gate) return; this._last[k] = t; }
     switch (k) {
-      case 'shoot': this.tone(620 + rand(80), .07, 'triangle', .07, 300); break;
+      case 'shoot': this.tone(620 + crand(80), .07, 'triangle', .07, 300); break;
       case 'hit': this.burst(.05, .09, 2000, 1.4); break;
       case 'kill': this.burst(.13, .13, 900, .8); this.tone(180, .1, 'sawtooth', .045, 60); break;
       case 'crit': this.tone(1180, .1, 'square', .1, 700); this.burst(.08, .12, 3200, 2); break;
       case 'hurt': this.tone(160, .26, 'sawtooth', .2, 52); this.burst(.18, .16, 420, .7); break;
-      case 'pick': this.tone(880 + rand(200), .06, 'sine', .09, 1300); break;
+      case 'pick': this.tone(880 + crand(200), .06, 'sine', .09, 1300); break;
       case 'level': [0, 4, 7, 12].forEach((n, i) => setTimeout(() => this.tone(440 * Math.pow(2, n / 12), .3, 'triangle', .12), i * 62)); break;
       case 'boss': this.tone(70, 1.4, 'sawtooth', .26, 42); this.burst(.9, .2, 200, .5); break;
       case 'blast': this.burst(.34, .26, 320, .5); this.tone(120, .34, 'sawtooth', .16, 40); break;
@@ -447,13 +447,13 @@ function addPart(x, y, vx, vy, life, size, color, kind) {
 function burstPart(x, y, n, color, spd, size, life) {
   n = Math.max(1, Math.round(n * G.q));
   for (let i = 0; i < n; i++) {
-    const a = rand(TAU), s = rand(spd, spd * .25);
-    addPart(x, y, Math.cos(a) * s, Math.sin(a) * s, rand(life || .55, (life || .55) * .4), rand(size || 3.4, 1.4), color);
+    const a = crand(TAU), s = crand(spd, spd * .25);
+    addPart(x, y, Math.cos(a) * s, Math.sin(a) * s, crand(life || .55, (life || .55) * .4), crand(size || 3.4, 1.4), color);
   }
 }
 function addFloat(x, y, txt, color, big) {
   if (G.floats.length > 24) return;
-  G.floats.push({ x: x + rand(14, -14), y, t: 0, txt, c: color, big: !!big });
+  G.floats.push({ x: x + crand(14, -14), y, t: 0, txt, c: color, big: !!big });
 }
 function addGem(x, y, v, kind) {
   G.gems.push({ x, y, v, k: kind || 0, t: 0, vx: rand(90, -90), vy: rand(90, -90) });
@@ -515,7 +515,7 @@ function hitEnemy(e, amount, opt) {
 }
 function _hit(e, amount, opt) {
   let dmg = amount, crit = false;
-  if (!opt.noCrit && Math.random() < P.crit) { crit = true; dmg *= P.critD; }
+  if (!opt.noCrit && chance(P.crit)) { crit = true; dmg *= P.critD; }
   /* la statistica conta il danno utile, non l'eccesso (una bomba fa 99999 a testa) */
   G.dmgDone += Math.max(0, Math.min(dmg, e.hp));
   e.hp -= dmg;
@@ -545,11 +545,11 @@ function _hit(e, amount, opt) {
   if (aw.gelo && !opt.noStatus) {
     e.slow = Math.max(e.slow, [0, .26, .42, .56][aw.gelo]); e.slowT = 2.2;
     const fc = [0, 0, .1, .2][aw.gelo];
-    if (fc && !e.boss && Math.random() < fc) { e.froze = Math.max(e.froze, .9 + aw.gelo * .25); }
+    if (fc && !e.boss && chance(fc)) { e.froze = Math.max(e.froze, .9 + aw.gelo * .25); }
   }
   if (aw.fulmine && !opt.noChain && !opt.noStatus) {
     const ch = [0, .2, .34, .5][aw.fulmine];
-    if (Math.random() < ch) {
+    if (chance(ch)) {
       const jumps = [0, 1, 2, 4][aw.fulmine];
       chainFrom(e, dmg * .5, jumps, 250);
     }
@@ -597,9 +597,9 @@ function killEnemy(e, opt) {
   const n = e.boss ? 26 : e.elite ? 9 : 1;
   for (let i = 0; i < n; i++) addGem(e.x + rand(30, -30), e.y + rand(30, -30), Math.max(1, Math.round(e.xp / n)));
   if (e.elite || e.boss) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
-  else if (!G.asc.noDrops && Math.random() < .012) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
-  else if (!G.asc.noDrops && Math.random() < .006) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
-  if (Math.random() < .05 || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);
+  else if (!G.asc.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
+  else if (!G.asc.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
+  if (chance(.05) || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);
 
   if (e.type === 'scissore' && !e.small && !e.elite && G.enemies.length < 330) {
     for (let i = 0; i < 2; i++) {

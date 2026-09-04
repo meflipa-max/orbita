@@ -8,12 +8,42 @@
 const TAU = Math.PI * 2, PI = Math.PI;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
-const rand = (a = 1, b = 0) => b + Math.random() * (a - b);
-const randi = (a, b = 0) => Math.floor(b + Math.random() * (a - b));
-const pick = a => a[(Math.random() * a.length) | 0];
+/* ── casualità con seme ─────────────────────────────────────────
+   Mulberry32: piccolo, veloce, di qualità sufficiente per un gioco.
+   Serve a due cose: poter rigiocare la stessa identica partita, e —
+   soprattutto — misurare il bilanciamento senza rumore. Prima ogni
+   misura oscillava del 25% e servivano cinque partite per leggere una
+   modifica; con lo stesso seme due partite identiche danno lo stesso
+   identico risultato.
+   Il pulviscolo, le stelle e il rumore audio restano su Math.random:
+   non toccano il gioco e non vale la pena legarli al seme.            */
+let RNG_S = 1;
+function srand(seed) { RNG_S = (seed >>> 0) || 1; }
+function nextRand() {
+  RNG_S = (RNG_S + 0x6D2B79F5) >>> 0;
+  let t = RNG_S;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const chance = p => nextRand() < p;
+const newSeed = () => (Math.random() * 0xFFFFFFFF) >>> 0;
+
+/* Casualità COSMETICA, deliberatamente fuori dal seme.
+   Scintille, tremolii e intonazione dei suoni girano alla frequenza dello
+   schermo e dell'audio, non a quella della simulazione: se pescassero dal
+   flusso con seme, due partite con lo stesso numero divergerebbero perché
+   una gira a 60 fotogrammi e l'altra a 144. Il seme deve governare solo
+   ciò che decide la partita. */
+const crand = (a = 1, b = 0) => b + Math.random() * (a - b);
+const cchance = p => Math.random() < p;
+
+const rand = (a = 1, b = 0) => b + nextRand() * (a - b);
+const randi = (a, b = 0) => Math.floor(b + nextRand() * (a - b));
+const pick = a => a[(nextRand() * a.length) | 0];
 const $ = s => document.querySelector(s);
 const fmtTime = s => ((s / 60) | 0).toString().padStart(2, '0') + ':' + ((s | 0) % 60).toString().padStart(2, '0');
-function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (nextRand() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
 const HEXC = new Map();
 function rgbOf(hex) {

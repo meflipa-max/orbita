@@ -82,7 +82,7 @@ const FIRE = {
     if (!t) { r.st.tgt = null; return; }
     r.st.tgt = t;
     G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .11, c: EL.fulmine.c, w: 3 });
-    hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: Math.random() > .3, el: 'fulmine' });
+    hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
   },
   singolarita(r, s) {
     const t = nearest(G.p.x, G.p.y, 620);
@@ -116,7 +116,7 @@ const FIRE = {
     const steps = Math.ceil(s.area / 46);
     for (let i = 1; i <= steps; i++) {
       const f = i / steps;
-      areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 26, s.dmg, { color: EL.luce.c, noCrit: Math.random() > .2, el: 'luce' });
+      areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 26, s.dmg, { color: EL.luce.c, noCrit: nextRand() > .2, el: 'luce' });
     }
   },
   prisma(r, s) {
@@ -191,7 +191,7 @@ const FIRE = {
       const steps = Math.ceil(s.area / 44);
       for (let i = 1; i <= steps; i++) {
         const f = i / steps;
-        areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 34, s.dmg, { color: EL.luce.c, noCrit: Math.random() > .25, el: 'luce' });
+        areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 34, s.dmg, { color: EL.luce.c, noCrit: nextRand() > .25, el: 'luce' });
       }
     }
   }
@@ -263,7 +263,7 @@ function updateBullets(dt) {
     }
     b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.ang !== undefined) b.ang = Math.atan2(b.vy, b.vx);
-    if (b.trail && b.t % .04 < dt) addPart(b.x, b.y, rand(20, -20), rand(20, -20), .26, b.r * .7, b.c);
+    if (b.trail && b.t % .04 < dt) addPart(b.x, b.y, crand(20, -20), crand(20, -20), .26, b.r * .7, b.c);
     /* Cometa: la scia brucia davvero, non è solo grafica */
     if (b.scia) {
       b.sciaT = (b.sciaT || 0) - dt;
@@ -324,7 +324,7 @@ function updateZones(dt) {
     if (z.k === 'pool') {
       z.tick -= dt;
       if (z.tick <= 0) { z.tick = .26; areaHit(z.x, z.y, z.r, z.dps * .26, { color: z.c, noCrit: true, el: z.el }); }
-      if (Math.random() < dt * 22) addPart(z.x + rand(z.r, -z.r) * .8, z.y + rand(z.r, -z.r) * .8, 0, rand(-42, -12), .6, rand(4, 2), z.c);
+      if (cchance(dt * 22)) addPart(z.x + crand(z.r, -z.r) * .8, z.y + crand(z.r, -z.r) * .8, 0, crand(-42, -12), .6, crand(4, 2), z.c);
     } else if (z.k === 'hole') {
       z.tick -= dt;
       GRID.near(z.x, z.y, z.r * 3.1, _q);
@@ -334,7 +334,7 @@ function updateZones(dt) {
         if (d < z.r * 3.1) { const f = (1 - d / (z.r * 3.1)) * 300; e.x += dx / d * f * dt; e.y += dy / d * f * dt; }
       }
       if (z.tick <= 0) { z.tick = .24; areaHit(z.x, z.y, z.r, z.dps * .24, { color: z.c, noCrit: true, el: z.el }); }
-      if (Math.random() < dt * 30) {
+      if (cchance(dt * 30)) {
         const a = rand(TAU), d = z.r * rand(3, 1.4);
         addPart(z.x + Math.cos(a) * d, z.y + Math.sin(a) * d, -Math.cos(a) * 130, -Math.sin(a) * 130, .5, rand(3, 1.4), z.c);
       }
@@ -370,7 +370,7 @@ function bossAI(e, dt) {
       if (e.charge > .5) { e.vx = 0; e.vy = 0; e.tell = 1; }
       else { e.tell = 0; e.vx = Math.cos(e.cdir) * 780; e.vy = Math.sin(e.cdir) * 780; }
       e.x += e.vx * dt; e.y += e.vy * dt;
-      if (Math.random() < dt * 40) burstPart(e.x, e.y, 2, d.c, 120, 4, .4);
+      if (cchance(dt * 40)) burstPart(e.x, e.y, 2, d.c, 120, 4, .4);
       /* si schianta contro il muro invece di uscire dall'arena */
       const w = ARENA - e.r;
       if (Math.abs(e.x) >= w || Math.abs(e.y) >= w) {
@@ -403,7 +403,7 @@ function bossAI(e, dt) {
       G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: 20, r1: 170, t: 0, dur: .4, c: d.c });
     }
   }
-  if (d.pat === 'final' && hpf < .7 && Math.random() < dt * 2.4) {
+  if (d.pat === 'final' && hpf < .7 && chance(dt * 2.4)) {
     const a = Math.atan2(dy, dx) + rand(.5, -.5);
     eShoot(e.x, e.y, Math.cos(a) * 300, Math.sin(a) * 300, d.dmg * .5, 9, d.c);
   }
@@ -621,7 +621,7 @@ function genRocks() {
       if (dd < k.r + r + 130) { libero = false; break; }
     }
     if (!libero) continue;
-    const m = 7 + (Math.random() * 4 | 0), pts = [];
+    const m = 7 + (nextRand() * 4 | 0), pts = [];
     for (let a = 0; a < m; a++) pts.push(rand(1.14, .82));
     G.rocks.push({ x, y, r, m, pts, rot: rand(TAU) });
   }
@@ -658,8 +658,8 @@ function apriEvento() {
   if (k === 'breccia') {
     /* lontano abbastanza da essere una scelta, non un passo */
     const a = rand(TAU), d = rand(1000, 620);
-    const x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
-    const y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
+    let x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
+    let y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
     /* una breccia dentro un asteroide sarebbe irraggiungibile */
     const roc = dentroRoccia(x, y, 90);
     if (roc) { const a2 = Math.atan2(y - roc.y, x - roc.x); x = roc.x + Math.cos(a2) * (roc.r + 130); y = roc.y + Math.sin(a2) * (roc.r + 130); }
@@ -726,7 +726,7 @@ function updateEventi(dt) {
     if (d < 420) { e.x += dx / d * 205 * dt; e.y += dy / d * 205 * dt; }
     else if (d > 820) { e.x -= dx / d * 150 * dt; e.y -= dy / d * 150 * dt; }
     e.x = clamp(e.x, -ARENA + e.r, ARENA - e.r); e.y = clamp(e.y, -ARENA + e.r, ARENA - e.r);
-    if (Math.random() < dt * 26) addPart(e.x, e.y, rand(40, -40), rand(40, -40), .5, 3, '#6ff2c4');
+    if (cchance(dt * 26)) addPart(e.x, e.y, crand(40, -40), crand(40, -40), .5, 3, '#6ff2c4');
   }
 
   if (v.t >= v.dur) {

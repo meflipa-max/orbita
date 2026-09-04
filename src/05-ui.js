@@ -152,6 +152,9 @@ const UI = {
       this.sfideHTML() +
       '<div class="eyebrow" style="text-align:left;margin-top:4px">Potenziamenti permanenti</div>' +
       '<div class="grid2">' + ups + '</div>' +
+      '<div class="seedrow"><label for="seedin">Semenza</label>' +
+      '<input id="seedin" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="vuoto = casuale">' +
+      '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte.</span></div>' +
       '<div class="btnrow" style="max-width:420px;margin:8px auto 0">' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
       '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
@@ -400,6 +403,7 @@ const UI = {
       '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
       '<div class="stats">' + stats.map(s => '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
+      '<div class="seedout">SEMENZA <b>' + (G.seed >>> 0) + '</b></div>' +
       ((G.sfideNuove && G.sfideNuove.length)
         ? '<div class="eyebrow" style="margin-top:2px">Sfide completate</div><div class="sfidelist">' +
           G.sfideNuove.map(s => '<div class="sfida fatta clip"><span class="sn">' + s.n + '</span>' +
@@ -412,6 +416,7 @@ const UI = {
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
       (win ? '<button class="btn primary clip" data-a="endless"><span class="face">Continua senza fine</span></button>' : '') +
       '<button class="btn ' + (win ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
+      '<button class="btn ghost clip" data-a="replay"><span class="face">Ripeti questa semenza</span></button>' +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Menu</span></button>' +
@@ -442,7 +447,7 @@ function rollChoices(n) {
   const out = [];
   let total = 0; for (const o of pool) total += o.w;
   while (out.length < n && pool.length) {
-    let r = Math.random() * total, k = 0;
+    let r = nextRand() * total, k = 0;
     for (; k < pool.length - 1; k++) { r -= pool[k].w; if (r <= 0) break; }
     total -= pool[k].w; out.push(pool.splice(k, 1)[0]);
   }
@@ -486,7 +491,11 @@ function placeRune(id, slot) {
 }
 
 /* ── ciclo di partita ───────────────────────────────────────── */
-function resetRun(charId) {
+function resetRun(charId, seed) {
+  /* il seme va fissato PRIMA di qualunque altra cosa: rocce, runa iniziale
+     e ricariche pescano già da qui */
+  G.seed = (seed >>> 0) || newSeed();
+  srand(G.seed);
   const c = CHARS.find(x => x.id === charId) || CHARS[0];
   G.char = c;
   G.ascLv = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
@@ -513,9 +522,9 @@ function resetRun(charId) {
   recalcRing(false);
   UI.renderAwake();
 }
-function startRun(charId) {
+function startRun(charId, seed) {
   AU.init();
-  resetRun(charId);
+  resetRun(charId, seed);
   HUD.classList.add('on');
   UI.close(); G.state = 'play';
   UI.hud();
@@ -589,8 +598,9 @@ SCR.addEventListener('click', ev => {
     case 'go': case 'hub': UI.hub(); break;
     case 'title': UI.title(); break;
     case 'guide': UI.guide(); break;
-    case 'start': startRun(SAVE.char); break;
+    case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
     case 'retry': startRun(SAVE.char); break;
+    case 'replay': startRun(SAVE.char, G.seed); break;
     case 'resume': UI.togglePause(); break;
     case 'quit': G.state = 'over'; HUD.classList.remove('on'); endRunSilent(); break;
     case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;

@@ -319,6 +319,18 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
 
+/* semenza */
+.seedrow{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;
+  padding:11px 13px;--cut:8px;border:1px solid var(--line);background:rgba(11,9,28,.7);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+.seedrow label{font:600 10px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.seedrow input{font:400 13px/1 ui-monospace,Consolas,monospace;color:var(--txt);
+  background:rgba(5,3,16,.75);border:1px solid var(--line);padding:8px 10px;width:100%}
+.seedrow input:focus{outline:none;border-color:var(--line-hot)}
+.seedrow .sh{grid-column:1 / -1;font:400 11px/1.45 var(--ui);color:var(--faint)}
+.seedout{text-align:center;font:600 10px/1 var(--ui);letter-spacing:.2em;color:var(--faint)}
+.seedout b{font:700 13px/1 ui-monospace,Consolas,monospace;color:var(--dim);letter-spacing:0;margin-left:6px}
+
 /* sfide */
 .sfidelist{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .sfida{--cut:7px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;
