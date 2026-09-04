@@ -211,10 +211,14 @@ const UI = {
       if (pel && !r && (fits(G.ring[(i - 1 + n) % n]) || fits(G.ring[(i + 1) % n]))) { good = ' good'; c = EL[pel].c; }
       /* un alloggiamento vuoto deve gridare "qui", non essere un contorno
          tratteggiato appena percepibile su fondo nero */
+      /* stato di trasformazione: senza dirlo, la regola posizionale resta
+         invisibile e la trasformazione non capita mai */
+      let evoCls = '';
+      if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (r.lv >= 8 ? ' vicino' : '');
       const vuoto = !r;
       const dentro = r ? svg(r.id)
         : '<svg viewBox="0 0 24 24" class="plus" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>';
-      slots += '<button class="slot' + (vuoto ? ' empty' : '') + good + (this.sel === i ? ' sel' : '') + (highlight === i ? ' sel' : '') + (vuoto && pel ? ' aperto' : '') + '"' +
+      slots += '<button class="slot' + (vuoto ? ' empty' : '') + good + evoCls + (this.sel === i ? ' sel' : '') + (highlight === i ? ' sel' : '') + (vuoto && pel ? ' aperto' : '') + '"' +
         (interactive ? ' data-a="slot" data-i="' + i + '"' : ' disabled tabindex="-1"') +
         ' style="left:' + x.toFixed(2) + '%;top:' + y.toFixed(2) + '%;--c:' + c + '">' +
         '<span class="in clip" style="--c:' + c + '">' + dentro + '</span>' +
@@ -226,6 +230,24 @@ const UI = {
       '<svg class="arcs" viewBox="0 0 100 100"><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(158,138,255,.16)" stroke-width="1"/>' + arcs + '</svg>' +
       '<div class="ringcore"><div><div class="n">' + aw + '</div><div class="l">RISVEGLI</div></div></div>' +
       slots + '</div>';
+  },
+
+  /* Cosa manca per trasformare. È l'informazione più importante dell'anello
+     e non era scritta da nessuna parte: senza, la regola posizionale resta
+     un segreto e la trasformazione non capita mai. */
+  evoLine() {
+    const parts = [];
+    for (const r of G.ring) {
+      if (!r || !EVO[r.id]) continue;
+      const nome = RUNES[r.id].n, col = EL[r.el].c;
+      if (canEvolve(r)) { parts.push('<b style="color:' + col + '">' + nome + ' può trasformarsi</b>'); continue; }
+      if (r.lv < 8) continue;
+      const manca = [];
+      if (r.res < 2) manca.push('rune compatibili su <b>entrambi</b> i lati');
+      if (!G.awaken[r.el]) manca.push('il Risveglio ' + EL[r.el].aw);
+      parts.push('<span style="color:' + col + '">' + nome + '</span> è al massimo: manca ' + manca.join(' e '));
+    }
+    return parts.join('<br>');
   },
 
   awakeLine() {
@@ -244,7 +266,7 @@ const UI = {
       '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + G.level) + '</div>' +
       '<h2 class="ttl">' + (chest ? 'Un dono dal vuoto' : 'Il nucleo cresce') + '</h2>' +
       '<div id="cards">' + cards + '</div>' +
-      '<div class="hint" style="margin-top:2px">' + this.awakeLine() + '</div>' +
+      '<div class="hint" style="margin-top:2px">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       '<button class="btn ghost clip" style="max-width:280px;margin:0 auto" data-a="ringedit"><span class="face">Riordina l’anello</span></button>'
     );
   },
@@ -316,7 +338,7 @@ const UI = {
       '<h2 class="ttl">' + (this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
       '<p class="sub" style="margin-top:-8px">' + t + '</p>' +
       this.ringHTML(true) +
-      '<div class="hint" id="ringinfo">' + this.awakeLine() + '</div>' +
+      '<div class="hint" id="ringinfo">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       (this.placing ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
     );
   },
@@ -324,7 +346,7 @@ const UI = {
     const w = SCR.querySelector('.ringwrap');
     if (w) w.outerHTML = this.ringHTML(true);
     const inf = SCR.querySelector('#ringinfo');
-    if (inf) inf.innerHTML = this.awakeLine();
+    if (inf) inf.innerHTML = this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
   },
 
   /* ── pausa ──────────────────────────────────────────────── */
