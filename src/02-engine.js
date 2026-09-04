@@ -32,7 +32,7 @@ if (window.visualViewport) {
    sicurezza i progressi sparirebbero in silenzio, che per un gioco
    costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
-const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
+const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
 let SAVE = Object.assign({}, DEFAULT_SAVE);
 let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
 const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
@@ -66,6 +66,7 @@ function sanitizeSave(o) {
   if (!Array.isArray(s.sfide)) s.sfide = [];
   s.sfide = s.sfide.filter(id => SFIDE.some(x => x.id === id));
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
+  if (!APERTURE.some(a => a.el === s.apertura)) s.apertura = 'fuoco';
   s.asc = Math.min(s.asc | 0, ASC.length - 1);
   s.ascSel = Math.min(Math.max(s.ascSel | 0, 0), s.asc);
   for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs', 'asc', 'ascSel']) {
@@ -338,7 +339,7 @@ const G = {
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
-  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5,
+  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2
 };
@@ -552,8 +553,17 @@ function _hit(e, amount, opt) {
     addFloat(e.x, e.y - e.r - 4, Math.round(dmg), crit ? '#ffffff' : (opt.color || '#ffd2e4'), crit);
   if (crit) {
     AU.play('crit');
-    /* Sirio: ogni critico accorcia la ricarica di tutto l'anello */
-    if (G.char.rule === 'cadenza') for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - .04);
+    /* Sirio: ogni critico accorcia la ricarica di tutto l'anello.
+       Si autoalimentava: piu' colpi -> piu' critici -> ricariche piu' corte
+       -> piu' colpi. Con sei rune in mezzo alla folla i critici sono
+       centinaia al secondo, quindi drenava piu' ricarica di quanta se ne
+       accumulasse e l'anello sparava a ogni fotogramma (45 uccisioni al
+       secondo contro le 17 di Vega, stessa build). Adesso conta un critico
+       ogni .18s: il taglio non supera un quarto di secondo al secondo. */
+    if (G.char.rule === 'cadenza' && G.cadT <= 0) {
+      G.cadT = .18;
+      for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - .04);
+    }
     burstPart(e.x, e.y, 4, '#fff', 190, 3, .28);
     if (G.awaken.luce && G.healCd <= 0) {
       G.healCd = .55; const h = [0, 1, 2, 3.5][G.awaken.luce];

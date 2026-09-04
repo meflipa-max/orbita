@@ -36,6 +36,10 @@ che è il gioco: **Nadir** fa risuonare le rune anche saltando un alloggiamento 
 alternati impossibili per chiunque altro), **Lyra** ha l'anello dimezzato ma ogni runa conta
 doppia per le catene — due rune bastano per un Risveglio.
 
+Il nucleo dice *che regola* giochi. Da *dove parti* è una scelta a parte: l'**apertura**
+decide la prima runa dell'anello, cioè la tua prima catena e il primo Risveglio a cui punti.
+Sei aperture, una per elemento più l'Iride, e non costano nulla: si scelgono a ogni partita.
+
 ### Sfide
 
 Dodici obiettivi che danno una direzione alle partite e insegnano i sistemi. Non medaglie:

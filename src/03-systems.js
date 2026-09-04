@@ -202,6 +202,7 @@ function updateRunes(dt) {
   /* Rigel: chi corre spara più in fretta — la regola premia la sua identità */
   G.fireBoost = (G.char.rule === 'slancio' && Math.hypot(G.p.vx, G.p.vy) > 40) ? 1.18 : 1;
   G.ringRot += dt * (.42 * P.projMul);
+  if (G.cadT > 0) G.cadT -= dt;
   for (let i = 0; i < sl; i++) {
     const r = G.ring[i]; if (!r) continue;
     const a = G.ringRot + i / sl * TAU;

@@ -89,6 +89,23 @@ const EL = {
 };
 const ELKEYS = ['fuoco', 'gelo', 'fulmine', 'vuoto', 'luce'];
 
+/* Da dove parti. Era una proprietà del nucleo, quindi la scelta che decide
+   davvero la partita — il primo elemento, cioè la prima catena e il primo
+   Risveglio — arrivava appiccicata a un blocco di statistiche e a un prezzo
+   in frammenti. Sul Fulmine non si poteva proprio cominciare: nessuno dei
+   sei nuclei ci apriva. Adesso il nucleo dice che REGOLA giochi, l'apertura
+   da DOVE parti, e sono due scelte separate.
+   Per ogni elemento la runa più semplice che ce l'ha: la prima arma deve
+   spiegare l'elemento, non sorprenderti. */
+const APERTURE = [
+  { el: 'fuoco',   id: 'scintilla' },
+  { el: 'gelo',    id: 'scheggia' },
+  { el: 'fulmine', id: 'arco' },
+  { el: 'vuoto',   id: 'sciame' },
+  { el: 'luce',    id: 'raggio' },
+  { el: 'iride',   id: 'iride' }
+];
+
 /* ── glifi (24×24, tracciati) ───────────────────────────────── */
 const ICO = {
   scintilla: 'M12 3.2c3.4 3.6 5.4 6.1 5.4 9.4a5.4 5.4 0 1 1-10.8 0c0-3.3 2-5.8 5.4-9.4Z|M12 12.6c1.3 1.4 2 2.3 2 3.4a2 2 0 1 1-4 0c0-1.1.7-2 2-3.4Z',
@@ -262,21 +279,21 @@ const RUN_LEN = 1200; /* 20 minuti */
    qualcosa del gioco — e le due che toccano l'anello (Nadir e Lyra) lo
    riscrivono davvero, perché l'anello è il gioco.                        */
 const CHARS = [
-  { id: 'vega',    n: 'Vega',    c: '#bff6ff', start: 'scintilla',   cost: 0,
+  { id: 'vega',    n: 'Vega',    c: '#bff6ff', cost: 0,
     d: 'Equilibrata sotto ogni aspetto.', mod: {} },
-  { id: 'rigel',   n: 'Rigel',   c: '#45d7ff', start: 'scheggia',    cost: 400,
+  { id: 'rigel',   n: 'Rigel',   c: '#45d7ff', cost: 400,
     d: '+24% velocità · −20% vita', mod: { spd: 1.24, hp: .8 },
     rule: 'slancio', ruleD: 'In movimento le rune sparano il 18% più in fretta.' },
-  { id: 'antares', n: 'Antares', c: '#ff6a2b', start: 'nova',        cost: 900,
+  { id: 'antares', n: 'Antares', c: '#ff6a2b', cost: 900,
     d: '+50% vita · +12% area · −12% velocità', mod: { hp: 1.5, area: 1.12, spd: .88 },
     rule: 'contraccolpo', ruleD: 'Ogni ferita che subisci scatena una Nova.' },
-  { id: 'sirio',   n: 'Sirio',   c: '#ffe9b0', start: 'raggio',      cost: 1600,
+  { id: 'sirio',   n: 'Sirio',   c: '#ffe9b0', cost: 1600,
     d: '+15% critico · +40% danno critico · −18% vita', mod: { crit: .15, critD: .4, hp: .82 },
     rule: 'cadenza', ruleD: 'Ogni critico accorcia di 0,04s la ricarica di tutte le rune.' },
-  { id: 'nadir',   n: 'Nadir',   c: '#b06bff', start: 'singolarita', cost: 2600,
+  { id: 'nadir',   n: 'Nadir',   c: '#b06bff', cost: 2600,
     d: '+25% esperienza · −8% danno', mod: { xp: 1.25, dmg: .92 },
     rule: 'ecoLunga', ruleD: 'Le rune risuonano anche saltando un alloggiamento.' },
-  { id: 'lyra',    n: 'Lyra',    c: '#ff7de3', start: 'iride',       cost: 3800,
+  { id: 'lyra',    n: 'Lyra',    c: '#ff7de3', cost: 3800,
     d: 'Due alloggiamenti in meno · +20% danno', mod: { dmg: 1.2 },
     rule: 'anelloCorto', ruleD: 'Anello dimezzato, ma ogni runa conta doppia per le catene.' }
 ];

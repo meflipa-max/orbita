@@ -305,6 +305,21 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .up .cost.done{color:var(--xp)}
 
 .chars{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+
+/* apertura: sei caselle strette in fila, non sei carte. È una scelta
+   piccola e va occupare poco, ma deve stare accanto al nucleo perché si
+   leggano insieme */
+.aprow{display:grid;gap:7px;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));margin-bottom:6px}
+.ap{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:7px;transition:transform .12s}
+.ap .face{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 5px;
+  background:linear-gradient(165deg,rgba(26,21,60,.9),rgba(11,9,28,.9));border:1px solid var(--line);height:100%}
+.ap:hover{transform:translateY(-2px)}
+.ap.on .face{border-color:var(--c);box-shadow:0 0 22px -8px var(--c);background:linear-gradient(165deg,color-mix(in srgb,var(--c) 20%,rgba(26,21,60,.9)),rgba(11,9,28,.92))}
+.ap .ico{display:grid;place-items:center;width:30px;height:30px;border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.ap .ico svg{width:19px;height:19px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ap .nm{font:700 11.5px/1 var(--disp);color:#fff;letter-spacing:.02em}
+.ap .ds{font:400 9.5px/1.2 var(--ui);color:var(--dim);text-align:center}
+.ap.on .nm{color:var(--c)}
 .ch{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:9px;text-align:center;transition:transform .12s}
 /* Tutto il contenuto della carta sono <span>. Senza una colonna flex
    restavano in linea e si accavallavano: nome, descrizione e regola

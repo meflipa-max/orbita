@@ -223,8 +223,16 @@ const UI = {
       '<h2 class="ttl" style="text-align:left">Osservatorio</h2>' +
       '<div class="reward' + (this.spesa ? ' spesa' : '') + '">' + shardIcon() + SAVE.shards +
       (this.spesa ? '<span class="delta">-' + this.spesa + '</span>' : '') + '</div></div>' +
-      '<div class="eyebrow" style="text-align:left">Nucleo</div>' +
+      '<div class="eyebrow" style="text-align:left">Nucleo · la regola</div>' +
       '<div class="chars">' + chars + '</div>' +
+      '<div class="eyebrow" style="text-align:left;margin-top:4px">Apertura · da dove parti</div>' +
+      '<div class="aprow">' + APERTURE.map(a => {
+        const on = SAVE.apertura === a.el, e = EL[a.el] || { n: 'Iride', c: '#ff7de3' };
+        return '<button class="ap clip' + (on ? ' on' : '') + '" style="--c:' + e.c + '" data-a="apertura" data-id="' + a.el + '">' +
+          '<span class="face"><span class="ico clip">' + svg(a.id) + '</span>' +
+          '<span class="nm">' + e.n + '</span><span class="ds">' + RUNES[a.id].n + '</span></span></button>';
+      }).join('') + '</div>' +
+      '<div class="hint" style="text-align:left">La prima runa dell\u2019anello. Decide la tua prima catena, quindi il primo Risveglio.</div>' +
       this.ascHTML() +
       this.sfideHTML() +
       '<div class="eyebrow" style="text-align:left;margin-top:4px">Potenziamenti permanenti</div>' +
@@ -556,6 +564,24 @@ function rollChoices(n) {
     total -= pool[k].w; out.push(pool.splice(k, 1)[0]);
   }
   while (out.length < n) out.push({ t: 'gold' });
+  /* Ad anello pieno le rune nuove non entrano nemmeno nel mazzo, quindi
+     Dissolvere e' l'unico modo di cambiare idea. Ma era in due tempi:
+     dissolvi adesso e SPERI che al livello dopo esca la runa. Nel frattempo
+     l'alloggiamento vuoto spegne risonanze e Risvegli — la stessa cosa che
+     dissolvere doveva servire a sistemare. Ora dopo un Dissolvi la runa
+     nuova e' garantita, finche' non ne piazzi una: il costo resta (un
+     livello, e il buco nell'anello), la scommessa no. */
+  if (G.dissolto && empty && !out.some(o => o.t === 'rnew')) {
+    const nuove = RUNEIDS.filter(id => !inRing.some(r => r.id === id));
+    if (nuove.length) {
+      /* sacrifica la carta meno preziosa, mai una trasformazione */
+      let k = out.findIndex(o => o.t === 'gold');
+      if (k < 0) k = out.findIndex(o => o.t === 'pas');
+      if (k < 0) k = out.findIndex(o => o.t === 'rup');
+      if (k < 0) k = out.length - 1;
+      out[k] = { t: 'rnew', id: nuove[(nextRand() * nuove.length) | 0] };
+    }
+  }
   return out;
 }
 
@@ -590,6 +616,7 @@ function applyChoice(c) {
 }
 
 function placeRune(id, slot) {
+  G.dissolto = 0;
   G.ring[slot] = { id, el: RUNES[id].el, lv: 1, cd: rand(.3), res: 0, slot, st: {} };
   recalcRing(true);
   AU.play('buy');
@@ -613,7 +640,7 @@ function resetRun(charId, seed) {
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
   G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
-  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0;
+  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0; G.cadT = 0; G.dissolto = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -625,7 +652,8 @@ function resetRun(charId, seed) {
   G.demo = false;
   hideMoveHint();
   P.hp = undefined; recalc(); P.hp = P.maxHp * G.asc.startHp;
-  placeRune(c.start, 0);
+  const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
+  placeRune(ap.id, 0);
   recalcRing(false);
   UI.renderAwake();
 }
@@ -706,6 +734,7 @@ SCR.addEventListener('click', ev => {
   if (a !== 'slot') AU.play('ui');
   switch (a) {
     case 'go': case 'hub': UI.hub(); break;
+    case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
     case 'title': UI.title(); break;
     case 'guide': UI.guide(); break;
     case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
@@ -802,7 +831,7 @@ SCR.addEventListener('click', ev => {
         /* mai svuotare del tutto l'anello: resteresti senza attacchi */
         if (G.ring.filter(Boolean).length <= 1) { UI.toast('SERVE ALMENO UNA RUNA', null, '#ff3d6e'); return; }
         const reso = 25 + r.lv * 20;
-        G.shards += reso; G.ring[i] = null; UI.dissolving = false;
+        G.shards += reso; G.ring[i] = null; UI.dissolving = false; G.dissolto = 1;
         recalcRing(true);
         UI.toast('DISSOLTA', RUNES[r.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
         AU.play('blast'); G.shake = Math.max(G.shake, 8);
