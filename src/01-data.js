@@ -180,8 +180,11 @@ const RUNES = {
     base: { dmg: 60, cd: .5, count: 4, area: 132, spd: 2.4, size: 21, kb: 32, gelo: .6 }, g: { dmg: 25, count: .4, spd: .1, size: 1.1 } },
   fulgore: { n: 'Fulgore', el: 'fulmine', tag: 'trasformazione', evo: 1, d: 'La scarica rimbalza su tutto il campo e a ogni salto si sdoppia.',
     base: { dmg: 46, cd: 1.0, count: 8, area: 340 }, g: { dmg: 19, cd: -.05, count: .8, area: 15 } },
+  /* dur e hit sono le manopole vere della lama: quanto resta in volo e ogni
+     quanto morde. Con dur 4.2 e ricarica .35 se ne accumulavano quaranta in
+     aria insieme, e mordendo dieci volte al secondo l'una */
   mietitore: { n: 'Mietitore', el: 'vuoto', tag: 'trasformazione', evo: 1, d: 'Lame che spiraleggiano a lungo risucchiando i nemici lungo il cammino.',
-    base: { dmg: 76, cd: 1.25, spd: 320, count: 3, size: 27 }, g: { dmg: 31, cd: -.07, count: .3, spd: 10 } },
+    base: { dmg: 56, cd: 1.25, spd: 320, count: 3, size: 27, dur: 2.6, hit: .24 }, g: { dmg: 22, cd: -.07, count: .3, spd: 10 } },
   alba: { n: 'Alba', el: 'luce', tag: 'trasformazione', evo: 1, d: 'Due fasci opposti che spazzano l’arena senza fermarsi mai.',
     base: { dmg: 8, cd: .09, area: 335, spd: 1.05 }, g: { dmg: 2.9, area: 17, spd: .04 } }
 };

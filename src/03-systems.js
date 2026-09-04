@@ -177,8 +177,8 @@ const FIRE = {
     for (let i = 0; i < s.count; i++) {
       const a = a0 + i * (TAU / s.count);
       shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
-        el: 'vuoto', c: EL.vuoto.c, pierce: 99, kind: 'scythe', life: 4.2, spin: rand(11, 7),
-        retime: 1.5, risucchio: 150, hitRate: .1 });
+        el: 'vuoto', c: EL.vuoto.c, pierce: 99, kind: 'scythe', life: s.dur, spin: rand(11, 7),
+        retime: 1.5, risucchio: 150, hitRate: s.hit });
     }
     AU.play('shoot');
   },
