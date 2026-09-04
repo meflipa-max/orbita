@@ -99,6 +99,15 @@ const UI = {
   /* ── titolo ─────────────────────────────────────────────── */
   title() {
     const best = SAVE.best ? fmtTime(SAVE.best) : '—';
+    const nu = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+    const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
+    const apEl = EL[ap.el] || { n: 'Iride', c: '#ff7de3' };
+    const ascSel = Math.min(SAVE.ascSel | 0, SAVE.asc | 0);
+    const cfg = '<button class="cfg clip" data-a="hub"><span class="face">' +
+      '<span class="pt" style="--c:' + nu.c + '">' + nu.n + '</span>' +
+      '<span class="pt" style="--c:' + apEl.c + '">' + apEl.n + ' · ' + RUNES[ap.id].n + '</span>' +
+      (ascSel ? '<span class="pt" style="--c:#ffc857">Ascensione ' + ascSel + '</span>' : '') +
+      '<span class="cam">cambia</span></span></button>';
     const chips = ELKEYS.map((e, i) =>
       '<span class="el clip" style="--c:' + EL[e].c + ';animation-delay:' + (.7 + i * .09).toFixed(2) + 's"><b></b>' + EL[e].n + '</span>'
     ).join('');
@@ -110,6 +119,10 @@ const UI = {
       '<div class="legend elrow">' + chips + '</div>' +
       '<div class="cta">' +
       '<button class="btn primary clip" data-a="go"><span class="face">Gioca</span></button>' +
+      /* Cosa stai per giocare, scritto sotto al bottone che lo fa partire:
+         e' anche l'unico modo di scoprire che si puo' cambiare, ora che
+         Gioca non passa piu' dall'Osservatorio */
+      cfg +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="guide"><span class="face">Guida</span></button>' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
@@ -773,7 +786,11 @@ SCR.addEventListener('click', ev => {
   AU.init();
   if (a !== 'slot') AU.play('ui');
   switch (a) {
-    case 'go': case 'hub': UI.hub(); break;
+    /* Gioca gioca. L'Osservatorio era diventato una dogana: per una
+       partita dovevi attraversare il negozio anche quando non compravi
+       niente. Ora ci vai quando vuoi cambiare qualcosa o spendere. */
+    case 'go': startRun(SAVE.char); break;
+    case 'hub': UI.hub(); break;
     case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
     case 'title': UI.title(); break;
     case 'guide': UI.guide(); break;

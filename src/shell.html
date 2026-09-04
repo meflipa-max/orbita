@@ -346,6 +346,19 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .seedbox>summary::-webkit-details-marker{display:none}
 .seedbox>summary::before{content:"+ ";color:var(--star)}
 .seedbox[open]>summary::before{content:"− "}
+
+/* riga di configurazione sotto a Gioca: dice cosa parte e si tocca per cambiarlo */
+.cfg{border:0;background:none;font:inherit;cursor:pointer;--cut:8px;padding:0;width:100%}
+.cfg .face{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;
+  padding:8px 10px;border:1px solid var(--line);background:rgba(255,255,255,.028)}
+.cfg:hover .face{border-color:color-mix(in srgb,var(--star) 40%,transparent)}
+.cfg .pt{font:600 11px/1 var(--ui);color:var(--c);display:inline-flex;align-items:center;gap:5px}
+.cfg .pt::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+ /* la riga puo' andare a capo su schermi stretti: niente bordo, o quando
+    "cambia" finisce da solo resta un trattino appeso in mezzo al vuoto */
+.cfg .cam{font:600 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#8a80c0;margin-left:2px}
+.cfg .cam::after{content:" \203A";font-size:13px;line-height:0}
+.cfg:hover .cam{color:var(--star)}
 .ch{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:9px;text-align:center;transition:transform .12s}
 /* Tutto il contenuto della carta sono <span>. Senza una colonna flex
    restavano in linea e si accavallavano: nome, descrizione e regola
