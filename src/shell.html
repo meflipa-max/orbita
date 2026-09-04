@@ -320,6 +320,32 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .ap .nm{font:700 11.5px/1 var(--disp);color:#fff;letter-spacing:.02em}
 .ap .ds{font:400 9.5px/1.2 var(--ui);color:var(--dim);text-align:center}
 .ap.on .nm{color:var(--c)}
+
+/* la nota dell'apertura scelta: dice cosa stai per giocare, invece di
+   lasciartelo scoprire al terzo minuto */
+.apnota{font:400 11.5px/1.5 var(--ui);color:var(--dim);text-align:left;margin:2px 0 2px;
+  padding:8px 10px;border-left:2px solid var(--c);background:rgba(255,255,255,.028)}
+.apnota b{color:var(--c);font-weight:700}
+
+/* nucleo unico: un elenco con una voce sola non e' una scelta */
+.unico{display:flex;align-items:center;gap:10px;padding:9px 11px;text-align:left;
+  border:1px solid var(--line);background:rgba(255,255,255,.028);
+  font:400 11.5px/1.45 var(--ui);color:var(--dim)}
+.unico b{color:#fff;font:700 13px/1 var(--disp)}
+.unico .av{flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 36% 32%,#fff,var(--c,#bff6ff) 42%,rgba(0,0,0,.2) 100%);
+  box-shadow:0 0 16px -2px var(--c,#bff6ff)}
+
+/* la riga che separa "preparo la partita" da "spendo i frammenti" */
+.hubsep{display:flex;align-items:center;gap:10px;margin:20px 0 10px;
+  font:600 10px/1 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:#6a6199}
+.hubsep::before,.hubsep::after{content:"";flex:1;height:1px;background:var(--line)}
+.seedbox{margin-top:10px}
+.seedbox>summary{cursor:pointer;font:600 10px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;
+  color:#6a6199;padding:7px 0;text-align:left;list-style:none}
+.seedbox>summary::-webkit-details-marker{display:none}
+.seedbox>summary::before{content:"+ ";color:var(--star)}
+.seedbox[open]>summary::before{content:"− "}
 .ch{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:9px;text-align:center;transition:transform .12s}
 /* Tutto il contenuto della carta sono <span>. Senza una colonna flex
    restavano in linea e si accavallavano: nome, descrizione e regola

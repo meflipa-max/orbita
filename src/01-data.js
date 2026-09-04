@@ -103,7 +103,12 @@ const APERTURE = [
   { el: 'fulmine', id: 'arco' },
   { el: 'vuoto',   id: 'sciame' },
   { el: 'luce',    id: 'raggio' },
-  { el: 'iride',   id: 'iride' }
+  /* L'Iride non ha un elemento suo: prende quello dei vicini. Da sola è la
+     partenza più debole di tutte (misurata: un terzo delle uccisioni della
+     Scheggia nei primi minuti), circondata è la più forte, perché conta
+     come i vicini e accende il Risveglio con due rune invece di tre. Chi
+     la sceglie deve saperlo prima, non scoprirlo al terzo minuto. */
+  { el: 'iride',   id: 'iride', nota: 'Non ha un elemento suo: prende quello dei vicini. La più debole finché resta sola, la più forte quando l’anello si riempie — conta come i vicini, quindi accende un Risveglio con due rune invece di tre.' }
 ];
 
 /* ── glifi (24×24, tracciati) ───────────────────────────────── */

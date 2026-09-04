@@ -180,8 +180,18 @@ const UI = {
   },
 
   /* ── osservatorio ───────────────────────────────────────── */
+  /* Due intenzioni diverse vivevano nella stessa schermata: preparare la
+     partita e spendere i frammenti. Il bottone Inizia stava in fondo, dopo
+     dodici sfide e nove potenziamenti, e la prima cosa che vedeva chi
+     comincia erano cinque carte bloccate su sei con scritto in rosso
+     quanto gli manca. Adesso sopra c'e' solo la partenza — apertura,
+     nucleo, ascensione, semenza — e si gioca. Sotto la riga c'e' il
+     negozio. E un elenco con una voce sola non e' una scelta: il nucleo
+     compare come carte solo quando ne possiedi piu' d'uno. */
   hub() {
-    const chars = CHARS.map(c => {
+    const posseduti = CHARS.filter(c => SAVE.chars.indexOf(c.id) >= 0);
+    const bloccati = CHARS.filter(c => SAVE.chars.indexOf(c.id) < 0);
+    const carta = c => {
       const own = SAVE.chars.indexOf(c.id) >= 0, on = SAVE.char === c.id;
       const arm = this.armato === 'char:' + c.id, manca = c.cost - SAVE.shards;
       /* Lo stesso tocco prima selezionava (gratis) oppure comprava (caro)
@@ -191,8 +201,9 @@ const UI = {
         : arm
           ? '<span class="lk">Spendi ' + shardIcon() + c.cost + '</span>' +
             '<span class="sub arm">Tocca ancora per confermare · te ne restano ' + (SAVE.shards - c.cost) + '</span>'
-          : '<span class="lk">Sblocca ' + shardIcon() + c.cost + '</span>' +
-            (manca > 0 ? '<span class="sub caro">te ne mancano ' + manca + '</span>' : '');
+          : '<span class="lk">' + shardIcon() + c.cost + '</span>' +
+            /* col portafoglio vuoto "te ne mancano 400" e' solo rumore rosso */
+            (manca > 0 && SAVE.shards > 0 ? '<span class="sub caro">te ne mancano ' + manca + '</span>' : '');
       return '<button class="ch clip' + (on ? ' on' : '') + (own ? '' : ' locked') + (arm ? ' arm' : '') +
         '" data-a="char" data-id="' + c.id + '"><span class="face">' +
         '<span class="av" style="--c:' + c.c + '"></span>' +
@@ -201,7 +212,7 @@ const UI = {
         (c.ruleD ? '<span class="rule" style="--c:' + c.c + '">' + c.ruleD + '</span>' : '') +
         piede +
         '</span></button>';
-    }).join('');
+    };
     const ups = META.map(m => {
       const lv = mlv(m.id), max = lv >= m.max, cost = metaCost(m, lv);
       const poor = !max && SAVE.shards < cost;
@@ -218,32 +229,61 @@ const UI = {
         '<span class="cost' + (max ? ' done' : '') + '">' + (max ? 'MAX' : shardIcon() + cost) + '</span>' +
         '</span></button>';
     }).join('');
+
+    /* apertura: la scelta che tutti possono fare, quindi viene per prima */
+    const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
+    const apCol = e => (EL[e] || { c: '#ff7de3' }).c;
+    const apNome = e => (EL[e] || { n: 'Iride' }).n;
+    const aprow = APERTURE.map(a =>
+      '<button class="ap clip' + (SAVE.apertura === a.el ? ' on' : '') + '" style="--c:' + apCol(a.el) + '"' +
+      ' data-a="apertura" data-id="' + a.el + '"><span class="face">' +
+      '<span class="ico clip">' + svg(a.id) + '</span>' +
+      '<span class="nm">' + apNome(a.el) + '</span><span class="ds">' + RUNES[a.id].n + '</span>' +
+      '</span></button>').join('');
+    const el = EL[ap.el];
+    const apNota = ap.nota
+      ? ap.nota
+      : RUNES[ap.id].d + ' Tre di fila accendono <b>' + el.aw + '</b>: ' + el.awd[0].toLowerCase() + '.';
+
+    const nucleo = posseduti.length > 1
+      ? '<div class="eyebrow" style="text-align:left;margin-top:10px">Nucleo · la regola</div>' +
+        '<div class="chars">' + posseduti.map(carta).join('') + '</div>'
+      : '<div class="eyebrow" style="text-align:left;margin-top:10px">Nucleo · la regola</div>' +
+        '<div class="unico"><span class="av" style="--c:' + posseduti[0].c + '"></span>' +
+        '<span><b>' + posseduti[0].n + '</b> — ' + posseduti[0].d +
+        '</span></div>';
+
     this.open('hub',
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
       '<h2 class="ttl" style="text-align:left">Osservatorio</h2>' +
       '<div class="reward' + (this.spesa ? ' spesa' : '') + '">' + shardIcon() + SAVE.shards +
       (this.spesa ? '<span class="delta">-' + this.spesa + '</span>' : '') + '</div></div>' +
-      '<div class="eyebrow" style="text-align:left">Nucleo · la regola</div>' +
-      '<div class="chars">' + chars + '</div>' +
-      '<div class="eyebrow" style="text-align:left;margin-top:4px">Apertura · da dove parti</div>' +
-      '<div class="aprow">' + APERTURE.map(a => {
-        const on = SAVE.apertura === a.el, e = EL[a.el] || { n: 'Iride', c: '#ff7de3' };
-        return '<button class="ap clip' + (on ? ' on' : '') + '" style="--c:' + e.c + '" data-a="apertura" data-id="' + a.el + '">' +
-          '<span class="face"><span class="ico clip">' + svg(a.id) + '</span>' +
-          '<span class="nm">' + e.n + '</span><span class="ds">' + RUNES[a.id].n + '</span></span></button>';
-      }).join('') + '</div>' +
-      '<div class="hint" style="text-align:left">La prima runa dell\u2019anello. Decide la tua prima catena, quindi il primo Risveglio.</div>' +
+
+      '<div class="eyebrow" style="text-align:left">Apertura · da dove parti</div>' +
+      '<div class="aprow">' + aprow + '</div>' +
+      '<div class="apnota" style="--c:' + apCol(ap.el) + '"><b>' + RUNES[ap.id].n + '</b> · ' + apNota + '</div>' +
+
+      nucleo +
       this.ascHTML() +
-      this.sfideHTML() +
-      '<div class="eyebrow" style="text-align:left;margin-top:4px">Potenziamenti permanenti</div>' +
-      '<div class="grid2">' + ups + '</div>' +
-      '<div class="seedrow"><label for="seedin">Semenza</label>' +
+      /* la semenza serve a chi rigioca una partita precisa: chiusa di
+         default, cosi' Inizia sta a portata di pollice */
+      '<details class="seedbox"><summary>Semenza</summary>' +
+      '<div class="seedrow"><label for="seedin">Numero</label>' +
       '<input id="seedin" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="vuoto = casuale">' +
-      '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte.</span></div>' +
-      '<div class="btnrow" style="max-width:420px;margin:8px auto 0">' +
+      '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte.</span></div></details>' +
+      '<div class="btnrow" style="max-width:420px;margin:10px auto 0">' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
       '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
       '</div>' +
+
+      '<div class="hubsep"><span>Frammenti</span></div>' +
+      '<div class="eyebrow" style="text-align:left">Potenziamenti permanenti</div>' +
+      '<div class="grid2">' + ups + '</div>' +
+      (bloccati.length
+        ? '<div class="eyebrow" style="text-align:left;margin-top:4px">Nuclei da sbloccare</div>' +
+          '<div class="chars">' + bloccati.map(carta).join('') + '</div>'
+        : '') +
+      this.sfideHTML() +
       (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
       '<details class="backup"><summary>Backup dei progressi</summary>' +
       '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
