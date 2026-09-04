@@ -683,7 +683,7 @@ function apriEvento() {
   const k = pick(EVENTI);
   if (k === 'breccia') {
     /* lontano abbastanza da essere una scelta, non un passo */
-    const a = rand(TAU), d = rand(1000, 620);
+    const a = rand(TAU), d = rand(860, 520);   /* un viaggio, non una spedizione */
     let x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
     let y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
     /* una breccia dentro un asteroide sarebbe irraggiungibile */

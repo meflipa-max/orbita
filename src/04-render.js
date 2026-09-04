@@ -12,18 +12,42 @@ function runePaths(id) {
 /* campo stellare: tre strati pre-renderizzati, ripetuti con parallasse */
 const STAR_TS = 1024;
 const starLayers = [];
+/* Le stelle erano bianco-azzurre, cioè quasi il colore delle gemme di
+   esperienza: due puntini della stessa tinta e della stessa taglia, uno
+   da raccogliere e uno no. La cura non è la forma, è la TINTA: il cielo
+   passa sui caldi (bianco, ambra, rosa) e lascia il verde-menta alle
+   gemme, che restano l'unica cosa fredda e piccola dello schermo. */
 function buildStars() {
   starLayers.length = 0;
-  const cfg = [{ n: 150, s: 1, a: .40, p: .12 }, { n: 90, s: 1.6, a: .58, p: .28 }, { n: 40, s: 2.4, a: .85, p: .5 }];
+  const cfg = [
+    { n: 170, s: 1, a: .34, p: .10, big: 0 },
+    { n: 95, s: 1.5, a: .50, p: .26, big: 0 },
+    { n: 34, s: 2.2, a: .78, p: .46, big: 1 }
+  ];
   for (const c of cfg) {
     const cn = document.createElement('canvas'); cn.width = cn.height = STAR_TS;
     const g = cn.getContext('2d');
     for (let i = 0; i < c.n; i++) {
-      const x = Math.random() * STAR_TS, y = Math.random() * STAR_TS;
+      const x = Math.round(Math.random() * STAR_TS), y = Math.round(Math.random() * STAR_TS);
       const tint = Math.random();
-      g.fillStyle = tint > .86 ? 'rgba(255,190,220,' + c.a + ')' : tint > .7 ? 'rgba(180,215,255,' + c.a + ')' : 'rgba(255,255,255,' + c.a + ')';
+      const col = tint > .88 ? '255,204,214' : tint > .68 ? '255,226,186' : '255,248,240';
+      /* alone morbido solo per le più vicine: dà profondità senza sporcare */
+      if (c.big && tint > .55) {
+        const gr = g.createRadialGradient(x + c.s / 2, y + c.s / 2, 0, x + c.s / 2, y + c.s / 2, 9);
+        gr.addColorStop(0, 'rgba(' + col + ',.30)');
+        gr.addColorStop(1, 'rgba(' + col + ',0)');
+        g.fillStyle = gr; g.fillRect(x - 9, y - 9, 20, 20);
+      }
+      g.fillStyle = 'rgba(' + col + ',' + c.a + ')';
       g.fillRect(x, y, c.s, c.s);
-      if (c.s > 2) { g.globalAlpha = .18; g.fillRect(x - 2, y, c.s + 4, c.s); g.fillRect(x, y - 2, c.s, c.s + 4); g.globalAlpha = 1; }
+      /* croce di diffrazione sulle più luminose: le fa leggere come stelle
+         e non come pallini, che è esattamente la differenza che serviva */
+      if (c.big && tint > .74) {
+        g.globalAlpha = .34;
+        g.fillRect(x - 3, y + (c.s - 1) / 2, c.s + 6, 1);
+        g.fillRect(x + (c.s - 1) / 2, y - 3, 1, c.s + 6);
+        g.globalAlpha = 1;
+      }
     }
     starLayers.push({ cn, p: c.p });
   }
@@ -45,11 +69,16 @@ function drawBG(cx, cy) {
     ctx.fillStyle = g; ctx.fillRect(sx - n.r, sy - n.r, n.r * 2, n.r * 2);
   }
   ctx.globalCompositeOperation = 'source-over';
-  for (const L of starLayers) {
+  /* respiro lento e sfasato per strato: il cielo vive, e il ritmo è
+     diverso da quello delle gemme, che pulsano molto più in fretta */
+  for (let i = 0; i < starLayers.length; i++) {
+    const L = starLayers[i];
+    ctx.globalAlpha = .84 + Math.sin(G.t * (.22 + i * .09) + i * 2.1) * .13;
     let ox = (-cx * L.p) % STAR_TS; if (ox > 0) ox -= STAR_TS;
     let oy = (-cy * L.p) % STAR_TS; if (oy > 0) oy -= STAR_TS;
     for (let x = ox; x < W; x += STAR_TS) for (let y = oy; y < H; y += STAR_TS) ctx.drawImage(L.cn, x | 0, y | 0);
   }
+  ctx.globalAlpha = 1;
 }
 
 /* Il suolo. Senza un riferimento fisso nel mondo si vola in un nero uniforme:
@@ -328,16 +357,43 @@ function drawEvento() {
   }
 }
 
-/* freccia a bordo schermo verso un punto fuori campo */
-function bussola(x, y, col, size) {
+/* Freccia a bordo schermo verso un punto fuori campo. Con etichetta:
+   la sola direzione non basta a trovare una breccia a ottocento pixel,
+   serve sapere quanto manca e quanto tempo resta. */
+function bussola(x, y, col, size, etichetta, pulsa) {
   const sx = x - G.cam.x + W / 2, sy = y - G.cam.y + H / 2;
   if (sx > 26 && sx < W - 26 && sy > 26 && sy < H - 26) return;
   const a = Math.atan2(y - G.cam.y, x - G.cam.x);
-  const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .41, iy = H / 2 + Math.sin(a) * Math.min(W, H) * .41;
-  ctx.save(); ctx.translate(ix, iy); ctx.rotate(a);
+  const k = pulsa ? 1 + Math.sin(G.t * 5) * .16 : 1;
+  const rad = Math.min(W, H) * .40;
+  const ix = W / 2 + Math.cos(a) * rad, iy = H / 2 + Math.sin(a) * rad;
+
+  if (etichetta) {
+    /* scia tratteggiata dal nucleo verso la freccia: dice "di là" senza
+       tracciare una linea su tutto lo schermo */
+    ctx.save();
+    ctx.strokeStyle = col; ctx.globalAlpha = .34; ctx.lineWidth = 2;
+    ctx.setLineDash([9, 12]); ctx.lineDashOffset = -G.t * 40;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 + Math.cos(a) * 92, H / 2 + Math.sin(a) * 92);
+    ctx.lineTo(W / 2 + Math.cos(a) * (rad - 22), H / 2 + Math.sin(a) * (rad - 22));
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  ctx.save(); ctx.translate(ix, iy);
+  ctx.save(); ctx.rotate(a); ctx.scale(k, k);
   ctx.fillStyle = col;
-  ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(-size * .6, size * .6); ctx.lineTo(-size * .6, -size * .6);
+  ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(-size * .6, size * .62); ctx.lineTo(-size * .6, -size * .62);
   ctx.closePath(); ctx.fill();
+  ctx.restore();
+  if (etichetta) {
+    ctx.font = '700 11px "Chakra Petch",system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const oy = Math.sin(a) > 0 ? -size - 12 : size + 12;
+    ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.9)';
+    ctx.strokeText(etichetta, 0, oy); ctx.fillStyle = col; ctx.fillText(etichetta, 0, oy);
+  }
   ctx.restore();
 }
 
@@ -570,8 +626,15 @@ function drawScreenUI() {
   /* bussola per gli scrigni */
   for (const d of G.drops) if (d.k === 'chest') bussola(d.x, d.y, 'rgba(255,200,87,.9)', 9);
   if (G.ev) {
-    if (G.ev.k === 'breccia' && !G.ev.preso) bussola(G.ev.x, G.ev.y, 'rgba(176,107,255,.95)', 12);
-    if (G.ev.k === 'caccia' && G.ev.e && G.ev.e.hp > 0) bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.95)', 11);
+    if (G.ev.k === 'breccia' && !G.ev.preso) {
+      const d = Math.round(Math.hypot(G.ev.x - G.p.x, G.ev.y - G.p.y));
+      const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
+      bussola(G.ev.x, G.ev.y, 'rgba(190,130,255,.98)', 15, d + '  ·  ' + s + 's', s <= 8);
+    }
+    if (G.ev.k === 'caccia' && G.ev.e && G.ev.e.hp > 0) {
+      const d = Math.round(Math.hypot(G.ev.e.x - G.p.x, G.ev.e.y - G.p.y));
+      bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 13, d + '', false);
+    }
   }
 }
 
