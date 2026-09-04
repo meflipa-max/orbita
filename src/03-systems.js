@@ -616,6 +616,8 @@ function spawnRing(type, opts) {
    passano sopra: bloccarli punirebbe un attacco che è automatico.      */
 function genRocks() {
   G.rocks.length = 0;
+  G.nodo = null; G.nodoK = null;
+  let nodi = 0;
   const n = 40;
   for (let i = 0; i < n * 8 && G.rocks.length < n; i++) {
     const r = rand(126, 54);
@@ -630,8 +632,25 @@ function genRocks() {
     if (!libero) continue;
     const m = 7 + (nextRand() * 4 | 0), pts = [];
     for (let a = 0; a < m; a++) pts.push(rand(1.14, .82));
-    G.rocks.push({ x, y, r, m, pts, rot: rand(TAU) });
+    const k = { x, y, r, m, pts, rot: rand(TAU), nodo: null, aura: 0 };
+    /* Un quarto delle formazioni è un Nodo elementale. L'elemento è
+       sorteggiato a ogni partita: l'arena stessa favorisce build diverse,
+       ed è questo a dare varietà fra una corsa e l'altra. */
+    if (nodi < 10 && chance(.26)) { k.nodo = pick(ELKEYS); k.aura = r + 128; nodi++; }
+    G.rocks.push(k);
   }
+}
+
+/* In quale Nodo mi trovo? L'isteresi evita che il bonus lampeggi
+   quando cammini sul bordo dell'aura. */
+function nodoCorrente() {
+  for (let i = 0; i < G.rocks.length; i++) {
+    const k = G.rocks[i]; if (!k.nodo) continue;
+    const dx = G.p.x - k.x, dy = G.p.y - k.y;
+    const rr = k.aura + (G.nodoK === k ? 42 : 0);
+    if (dx * dx + dy * dy < rr * rr) { G.nodoK = k; return k.nodo; }
+  }
+  G.nodoK = null; return null;
 }
 /* spinge un corpo fuori dagli asteroidi */
 function scostaDaRocce(o, raggio) {

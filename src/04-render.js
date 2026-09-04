@@ -101,6 +101,28 @@ function drawArena() {
   for (let i = 0; i < G.rocks.length; i++) {
     const k = G.rocks[i];
     if (Math.abs(k.x - cx) > mw || Math.abs(k.y - cy) > mh) continue;
+    const col = k.nodo ? EL[k.nodo].c : null;
+    /* Aura del Nodo: si accende quando ci sei dentro. È il segnale che
+       stai raccogliendo il bonus, quindi deve essere inequivocabile. */
+    if (k.nodo) {
+      const dentro = G.nodoK === k;
+      const pul = 1 + Math.sin(G.t * (dentro ? 3.4 : 1.5)) * (dentro ? .035 : .015);
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(k.x, k.y, k.r * .8, k.x, k.y, k.aura * pul);
+      g.addColorStop(0, rgba(col, dentro ? .17 : .05));
+      g.addColorStop(.72, rgba(col, dentro ? .09 : .028));
+      g.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(k.x, k.y, k.aura * pul, 0, TAU); ctx.fill();
+      ctx.strokeStyle = rgba(col, dentro ? .62 : .22);
+      ctx.lineWidth = dentro ? 2.4 : 1.2;
+      ctx.setLineDash(dentro ? [] : [9, 11]);
+      ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(G.t * .2);
+      ctx.beginPath(); ctx.arc(0, 0, k.aura * pul, 0, TAU); ctx.stroke();
+      ctx.restore(); ctx.setLineDash([]);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
     ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(k.rot);
     ctx.beginPath();
     for (let j = 0; j < k.m; j++) {
@@ -108,20 +130,36 @@ function drawArena() {
       if (j) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
     }
     ctx.closePath();
-    ctx.fillStyle = 'rgba(13,10,30,.96)'; ctx.fill();
-    ctx.strokeStyle = 'rgba(132,118,206,.5)'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.strokeStyle = 'rgba(196,182,255,.16)'; ctx.lineWidth = 1;
+    ctx.fillStyle = k.nodo ? rgba(col, .12) : 'rgba(13,10,30,.96)';
+    if (k.nodo) { ctx.fillStyle = 'rgba(13,10,30,.94)'; ctx.fill(); ctx.fillStyle = rgba(col, .16); }
+    ctx.fill();
+    ctx.strokeStyle = k.nodo ? rgba(col, .8) : 'rgba(132,118,206,.5)';
+    ctx.lineWidth = k.nodo ? 2.6 : 2; ctx.stroke();
+    ctx.strokeStyle = k.nodo ? rgba(col, .34) : 'rgba(196,182,255,.16)'; ctx.lineWidth = 1;
     ctx.beginPath();
     for (let j = 0; j < k.m; j++) {
       const a = j / k.m * TAU, rr = k.r * k.pts[j] * .72;
       if (j) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
     }
     ctx.closePath(); ctx.stroke();
+    /* cuore del cristallo: raggi verso i vertici, si legge come formazione viva */
+    if (k.nodo) {
+      ctx.strokeStyle = rgba(col, .5); ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let j = 0; j < k.m; j += 2) {
+        const a = j / k.m * TAU, rr = k.r * k.pts[j] * .68;
+        ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.drawImage(glowTex(col, 40), -k.r * .5, -k.r * .5, k.r, k.r);
+      ctx.globalCompositeOperation = 'source-over';
+    }
     ctx.restore();
     /* velo di campo: appena percettibile da fermo, ma dice che la roccia
        è qualcosa di attivo e non solo un sasso. Ruota lentamente. */
     ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(G.t * .12);
-    ctx.strokeStyle = 'rgba(158,198,255,.13)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = k.nodo ? rgba(col, .18) : 'rgba(158,198,255,.13)'; ctx.lineWidth = 1;
     ctx.setLineDash([6, 9]);
     ctx.beginPath(); ctx.arc(0, 0, k.r + 7, 0, TAU); ctx.stroke();
     ctx.setLineDash([]); ctx.restore();

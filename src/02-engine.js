@@ -331,7 +331,7 @@ const G = {
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
-  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: []
+  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null
 };
 const P = {}; /* statistiche derivate */
 
@@ -405,7 +405,9 @@ function recalcRing(announce) {
     }
     /* Lyra: quattro alloggiamenti soli, ma ogni runa vale doppia nella
        catena — due rune bastano per un Risveglio, tre per il secondo grado */
-    const run = maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1);
+    /* dentro un Nodo, la catena del suo elemento conta una runa in più:
+       due rune adiacenti bastano ad accendere il Risveglio finché resti lì */
+    const run = maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1) + (G.nodo === e ? 1 : 0);
     const c0 = G.asc.chain;
     const tier = run >= c0 + 4 ? 3 : run >= c0 + 2 ? 2 : run >= c0 ? 1 : 0;
     const prev = G.awaken[e];
@@ -436,7 +438,9 @@ function runeStats(r) {
   if (s.spd !== undefined && d.tag !== 'faro' && d.tag !== 'orbitante') s.spd *= P.projMul;
   if (s.count !== undefined) s.count = Math.max(1, Math.floor(s.count));
   if (s.pierce !== undefined) s.pierce = Math.floor(s.pierce);
-  s.el = d.el; return s;
+  s.el = d.el;
+  if (G.nodo && G.nodo === d.el) s.dmg *= 1.35;   /* rune sintonizzate col Nodo */
+  return s;
 }
 
 /* ── entità: creazione ──────────────────────────────────────── */

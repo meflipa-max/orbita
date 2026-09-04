@@ -43,9 +43,17 @@ pagano in frammenti, e due sbloccano un nucleo scavalcando il prezzo.
 
 ### Terreno
 
-Asteroidi che fermano te e i nemici e **assorbono i colpi nemici**: sono riparo. I tuoi
-proiettili passano sopra, perché bloccarli punirebbe un attacco che è automatico. I guardiani
-li sfondano.
+Asteroidi che fermano te e i nemici e **assorbono i colpi nemici**: sono riparo, e lampeggiano
+nel punto d'impatto quando bloccano qualcosa. I tuoi proiettili passano sopra, perché bloccarli
+punirebbe un attacco che è automatico — e metà dell'arsenale (aure, onde d'urto, pozze) non
+sarebbe comunque fermabile da un masso. I guardiani li sfondano.
+
+Un quarto delle formazioni sono **Nodi elementali**: cristalli sintonizzati su un elemento,
+sorteggiato a ogni partita. Nella loro aura le rune di quell'elemento fanno +35% danno e la
+catena di quell'elemento **conta una runa in più** — due rune adiacenti accendono il Risveglio
+finché resti lì. Il cuore resta solido, quindi ci orbiti intorno: tenere la posizione rende
+molto, ma restare fermi in mezzo alla mischia si paga. È l'arena stessa a favorire build
+diverse a ogni corsa.
 
 ### Eventi d'arena
 

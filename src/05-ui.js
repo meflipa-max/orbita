@@ -5,7 +5,7 @@
 const SCR = $('#screens'), HUD = $('#hud');
 const elLv = $('#lvnum'), elXp = $('#xpfill'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
-  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip');
+  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip');
 
 /* dito o tastiera? Deciso a ogni partita, non al caricamento:
    così regge anche i portatili con schermo touch e i cambi di contesto. */
@@ -71,6 +71,11 @@ const UI = {
     } else elNext.className = '';
     if (G.ascLv > 0) { elAsc.className = 'clip on'; elAsc.textContent = 'ASCENSIONE ' + G.ascLv; }
     else elAsc.className = 'clip';
+    if (G.nodo) {
+      elNodo.className = 'clip on';
+      elNodo.style.setProperty('--c', EL[G.nodo].c);
+      elNodo.innerHTML = '<i></i>NODO DI ' + EL[G.nodo].n.toUpperCase();
+    } else elNodo.className = 'clip';
   },
 
   renderAwake() {
@@ -145,6 +150,10 @@ const UI = {
 
       sec('Trasformazioni',
         p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. L’anello ti dice quando è pronta e cosa manca.')) +
+
+      sec('Nodi elementali',
+        p('Alcune formazioni sono <b>cristalli sintonizzati su un elemento</b>, sorteggiato a ogni partita. Restando nella loro aura le tue rune di quell’elemento fanno <b>+35% danno</b>, e la catena di quell’elemento <b>conta una runa in più</b>: due rune adiacenti bastano ad accendere il Risveglio finché sei lì.') +
+        p('Il cuore del cristallo resta solido, quindi ci <em>orbiti intorno</em>. È il compromesso: tenere la posizione rende molto, ma restare fermi in mezzo alla mischia si paga.')) +
 
       sec('Gli asteroidi sono riparo',
         p('Gli asteroidi fermano te e i nemici, e <b>assorbono i colpi nemici</b>: quando ne bloccano uno lampeggiano nel punto d’impatto. Mettitici dietro quando il fuoco si fa fitto.') +
@@ -548,6 +557,7 @@ function resetRun(charId, seed) {
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
   G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null;
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0;
+  G.nodo = null; G.nodoK = null;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;

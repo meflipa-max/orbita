@@ -10,6 +10,10 @@ function step(dt) {
   p.x = clamp(p.x + p.vx * dt, -ARENA, ARENA);
   p.y = clamp(p.y + p.vy * dt, -ARENA, ARENA);
   scostaDaRocce(p, p.r);
+  /* entrare o uscire da un Nodo cambia le catene: ricalcolo solo sulla
+     transizione, non a ogni fotogramma */
+  const nd = nodoCorrente();
+  if (nd !== G.nodo) { G.nodo = nd; recalcRing(!!nd); }
   if (p.inv > 0) p.inv -= dt;
   if (p.hurt > 0) p.hurt -= dt;
   if (G.healCd > 0) G.healCd -= dt;
@@ -122,7 +126,7 @@ function enterMenu() {
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
   G.boss = null; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
-  G.rocks.length = 0;                    /* né ostacoli dietro al titolo */
+  G.rocks.length = 0; G.nodo = null; G.nodoK = null;   /* né ostacoli dietro al titolo */
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
   G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
   G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;
