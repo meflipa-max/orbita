@@ -14,6 +14,17 @@ function step(dt) {
      transizione, non a ogni fotogramma */
   const nd = nodoCorrente();
   if (nd !== G.nodo) { G.nodo = nd; recalcRing(!!nd); }
+  /* La prima volta che tieni la levetta a fondo corsa per piu' di un
+     secondo, diglielo: spingere piu' lontano non aumenta la velocita', e
+     spingendo il dito ti cammina addosso all'azione. Solo nelle prime
+     partite: dopo basta l'anello che si accende. */
+  if (IN.touchId !== null && i.x * i.x + i.y * i.y > .985) {
+    G.maxT += dt;
+    if (G.maxT > 1.1 && !G.maxHint && (SAVE.runs | 0) <= 3) {
+      G.maxHint = 1;
+      UI.toast('VELOCITÀ MASSIMA', 'Spingere più lontano non serve', '#bff6ff');
+    }
+  } else G.maxT = 0;
   if (p.inv > 0) p.inv -= dt;
   if (p.hurt > 0) p.hurt -= dt;
   if (G.healCd > 0) G.healCd -= dt;

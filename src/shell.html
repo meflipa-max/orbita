@@ -126,7 +126,16 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   background:radial-gradient(circle,rgba(191,246,255,.055),rgba(191,246,255,0) 70%)}
 #joy .nub{position:absolute;left:50%;top:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;
   background:radial-gradient(circle at 38% 32%,#fff,var(--star) 45%,rgba(69,215,255,.35) 100%);
-  box-shadow:0 0 16px rgba(120,220,255,.45)}
+  box-shadow:0 0 16px rgba(120,220,255,.45);transition:box-shadow .12s}
+/* Fondo corsa. Oltre questo punto spingere non fa andare piu' veloce, e
+   senza un segnale il giocatore continua a spingere: il dito gli cammina
+   fino in mezzo allo schermo, sopra all'azione. L'!important serve a
+   battere l'animazione che sbiadisce la levetta dopo un secondo e mezzo. */
+#joy.max{opacity:.95!important}
+#joy.max .ring{border-color:rgba(191,246,255,.85);border-width:2px;
+  background:radial-gradient(circle,rgba(191,246,255,.12),rgba(191,246,255,0) 72%);
+  box-shadow:0 0 22px rgba(120,220,255,.4),inset 0 0 16px rgba(120,220,255,.22)}
+#joy.max .nub{box-shadow:0 0 26px rgba(180,240,255,.85)}
 
 /* ---------- schermate ---------- */
 #screens{position:absolute;inset:0;z-index:20;pointer-events:none}

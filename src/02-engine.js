@@ -266,28 +266,38 @@ function joyStart(e) {
      senza questa rete la levetta resterebbe agganciata a metà partita */
   try { cv.setPointerCapture && cv.setPointerCapture(e.pointerId); } catch (err) { }
 }
+const JOY_MAX = 46, JOY_GIOCO = 28;
 function joyMove(e) {
   if (e.pointerId !== IN.touchId) return;
   let dx = e.clientX - IN.ox, dy = e.clientY - IN.oy;
-  const d = Math.hypot(dx, dy), max = 46;
-  if (d > max) {
+  const d = Math.hypot(dx, dy), max = JOY_MAX;
+  if (d > max + JOY_GIOCO) {
     /* L'origine insegue il dito invece di restare inchiodata dov'era il
-       primo tocco. Tenendo premuto a lungo la mano scivola: prima la
-       levetta restava indietro e il dito finiva chissà dove, spesso in
-       mezzo allo schermo. Così resta sempre sotto il pollice. */
-    const f = 1 - max / d;
+       primo tocco: tenendo premuto a lungo la mano scivola, e la levetta
+       restava indietro. Ma inseguirlo pixel per pixel era peggio in un
+       altro modo: oltre il massimo spingere non fa andare piu' veloce, solo
+       che nessuno lo sa, quindi si spinge - e la base seguiva, trascinando
+       il dito fino in mezzo allo schermo. Adesso c'e' un margine: la
+       spinta in eccesso non sposta niente, la base si muove solo quando ti
+       stai davvero riposizionando. */
+    const f = 1 - (max + JOY_GIOCO) / d;
     IN.ox += dx * f; IN.oy += dy * f;
     joyEl.style.left = IN.ox + 'px'; joyEl.style.top = IN.oy + 'px';
-    dx = dx / d * max; dy = dy / d * max;
+    dx = e.clientX - IN.ox; dy = e.clientY - IN.oy;
   }
+  const dd = Math.hypot(dx, dy) || 1;
+  if (dd > max) { dx = dx / dd * max; dy = dy / dd * max; }
   joyNub.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
   const n = Math.min(d, max) / max, a = Math.atan2(dy, dx);
   const s = d < 6 ? 0 : n;
   IN.ax = Math.cos(a) * s; IN.ay = Math.sin(a) * s;
+  /* a fondo corsa la levetta si accende e smette di sbiadire: e' l'unico
+     modo che ha il giocatore di sapere che ha finito la corsa */
+  joyEl.classList.toggle('max', d >= max);
 }
 function joyEnd(e) {
   if (e.pointerId !== IN.touchId) return;
-  IN.touchId = null; IN.ax = IN.ay = 0; joyEl.classList.remove('on');
+  IN.touchId = null; IN.ax = IN.ay = 0; joyEl.classList.remove('on'); joyEl.classList.remove('max');
 }
 cv.addEventListener('pointerdown', joyStart);
 cv.addEventListener('pointermove', joyMove);
@@ -339,7 +349,7 @@ const G = {
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
-  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0,
+  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2
 };
