@@ -571,7 +571,23 @@ function _hit(e, amount, opt) {
     }
   } else AU.play('hit');
 
-  if (opt.kb) { e.kbx += (opt.kbx || 0) * opt.kb; e.kby += (opt.kby || 0) * opt.kb; e.kb = .18; }
+  /* Il contraccolpo ACCUMULAVA: e.kbx += direzione * forza, e non veniva mai
+     azzerato. Un solo colpo spostava un nemico di 1478px, e l'arena e' 1700
+     di semilarghezza. Su un bersaglio che sopravvive a migliaia di colpi -
+     un guardiano - il vettore cresceva senza fine finche' il salto in un
+     fotogramma superava i millesettecento pixel: il Custode spariva e
+     ricompariva dall'altra parte. Sui nemici normali non si vedeva il salto
+     ma si vedeva il risultato: a quindici secondi da una mischia, ZERO
+     nemici entro 400px dal giocatore e mediana 1083 - un bullet heaven in
+     cui l'orda non ti raggiunge mai.
+     Adesso e' un impulso: si assegna invece di sommarsi, ha una scala in
+     pixel (forza/110, cioe' una quindicina per un colpo normale) e chi e'
+     grosso lo sente meno. Un guardiano non lo si sposta a fucilate. */
+  if (opt.kb) {
+    const massa = e.boss ? .12 : e.elite ? .45 : 1;
+    const f = opt.kb / 110 * massa;
+    e.kbx = (opt.kbx || 0) * f; e.kby = (opt.kby || 0) * f; e.kb = .18;
+  }
   burstPart(e.x, e.y, crit ? 5 : 2, opt.color || e.c, 140, 2.6, .26);
 
   /* risvegli: regole globali del run */
@@ -617,7 +633,15 @@ function killEnemy(e, opt) {
   burstPart(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 6), e.c, e.boss ? 420 : 230, e.boss ? 6 : 3.4, e.boss ? 1.1 : .48);
   G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c });
 
-  if (G.awaken.vuoto) {
+  /* Implosione: ogni uccisione detona i vicini. Ma chi moriva DENTRO
+     un'implosione ne scatenava un'altra, e quella un'altra ancora: una
+     reazione a catena che si autoalimenta. Finche' il contraccolpo rotto
+     teneva l'orda sparpagliata non si vedeva; con i nemici di nuovo
+     addosso, la stessa build faceva sedici volte il danno per colpa della
+     catena (Falce da 5.8 a 95.4 uccisioni al secondo col solo Risveglio
+     acceso, contro il x1.0 di Ardore e Torpore). Adesso e' una detonazione,
+     non una reazione: chi cade nell'implosione non ne accende una nuova. */
+  if (G.awaken.vuoto && !(opt && opt.implosione)) {
     const f = [0, .3, .5, .8][G.awaken.vuoto];
     const rr = 78 + e.r * 2.2 + G.awaken.vuoto * 22;
     const dm = Math.min(e.maxHp * f, 420 * G.awaken.vuoto);
@@ -625,7 +649,7 @@ function killEnemy(e, opt) {
     const near = GRID.near(e.x, e.y, rr, []);
     for (let i = 0; i < near.length; i++) {
       const o = near[i]; if (o === e || o.hp <= 0) continue;
-      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, noStatus: G.awaken.vuoto < 3 });
+      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, implosione: 1, noStatus: G.awaken.vuoto < 3 });
     }
   }
 

@@ -489,7 +489,9 @@ function updateEnemies(dt) {
         if (e.hp <= 0) { killEnemy(e); continue; }
       }
     }
-    if (e.kb > 0) { e.kb -= dt; e.x += e.kbx * e.kb * 14; e.y += e.kby * e.kb * 14; }
+    /* per secondo, non per fotogramma: a 30fps il contraccolpo arrivava a
+       meta' strada di quello a 60 */
+    if (e.kb > 0) { e.kb -= dt; const s = e.kb * dt * 840; e.x += e.kbx * s; e.y += e.kby * s; }
 
     if (e.boss) { bossAI(e, dt); }
     else if (e.froze > 0) { /* congelato */ }
