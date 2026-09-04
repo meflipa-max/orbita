@@ -263,6 +263,14 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .slot.vicino .in{border-style:dashed;border-width:2px}
 .slot.vicino::after{content:"MAX";position:absolute;top:-13px;left:50%;transform:translateX(-50%);
   font:700 8px/1 var(--ui);letter-spacing:.12em;color:var(--c);white-space:nowrap}
+/* in dissoluzione le rune rimovibili si segnalano da sole */
+.slot.dissolvibile .in{border-color:#ff3d6e;border-width:2px;animation:dissPulse 1s ease-in-out infinite}
+.slot.dissolvibile svg{stroke:#ff8fae}
+.slot.dissolvibile::after{content:"DISSOLVI";position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  font:700 8px/1 var(--ui);letter-spacing:.12em;color:#ff3d6e;white-space:nowrap}
+@keyframes dissPulse{0%,100%{box-shadow:0 0 0 1px rgba(255,61,110,.5),0 0 16px -4px #ff3d6e}
+  50%{box-shadow:0 0 0 2px #ff3d6e,0 0 32px -2px #ff3d6e}}
+.card.diss .face{border-color:rgba(255,61,110,.5)}
 .slot:hover{transform:translate(-50%,-50%) scale(1.09)}
 .slot.sel{transform:translate(-50%,-50%) scale(1.13)}
 .slot.sel .in{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 30px color-mix(in srgb,var(--c) 70%,transparent)}

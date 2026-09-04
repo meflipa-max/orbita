@@ -30,7 +30,7 @@ const ARC = (r, a1, a2) => {
 };
 
 const UI = {
-  cur: null, sel: -1, placing: null, chestMode: false,
+  cur: null, sel: -1, placing: null, dissolving: false, chestMode: false,
 
   /* ── infrastruttura ─────────────────────────────────────── */
   open(name, html) {
@@ -144,7 +144,7 @@ const UI = {
         '<li><b>Il numero magico è tre.</b> Due rune danno risonanza ma nessun Risveglio: la terza dello stesso elemento vale più di un potenziamento su una runa che hai già.</li>' +
         '<li><b>Chi sta in mezzo conta.</b> In una catena di tre, solo quella centrale ottiene risonanza da entrambi i lati. Mettici la runa che vuoi trasformare, o quella che picchia di più.</li>' +
         '<li><b>L’Iride dipende da cosa vuoi.</b> Sul confine fra due gruppi accende un secondo Risveglio, utile contro la folla. Dentro il tuo gruppo principale fa più danno puro, meglio contro i guardiani.</li>' +
-        '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento.</li>' +
+        '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento. E la carta <b>Dissolvi</b> ti libera un alloggiamento: non sei legato per sempre alla runa di partenza.</li>' +
         '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune risuonano anche saltando un alloggiamento, quindi alternare funziona. Con Lyra ogni runa conta doppia: due bastano per un Risveglio.</li>' +
         '</ol>') +
 
@@ -282,8 +282,11 @@ const UI = {
          tratteggiato appena percepibile su fondo nero */
       /* stato di trasformazione: senza dirlo, la regola posizionale resta
          invisibile e la trasformazione non capita mai */
+      /* in dissoluzione il segnale rosso vince su quello di trasformazione:
+         altrimenti le rune trasformabili non risultavano rimovibili */
       let evoCls = '';
-      if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (r.lv >= 8 ? ' vicino' : '');
+      if (this.dissolving) evoCls = r ? ' dissolvibile' : '';
+      else if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (r.lv >= 8 ? ' vicino' : '');
       const vuoto = !r;
       const dentro = r ? svg(r.id)
         : '<svg viewBox="0 0 24 24" class="plus" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>';
@@ -349,6 +352,13 @@ const UI = {
         '<span class="kicker">' + from.n + ' → ' + to.n + '</span><h3>' + to.n + '</h3><p>' + to.d + '</p>' +
         '</span></span></button>';
     }
+    if (c.t === 'diss') {
+      return '<button class="card diss clip" data-a="pick" data-i="' + i + '" style="--c:#ff3d6e"><span class="face">' +
+        '<span class="ico clip">' + svg('vortice') + '</span><span class="body">' +
+        '<span class="kicker">Anello</span><h3>Dissolvi</h3>' +
+        '<p>Rimuovi una runa dall’anello e <em>libera il suo alloggiamento</em>. Ti restituisce frammenti in base al livello.</p>' +
+        '</span></span></button>';
+    }
     if (c.t === 'gold') {
       return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:#ffc857"><span class="face">' +
         '<span class="ico clip">' + svg('frammento') + '</span><span class="body">' +
@@ -397,18 +407,20 @@ const UI = {
   },
 
   /* ── editor dell’anello ─────────────────────────────────── */
-  ringEdit(placing) {
-    this.placing = placing || null; this.sel = -1;
-    const t = this.placing
-      ? 'Scegli dove collocare <span style="color:' + EL[RUNES[this.placing].el].c + '">' + RUNES[this.placing].n + '</span>'
-      : 'Tocca due rune per scambiarle';
+  ringEdit(placing, dissolving) {
+    this.placing = placing || null; this.dissolving = !!dissolving; this.sel = -1;
+    const t = this.dissolving
+      ? 'Tocca la runa da dissolvere. L’alloggiamento torna libero.'
+      : this.placing
+        ? 'Scegli dove collocare <span style="color:' + EL[RUNES[this.placing].el].c + '">' + RUNES[this.placing].n + '</span>'
+        : 'Tocca due rune per scambiarle';
     this.open('ring',
       '<div class="eyebrow">Anello · ' + G.slots + ' alloggiamenti</div>' +
-      '<h2 class="ttl">' + (this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
+      '<h2 class="ttl">' + (this.dissolving ? 'Dissoluzione' : this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
       '<p class="sub" style="margin-top:-8px">' + t + '</p>' +
       this.ringHTML(true) +
       '<div class="hint" id="ringinfo">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
-      (this.placing ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
+      (this.placing || this.dissolving ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
     );
   },
   refreshRing() {
@@ -484,6 +496,11 @@ function rollChoices(n) {
   /* una trasformazione disponibile domina le altre carte: è il momento
      che ripaga tutta la pianificazione dell'anello, non va sprecato */
   for (const r of inRing) if (canEvolve(r)) pool.push({ t: 'evo', id: r.id, to: EVO[r.id], w: 26 });
+  /* Dissolvere. Senza, la runa iniziale è una tassa permanente: con sei
+     alloggiamenti ti obbliga a usare il suo elemento come una delle due
+     catene, o a rinunciare al secondo Risveglio. Pesa di più ad anello
+     pieno, che è quando è l'unico modo di cambiare idea. */
+  if (inRing.length >= 3) pool.push({ t: 'diss', w: empty ? 1.8 : 5.5 });
   const vuoti = G.slots - inRing.length;
   const wNew = 3.6 + vuoti * 1.3;
   for (const r of inRing) if (r.lv < 8) pool.push({ t: 'rup', id: r.id, w: 3.4 });
@@ -504,6 +521,7 @@ function rollChoices(n) {
 }
 
 function applyChoice(c) {
+  if (c.t === 'diss') return 'diss';   /* la scelta di quale runa avviene nell'anello */
   if (c.t === 'evo') {
     const i = G.ring.findIndex(x => x && x.id === c.id);
     if (i >= 0) {
@@ -702,13 +720,27 @@ SCR.addEventListener('click', ev => {
       const c = UI.choices[+b.dataset.i];
       const needsPlace = applyChoice(c);
       G.pending--;
-      if (needsPlace) UI.ringEdit(c.id);
+      if (needsPlace === 'diss') UI.ringEdit(null, true);
+      else if (needsPlace) UI.ringEdit(c.id);
       else if (G.pending > 0) UI.levelup();
       else { UI.close(); G.state = 'play'; }
       break;
     }
     case 'slot': {
       const i = +b.dataset.i;
+      if (UI.dissolving) {
+        const r = G.ring[i];
+        if (!r) return;
+        /* mai svuotare del tutto l'anello: resteresti senza attacchi */
+        if (G.ring.filter(Boolean).length <= 1) { UI.toast('SERVE ALMENO UNA RUNA', null, '#ff3d6e'); return; }
+        const reso = 25 + r.lv * 20;
+        G.shards += reso; G.ring[i] = null; UI.dissolving = false;
+        recalcRing(true);
+        UI.toast('DISSOLTA', RUNES[r.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
+        AU.play('blast'); G.shake = Math.max(G.shake, 8);
+        if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
+        return;
+      }
       if (UI.placing) {
         if (G.ring[i]) { UI.toast('ALLOGGIAMENTO OCCUPATO', 'Scegline uno vuoto', '#ff3d6e'); return; }
         placeRune(UI.placing, i); UI.placing = null;

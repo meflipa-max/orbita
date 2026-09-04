@@ -277,7 +277,9 @@ const META = [
   { id: 'calamita',  n: 'Calamita',       max: 3, c: 65,   step: 1.8, ico: 'magnete',    d: '+22% Raggio di raccolta' },
   { id: 'linfa',     n: 'Linfa Stellare', max: 3, c: 120,  step: 1.9, ico: 'linfa',      d: '+0,3 Rigenerazione al secondo' },
   { id: 'fortuna',   n: 'Fortuna',        max: 4, c: 90,   step: 1.8, ico: 'frammento',  d: '+12% Frammenti raccolti' },
-  { id: 'orbita',    n: 'Orbita Estesa',  max: 2, c: 900,  step: 2.0, ico: 'orbita',     d: '+1 alloggiamento nell’anello' },
+  /* è il potenziamento che sblocca la libertà di build: con sei alloggiamenti
+     la runa iniziale ti obbliga a usare il suo elemento. Costo ridotto. */
+  { id: 'orbita',    n: 'Orbita Estesa',  max: 2, c: 700,  step: 1.9, ico: 'orbita',     d: '+1 alloggiamento nell’anello' },
   { id: 'rinascita', n: 'Rinascita',      max: 1, c: 1500, step: 1,   ico: 'rinascita',  d: 'Torni in vita una volta per partita' }
 ];
 const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
