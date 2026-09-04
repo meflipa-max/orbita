@@ -95,6 +95,31 @@ function drawArena() {
   const x1 = G.cam.x + W / 2, y1 = G.cam.y + H / 2;
   for (let x = x0; x < x1; x += FLOOR_TS)
     for (let y = y0; y < y1; y += FLOOR_TS) ctx.drawImage(floorTile, x, y);
+  /* asteroidi: corpo scuro e bordo illuminato, così leggono come solidi
+     e non come un altro effetto luminoso in mezzo agli altri */
+  const cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 180, mh = H / 2 + 180;
+  for (let i = 0; i < G.rocks.length; i++) {
+    const k = G.rocks[i];
+    if (Math.abs(k.x - cx) > mw || Math.abs(k.y - cy) > mh) continue;
+    ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(k.rot);
+    ctx.beginPath();
+    for (let j = 0; j < k.m; j++) {
+      const a = j / k.m * TAU, rr = k.r * k.pts[j];
+      if (j) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(13,10,30,.96)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(132,118,206,.5)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = 'rgba(196,182,255,.16)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let j = 0; j < k.m; j++) {
+      const a = j / k.m * TAU, rr = k.r * k.pts[j] * .72;
+      if (j) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.stroke();
+    ctx.restore();
+  }
+
   ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
   ctx.strokeRect(-ARENA, -ARENA, ARENA * 2, ARENA * 2);
   ctx.strokeStyle = 'rgba(255,61,110,.10)'; ctx.lineWidth = 22;

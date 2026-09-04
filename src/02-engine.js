@@ -32,7 +32,7 @@ if (window.visualViewport) {
    sicurezza i progressi sparirebbero in silenzio, che per un gioco
    costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
-const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0 };
+const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
 let SAVE = Object.assign({}, DEFAULT_SAVE);
 let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
 const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
@@ -63,6 +63,8 @@ function sanitizeSave(o) {
   s.chars = s.chars.filter(id => CHARS.some(c => c.id === id));
   if (!s.chars.length) s.chars = ['vega'];
   if (!s.meta || typeof s.meta !== 'object' || Array.isArray(s.meta)) s.meta = {};
+  if (!Array.isArray(s.sfide)) s.sfide = [];
+  s.sfide = s.sfide.filter(id => SFIDE.some(x => x.id === id));
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
   s.asc = Math.min(s.asc | 0, ASC.length - 1);
   s.ascSel = Math.min(Math.max(s.ascSel | 0, 0), s.asc);
@@ -328,7 +330,8 @@ const G = {
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
-  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70
+  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
+  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: []
 };
 const P = {}; /* statistiche derivate */
 
@@ -379,10 +382,19 @@ function maxRun(ok, isE, n) {
 }
 function recalcRing(announce) {
   const n = G.slots, R = G.ring;
+  const rule = G.char && G.char.rule;
   for (let i = 0; i < n; i++) if (R[i]) R[i].res = 0;
   for (let i = 0; i < n; i++) {
     const a = R[i], b = R[(i + 1) % n];
     if (a && b && compat(a, b)) { a.res++; b.res++; }
+  }
+  /* Nadir: l'eco arriva anche un alloggiamento più in là, quindi si possono
+     costruire anelli alternati che con chiunque altro non risuonerebbero */
+  if (rule === 'ecoLunga' && n >= 5) {
+    for (let i = 0; i < n; i++) {
+      const a = R[i], b = R[(i + 2) % n];
+      if (a && b && compat(a, b)) { a.res = Math.min(3, a.res + 1); b.res = Math.min(3, b.res + 1); }
+    }
   }
   const ok = new Array(n), isE = new Array(n);
   for (const e of ELKEYS) {
@@ -391,16 +403,23 @@ function recalcRing(announce) {
       ok[i] = !!r && (r.el === e || r.el === 'iride');
       isE[i] = !!r && r.el === e;
     }
-    const run = maxRun(ok, isE, n);
+    /* Lyra: quattro alloggiamenti soli, ma ogni runa vale doppia nella
+       catena — due rune bastano per un Risveglio, tre per il secondo grado */
+    const run = maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1);
     const c0 = G.asc.chain;
     const tier = run >= c0 + 4 ? 3 : run >= c0 + 2 ? 2 : run >= c0 ? 1 : 0;
     const prev = G.awaken[e];
     G.awaken[e] = tier;
+    if (tier && !G.awakeAt) G.awakeAt = G.t;
     if (announce && tier > prev) {
       UI.toast('RISVEGLIO · ' + EL[e].aw.toUpperCase(), EL[e].awd[tier - 1], EL[e].c);
       AU.play('awake'); G.shake = Math.max(G.shake, 9);
     }
   }
+  /* traccia per le sfide: quanti Risvegli insieme, e se uno ha toccato il terzo grado */
+  let acc = 0;
+  for (const k of ELKEYS) { if (G.awaken[k]) acc++; if (G.awaken[k] >= 3) G.tier3 = 1; }
+  if (acc > G.awakeMax) G.awakeMax = acc;
   recalc();
   UI.renderAwake();
 }
@@ -508,6 +527,8 @@ function _hit(e, amount, opt) {
     addFloat(e.x, e.y - e.r - 4, Math.round(dmg), crit ? '#ffffff' : (opt.color || '#ffd2e4'), crit);
   if (crit) {
     AU.play('crit');
+    /* Sirio: ogni critico accorcia la ricarica di tutto l'anello */
+    if (G.char.rule === 'cadenza') for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - .04);
     burstPart(e.x, e.y, 4, '#fff', 190, 3, .28);
     if (G.awaken.luce && G.healCd <= 0) {
       G.healCd = .55; const h = [0, 1, 2, 3.5][G.awaken.luce];
@@ -599,6 +620,8 @@ function hurtPlayer(amount) {
   if (G.p.inv > 0 || G.state !== 'play') return;
   const d = amount * P.dr;
   P.hp -= d; G.p.inv = .62; G.p.hurt = .3;
+  if (G.char.rule === 'contraccolpo')
+    G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 14, r1: 210 * P.areaMul, t: 0, dur: .45, dmg: 45 * P.dmgMul, hit: new Set(), c: EL.fuoco.c, kb: 320 });
   G.shake = Math.max(G.shake, 8); G.flashT = .16;
   AU.play('hurt');
   burstPart(G.p.x, G.p.y, 10, '#ff3d6e', 200, 3.4, .5);

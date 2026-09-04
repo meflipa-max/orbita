@@ -29,6 +29,24 @@ Vinci e sblocchi un livello di difficoltà. Ognuno aggiunge **una regola sola**,
 sommano: scrigni che non danno più potenziamenti, un alloggiamento in meno, metà vita
 iniziale, Risvegli che richiedono quattro rune in fila, guardiani in coppia. Tredici livelli.
 
+### Nuclei
+
+Sei nuclei, e ognuno oltre alle statistiche porta **una regola**. Due riscrivono l'anello,
+che è il gioco: **Nadir** fa risuonare le rune anche saltando un alloggiamento (anelli
+alternati impossibili per chiunque altro), **Lyra** ha l'anello dimezzato ma ogni runa conta
+doppia per le catene — due rune bastano per un Risveglio.
+
+### Sfide
+
+Dodici obiettivi che danno una direzione alle partite e insegnano i sistemi. Non medaglie:
+pagano in frammenti, e due sbloccano un nucleo scavalcando il prezzo.
+
+### Terreno
+
+Asteroidi che fermano te e i nemici e **assorbono i colpi nemici**: sono riparo. I tuoi
+proiettili passano sopra, perché bloccarli punirebbe un attacco che è automatico. I guardiani
+li sfondano.
+
 ### Eventi d'arena
 
 Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima

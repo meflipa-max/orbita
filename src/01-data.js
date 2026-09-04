@@ -213,12 +213,28 @@ const BOSSES = [
 const RUN_LEN = 1200; /* 20 minuti */
 
 /* ── personaggi ─────────────────────────────────────────────── */
+/* Nuclei. Le statistiche da sole non cambiano come si gioca: si scelgono
+   una volta e si dimenticano. Ognuno porta anche una REGOLA che riscrive
+   qualcosa del gioco — e le due che toccano l'anello (Nadir e Lyra) lo
+   riscrivono davvero, perché l'anello è il gioco.                        */
 const CHARS = [
-  { id: 'vega',    n: 'Vega',    c: '#bff6ff', start: 'scintilla',   cost: 0,    d: 'Equilibrata sotto ogni aspetto.', mod: {} },
-  { id: 'rigel',   n: 'Rigel',   c: '#45d7ff', start: 'scheggia',    cost: 400,  d: '+24% velocità · −20% vita', mod: { spd: 1.24, hp: .8 } },
-  { id: 'antares', n: 'Antares', c: '#ff6a2b', start: 'nova',        cost: 900,  d: '+50% vita · +12% area · −12% velocità', mod: { hp: 1.5, area: 1.12, spd: .88 } },
-  { id: 'sirio',   n: 'Sirio',   c: '#ffe9b0', start: 'raggio',      cost: 1600, d: '+15% critico · +40% danno critico · −18% vita', mod: { crit: .15, critD: .4, hp: .82 } },
-  { id: 'nadir',   n: 'Nadir',   c: '#b06bff', start: 'singolarita', cost: 2600, d: '+25% esperienza · +10% area · −8% danno', mod: { xp: 1.25, area: 1.1, dmg: .92 } }
+  { id: 'vega',    n: 'Vega',    c: '#bff6ff', start: 'scintilla',   cost: 0,
+    d: 'Equilibrata sotto ogni aspetto.', mod: {} },
+  { id: 'rigel',   n: 'Rigel',   c: '#45d7ff', start: 'scheggia',    cost: 400,
+    d: '+24% velocità · −20% vita', mod: { spd: 1.24, hp: .8 },
+    rule: 'slancio', ruleD: 'In movimento le rune sparano il 18% più in fretta.' },
+  { id: 'antares', n: 'Antares', c: '#ff6a2b', start: 'nova',        cost: 900,
+    d: '+50% vita · +12% area · −12% velocità', mod: { hp: 1.5, area: 1.12, spd: .88 },
+    rule: 'contraccolpo', ruleD: 'Ogni ferita che subisci scatena una Nova.' },
+  { id: 'sirio',   n: 'Sirio',   c: '#ffe9b0', start: 'raggio',      cost: 1600,
+    d: '+15% critico · +40% danno critico · −18% vita', mod: { crit: .15, critD: .4, hp: .82 },
+    rule: 'cadenza', ruleD: 'Ogni critico accorcia di 0,04s la ricarica di tutte le rune.' },
+  { id: 'nadir',   n: 'Nadir',   c: '#b06bff', start: 'singolarita', cost: 2600,
+    d: '+25% esperienza · −8% danno', mod: { xp: 1.25, dmg: .92 },
+    rule: 'ecoLunga', ruleD: 'Le rune risuonano anche saltando un alloggiamento.' },
+  { id: 'lyra',    n: 'Lyra',    c: '#ff7de3', start: 'iride',       cost: 3800,
+    d: 'Due alloggiamenti in meno · +20% danno', mod: { dmg: 1.2 },
+    rule: 'anelloCorto', ruleD: 'Anello dimezzato, ma ogni runa conta doppia per le catene.' }
 ];
 
 /* ── potenziamenti permanenti ───────────────────────────────── */
@@ -235,6 +251,25 @@ const META = [
   { id: 'rinascita', n: 'Rinascita',      max: 1, c: 1500, step: 1,   ico: 'rinascita',  d: 'Torni in vita una volta per partita' }
 ];
 const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
+
+/* ── sfide ──────────────────────────────────────────────────────
+   Non medaglie da vetrina: chiavi. Danno una direzione alle partite e
+   soprattutto insegnano i sistemi, spingendoti a usarli in modi che da
+   solo non proveresti. Due sbloccano un nucleo, scavalcando i frammenti. */
+const SFIDE = [
+  { id: 'vittoria',  n: 'Prima luce',      d: 'Vinci una partita.',                              r: 400,  f: s => s.win },
+  { id: 'pieno',     n: 'Anello completo', d: 'Riempi ogni alloggiamento in una partita.',        r: 200,  f: s => s.pieno },
+  { id: 'presto',    n: 'Fuoco precoce',   d: 'Accendi un Risveglio entro il quinto minuto.',     r: 250,  f: s => s.awakeAt > 0 && s.awakeAt <= 300 },
+  { id: 'duplice',   n: 'Doppia voce',     d: 'Tieni due Risvegli accesi insieme.',               r: 300,  f: s => s.awakeMax >= 2 },
+  { id: 'ponte',     n: 'Ponte iridato',   d: 'Due Risvegli con un’Iride nell’anello.',           r: 450,  f: s => s.awakeMax >= 2 && s.iride },
+  { id: 'terzo',     n: 'Terzo grado',     d: 'Porta un Risveglio al terzo grado.',               r: 600,  f: s => s.tier3 },
+  { id: 'trasforma', n: 'Metamorfosi',     d: 'Trasforma una runa.',                              r: 400,  f: s => s.evo >= 1 },
+  { id: 'massacro',  n: 'Marea rossa',     d: '1500 eliminazioni in una sola partita.',           r: 300,  f: s => s.kills >= 1500 },
+  { id: 'intatto',   n: 'Senza un graffio',d: 'Arriva al quinto minuto senza scendere a metà vita.', r: 350, f: s => s.t >= 300 && !s.lowHp },
+  { id: 'duetrasf',  n: 'Doppia forma',    d: 'Trasforma due rune nella stessa partita.',         r: 700,  f: s => s.evo >= 2, unlock: 'lyra' },
+  { id: 'purista',   n: 'Purista',         d: 'Vinci senza mai riordinare l’anello.',             r: 900,  f: s => s.win && s.reorders === 0 },
+  { id: 'ascesa',    n: 'Ascesa',          d: 'Vinci ad ascensione 3 o superiore.',               r: 1000, f: s => s.win && s.ascLv >= 3, unlock: 'nadir' }
+];
 
 /* ── ascensioni ─────────────────────────────────────────────────
    Ogni livello aggiunge UNA regola, e le regole si sommano. Non è un

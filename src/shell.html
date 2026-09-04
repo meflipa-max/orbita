@@ -295,6 +295,8 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
   box-shadow:0 0 24px -2px var(--c,#bff6ff)}
 .ch .nm{font:700 15px/1 var(--disp);color:#fff}
 .ch .ds{font:400 10.5px/1.4 var(--ui);color:var(--dim);margin-top:5px}
+.ch .rule{display:block;font:600 10.5px/1.45 var(--ui);color:var(--c);margin-top:8px;padding-top:8px;
+  border-top:1px solid color-mix(in srgb,var(--c) 26%,transparent);text-wrap:balance}
 .ch .lk{font:600 11px/1 var(--ui);color:var(--gold);margin-top:7px;display:flex;align-items:center;justify-content:center;gap:4px}
 .ch.locked .face{opacity:.62}
 
@@ -316,6 +318,17 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .toast small{display:block;font:500 9.5px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-top:5px}
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
+
+/* sfide */
+.sfidelist{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.sfida{--cut:7px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;
+  background:linear-gradient(160deg,rgba(22,18,52,.8),rgba(10,8,26,.85));border:1px solid var(--line)}
+.sfida.fatta{border-color:rgba(111,242,196,.44);background:linear-gradient(160deg,rgba(20,44,44,.6),rgba(10,8,26,.85))}
+.sfida .sn{font:700 12.5px/1.2 var(--disp);color:var(--dim)}
+.sfida.fatta .sn{color:var(--xp)}
+.sfida .sd{font:400 11px/1.4 var(--ui);color:var(--faint)}
+.sfida .sr{display:flex;align-items:center;gap:4px;font:600 10px/1 var(--ui);color:var(--gold);margin-top:2px}
+.sfida .sr svg{width:10px;height:10px}
 
 /* ascensioni */
 .ascrow{display:flex;flex-wrap:wrap;gap:5px}

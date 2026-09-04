@@ -199,6 +199,8 @@ const FIRE = {
 
 function updateRunes(dt) {
   const sl = G.slots;
+  /* Rigel: chi corre spara più in fretta — la regola premia la sua identità */
+  G.fireBoost = (G.char.rule === 'slancio' && Math.hypot(G.p.vx, G.p.vy) > 40) ? 1.18 : 1;
   G.ringRot += dt * (.42 * P.projMul);
   for (let i = 0; i < sl; i++) {
     const r = G.ring[i]; if (!r) continue;
@@ -227,7 +229,7 @@ function updateRunes(dt) {
       }
       continue;
     }
-    r.cd -= dt;
+    r.cd -= dt * G.fireBoost;
     if (r.cd <= 0) { r.cd += Math.max(.06, s.cd); FIRE[r.id](r, s); }
   }
 }
@@ -477,6 +479,7 @@ function updateEnemies(dt) {
        un nemico oltre il muro sembrerebbe sparito dalla mappa. */
     const lim = ARENA - e.r;
     e.x = clamp(e.x, -lim, lim); e.y = clamp(e.y, -lim, lim);
+    if (!e.boss) scostaDaRocce(e, e.r);   /* i guardiani sfondano gli asteroidi */
 
     /* contatto */
     const dx = px - e.x, dy = py - e.y, rr = e.r + G.p.r;
@@ -490,6 +493,8 @@ function updateEBullets(dt) {
     const b = B[i]; b.t += dt; b.life -= dt;
     b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.life <= 0 || Math.abs(b.x) > ARENA + 500 || Math.abs(b.y) > ARENA + 500) { B.splice(i, 1); continue; }
+    /* la roccia è riparo: assorbe i colpi nemici */
+    if (dentroRoccia(b.x, b.y, b.r)) { burstPart(b.x, b.y, 4, b.c, 120, 2.6, .3); B.splice(i, 1); continue; }
     const dx = G.p.x - b.x, dy = G.p.y - b.y, rr = b.r + G.p.r * .8;
     if (dx * dx + dy * dy < rr * rr) { hurtPlayer(b.dmg); B.splice(i, 1); }
   }
@@ -597,6 +602,51 @@ function spawnRing(type, opts) {
   }
   return spawnEnemy(type, x, y, opts);
 }
+/* ── terreno ───────────────────────────────────────────────────
+   Prima ogni punto dell'arena valeva esattamente quanto ogni altro, ed è
+   per questo che muoversi era meccanico. Gli asteroidi fermano te e i
+   nemici e assorbono i colpi nemici — sono riparo. I tuoi proiettili
+   passano sopra: bloccarli punirebbe un attacco che è automatico.      */
+function genRocks() {
+  G.rocks.length = 0;
+  const n = 40;
+  for (let i = 0; i < n * 8 && G.rocks.length < n; i++) {
+    const r = rand(126, 54);
+    const x = rand(ARENA - r - 120, -ARENA + r + 120);
+    const y = rand(ARENA - r - 120, -ARENA + r + 120);
+    if (x * x + y * y < 460 * 460) continue;          /* mai addosso alla partenza */
+    let libero = true;
+    for (const k of G.rocks) {
+      const dd = Math.hypot(k.x - x, k.y - y);
+      if (dd < k.r + r + 130) { libero = false; break; }
+    }
+    if (!libero) continue;
+    const m = 7 + (Math.random() * 4 | 0), pts = [];
+    for (let a = 0; a < m; a++) pts.push(rand(1.14, .82));
+    G.rocks.push({ x, y, r, m, pts, rot: rand(TAU) });
+  }
+}
+/* spinge un corpo fuori dagli asteroidi */
+function scostaDaRocce(o, raggio) {
+  for (let i = 0; i < G.rocks.length; i++) {
+    const k = G.rocks[i];
+    const dx = o.x - k.x, dy = o.y - k.y;
+    const min = k.r + raggio;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < min * min && d2 > .01) {
+      const d = Math.sqrt(d2);
+      o.x = k.x + dx / d * min; o.y = k.y + dy / d * min;
+    }
+  }
+}
+function dentroRoccia(x, y, raggio) {
+  for (let i = 0; i < G.rocks.length; i++) {
+    const k = G.rocks[i], dx = x - k.x, dy = y - k.y, min = k.r + (raggio || 0);
+    if (dx * dx + dy * dy < min * min) return k;
+  }
+  return null;
+}
+
 /* ── eventi d'arena ────────────────────────────────────────────
    Ogni novanta secondi succede qualcosa che HA UN LUOGO. Senza, i minuti
    centrali sono una salita monotona in uno spazio identico ovunque: non
@@ -610,6 +660,10 @@ function apriEvento() {
     const a = rand(TAU), d = rand(1000, 620);
     const x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
     const y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
+    /* una breccia dentro un asteroide sarebbe irraggiungibile */
+    const roc = dentroRoccia(x, y, 90);
+    if (roc) { const a2 = Math.atan2(y - roc.y, x - roc.x); x = roc.x + Math.cos(a2) * (roc.r + 130); y = roc.y + Math.sin(a2) * (roc.r + 130); }
+    x = clamp(x, -ARENA + 90, ARENA - 90); y = clamp(y, -ARENA + 90, ARENA - 90);
     G.ev = { k, x, y, t: 0, dur: 22, r: 74, preso: 0 };
     for (let i = 0; i < 3; i++) spawnEnemy(pick(currentPool()), x + rand(150, -150), y + rand(150, -150), { elite: i === 0, rMul: i === 0 ? 1.5 : 1 });
     UI.toast('BRECCIA', 'Raggiungila prima che si chiuda', '#b06bff');

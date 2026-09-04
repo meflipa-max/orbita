@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    ORBITA — ciclo principale.
    ═══════════════════════════════════════════════════════════════ */
 
@@ -9,6 +9,7 @@ function step(dt) {
   p.vx += (tx - p.vx) * k; p.vy += (ty - p.vy) * k;
   p.x = clamp(p.x + p.vx * dt, -ARENA, ARENA);
   p.y = clamp(p.y + p.vy * dt, -ARENA, ARENA);
+  scostaDaRocce(p, p.r);
   if (p.inv > 0) p.inv -= dt;
   if (p.hurt > 0) p.hurt -= dt;
   if (G.healCd > 0) G.healCd -= dt;
@@ -46,6 +47,10 @@ function step(dt) {
   G.shake = Math.max(0, G.shake - dt * 42);
   if (G.flashT > 0) { G.flashT -= dt; elFlash.style.opacity = String(Math.max(0, G.flashT * 2.4)); }
   else if (elFlash.style.opacity !== '0') elFlash.style.opacity = '0';
+
+  /* tracce per le sfide */
+  if (P.hp < P.maxHp * .5) G.lowHp = 1;
+  if (!G.pieno) { let v = 0; for (let n = 0; n < G.slots; n++) if (G.ring[n]) v++; if (v >= G.slots) G.pieno = 1; }
 
   UI.hud();
   if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
@@ -117,6 +122,7 @@ function enterMenu() {
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
   G.boss = null; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
+  G.rocks.length = 0;                    /* né ostacoli dietro al titolo */
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
   G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
   G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;

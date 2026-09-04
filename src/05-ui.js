@@ -129,6 +129,7 @@ const UI = {
         '<span class="av" style="--c:' + c.c + '"></span>' +
         '<span class="nm">' + c.n + '</span>' +
         '<span class="ds">' + c.d + '</span>' +
+        (c.ruleD ? '<span class="rule" style="--c:' + c.c + '">' + c.ruleD + '</span>' : '') +
         (own ? '' : '<span class="lk">' + shardIcon() + c.cost + '</span>') +
         '</span></button>';
     }).join('');
@@ -148,6 +149,7 @@ const UI = {
       '<div class="eyebrow" style="text-align:left">Nucleo</div>' +
       '<div class="chars">' + chars + '</div>' +
       this.ascHTML() +
+      this.sfideHTML() +
       '<div class="eyebrow" style="text-align:left;margin-top:4px">Potenziamenti permanenti</div>' +
       '<div class="grid2">' + ups + '</div>' +
       '<div class="btnrow" style="max-width:420px;margin:8px auto 0">' +
@@ -164,6 +166,22 @@ const UI = {
       '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
       '</details>'
     );
+  },
+
+  /* ── sfide ──────────────────────────────────────────────── */
+  sfideHTML() {
+    const fatte = SAVE.sfide.length;
+    const righe = SFIDE.map(s => {
+      const ok = SAVE.sfide.indexOf(s.id) >= 0;
+      const unl = s.unlock ? (CHARS.find(c => c.id === s.unlock) || {}).n : null;
+      return '<div class="sfida clip' + (ok ? ' fatta' : '') + '">' +
+        '<span class="sn">' + s.n + (ok ? ' ✓' : '') + '</span>' +
+        '<span class="sd">' + s.d + '</span>' +
+        '<span class="sr">' + shardIcon() + '+' + s.r + (unl ? ' · sblocca ' + unl : '') + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="eyebrow" style="text-align:left;margin-top:4px">Sfide · ' + fatte + ' di ' + SFIDE.length + '</div>' +
+      '<div class="sfidelist">' + righe + '</div>';
   },
 
   /* ── ascensioni ─────────────────────────────────────────── */
@@ -382,6 +400,13 @@ const UI = {
       '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
       '<div class="stats">' + stats.map(s => '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
+      ((G.sfideNuove && G.sfideNuove.length)
+        ? '<div class="eyebrow" style="margin-top:2px">Sfide completate</div><div class="sfidelist">' +
+          G.sfideNuove.map(s => '<div class="sfida fatta clip"><span class="sn">' + s.n + '</span>' +
+            '<span class="sd">' + s.d + '</span><span class="sr">' + shardIcon() + '+' + s.r +
+            (s.unlock ? ' · ' + (CHARS.find(c => c.id === s.unlock) || {}).n + ' sbloccata' : '') + '</span></div>').join('') +
+          '</div>'
+        : '') +
       this.ringHTML(false) +
       '<div class="hint">' + this.awakeLine() + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
@@ -431,6 +456,7 @@ function applyChoice(c) {
     if (i >= 0) {
       const el = RUNES[c.to].el;
       G.ring[i] = { id: c.to, el, lv: 5, cd: 0, res: 0, slot: i, st: {} };
+      G.evoCount++;
       recalcRing(true);
       UI.toast('TRASFORMAZIONE', RUNES[c.to].n, EL[el].c);
       AU.play('awake'); G.shake = Math.max(G.shake, 16); G.hitstop = .12;
@@ -466,17 +492,20 @@ function resetRun(charId) {
   G.ascLv = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
   G.asc = ascMods(G.ascLv);
   G.slots = Math.max(4, 6 + mlv('orbita') + G.asc.slots);
+  if (c.rule === 'anelloCorto') G.slots = Math.max(3, G.slots - 2);
   G.ring = new Array(G.slots).fill(null);
   G.passives = {};
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
   G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null;
-  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
+  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0;
+  G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');
+  genRocks();
   G.demo = false;
   hideMoveHint();
   P.hp = undefined; recalc(); P.hp = P.maxHp * G.asc.startHp;
@@ -498,9 +527,34 @@ function payout() {
   const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul * asc) + G.shards;
   return Math.max(1, g);
 }
+/* Valuta le sfide a fine partita. Restituisce quelle appena completate,
+   così la schermata finale può mostrarle invece di farle passare inosservate. */
+function valutaSfide(win) {
+  const s = {
+    win: !!win, t: G.t, kills: G.kills, level: G.level, ascLv: G.ascLv || 0,
+    awakeMax: G.awakeMax | 0, awakeAt: G.awakeAt | 0, evo: G.evoCount | 0,
+    reorders: G.reorders | 0, pieno: !!G.pieno, lowHp: !!G.lowHp, tier3: !!G.tier3,
+    iride: G.ring.some(r => r && r.el === 'iride')
+  };
+  const nuove = [];
+  for (const sf of SFIDE) {
+    if (SAVE.sfide.indexOf(sf.id) >= 0) continue;
+    let ok = false;
+    try { ok = !!sf.f(s); } catch (e) { ok = false; }
+    if (!ok) continue;
+    SAVE.sfide.push(sf.id);
+    SAVE.shards += sf.r;
+    if (sf.unlock && SAVE.chars.indexOf(sf.unlock) < 0) SAVE.chars.push(sf.unlock);
+    nuove.push(sf);
+  }
+  return nuove;
+}
+
 function endRun(win) {
   const g = payout();
   SAVE.shards += g;
+  const sfideNuove = valutaSfide(win);
+  G.sfideNuove = sfideNuove;
   if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t);
   if (G.kills > (SAVE.bestKills || 0)) SAVE.bestKills = G.kills;
   if (win) {
@@ -608,7 +662,7 @@ SCR.addEventListener('click', ev => {
         const t = G.ring[i]; G.ring[i] = G.ring[UI.sel]; G.ring[UI.sel] = t;
         if (G.ring[i]) G.ring[i].slot = i;
         if (G.ring[UI.sel]) G.ring[UI.sel].slot = UI.sel;
-        UI.sel = -1; recalcRing(true); AU.play('buy');
+        UI.sel = -1; G.reorders++; recalcRing(true); AU.play('buy');
       }
       UI.refreshRing();
       break;
