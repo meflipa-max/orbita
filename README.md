@@ -14,6 +14,27 @@ una schermata inventario separata, le rune che vedi orbitare *sono* l'interfacci
 Partita da 20 minuti, cinque guardiani, poi modalità senza fine. I **frammenti** restano fra
 una partita e l'altra e si spendono nell'Osservatorio in potenziamenti permanenti e nuovi nuclei.
 
+### Trasformazioni
+
+Una runa portata a livello 8 **mentre risuona da entrambi i lati e il suo elemento è
+risvegliato** si trasforma. Non diventa più grande: diventa un'altra cosa. La Cometa lascia
+una scia che brucia davvero e si frantuma a ogni uccisione; il Glaciale congela al tocco; il
+Fulgore sdoppia la catena a ogni salto; il Mietitore risucchia i nemici lungo il cammino;
+l'Alba spazza con due fasci opposti. La condizione è **posizionale**: obbliga a progettare
+l'anello dal primo minuto.
+
+### Ascensioni
+
+Vinci e sblocchi un livello di difficoltà. Ognuno aggiunge **una regola sola**, e le regole si
+sommano: scrigni che non danno più potenziamenti, un alloggiamento in meno, metà vita
+iniziale, Risvegli che richiedono quattro rune in fila, guardiani in coppia. Tredici livelli.
+
+### Eventi d'arena
+
+Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima
+che si chiuda, una marea di nemici da una sola direzione, un Corriere da abbattere prima che
+sparisca. Servono a dare un motivo per andare da qualche parte.
+
 Niente dipendenze a runtime a parte due font Google, che degradano su stack di sistema se manca
 la rete. Tutto il resto — grafica, effetti, musica generativa — è prodotto a runtime da ~2.500
 righe di JavaScript, canvas 2D puro.

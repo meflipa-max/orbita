@@ -17,6 +17,13 @@ function resize() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => { resize(); setTimeout(resize, 260); });
+/* su mobile la barra del browser cambia altezza dopo il caricamento e l'evento
+   'resize' della finestra non sempre scatta: visualViewport sì */
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', resize);
+  visualViewport.addEventListener('scroll', resize);
+}
 
 /* ── salvataggio ──────────────────────────────────────────────
    localStorage non è garantito: è bloccato nelle URL data:, in alcuni
@@ -321,7 +328,7 @@ const G = {
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
-  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0
+  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70
 };
 const P = {}; /* statistiche derivate */
 

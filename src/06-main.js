@@ -31,6 +31,7 @@ function step(dt) {
   updateEnemies(dt);
   updateGems(dt);
   updateParts(dt);
+  updateEventi(dt);
   updateSpawns(dt);
 
   /* le istruzioni svaniscono al primo movimento, o da sole dopo qualche secondo */
@@ -66,6 +67,14 @@ function frame(t) {
   requestAnimationFrame(frame);
   let rdt = (t - last) / 1000; last = t;
   if (rdt > .06) rdt = .06;
+
+  /* Autoriparazione delle dimensioni. Su mobile il canvas poteva restare
+     dimensionato su un viewport vecchio finché non ruotavi il telefono:
+     il gioco partiva deformato e si sistemava solo cambiando orientamento.
+     Confrontare qui copre qualunque causa, invece di indovinarne una. */
+  if (app.clientWidth !== W || app.clientHeight !== H) {
+    if (app.clientWidth > 0 && app.clientHeight > 0) resize();
+  }
 
   let intensity = .1;
   if (G.state === 'play') {
@@ -107,6 +116,7 @@ function enterMenu() {
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
   G.boss = null; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
+  G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
   G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
   G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;

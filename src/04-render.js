@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════════
    ORBITA — rendering.
    ═══════════════════════════════════════════════════════════════ */
 
@@ -52,15 +52,49 @@ function drawBG(cx, cy) {
   }
 }
 
+/* Il suolo. Senza un riferimento fisso nel mondo si vola in un nero uniforme:
+   non capisci in che direzione stai andando e viene il mal di mare. Le stelle
+   non bastano perché scorrono in parallasse, cioè quasi ferme. Questa trama
+   sta a distanza 1:1 e scorre esattamente come ti muovi. */
+const FLOOR_TS = 420;
+let floorTile = null;
+function buildFloor() {
+  const c = document.createElement('canvas');
+  c.width = c.height = FLOOR_TS;
+  const g = c.getContext('2d');
+  /* reticolo fine: la maglia stretta dà la velocità, quella larga la direzione */
+  g.strokeStyle = 'rgba(126,110,205,.075)'; g.lineWidth = 1;
+  g.beginPath();
+  for (let i = 1; i < 4; i++) {
+    const p = Math.round(FLOOR_TS / 4 * i) + .5;
+    g.moveTo(p, 0); g.lineTo(p, FLOOR_TS); g.moveTo(0, p); g.lineTo(FLOOR_TS, p);
+  }
+  g.stroke();
+  g.strokeStyle = 'rgba(150,132,240,.17)'; g.lineWidth = 1.2;
+  g.strokeRect(.5, .5, FLOOR_TS - 1, FLOOR_TS - 1);
+  /* pulviscolo: i granelli sono ciò che l'occhio usa davvero per la velocità */
+  for (let i = 0; i < 46; i++) {
+    const x = Math.random() * FLOOR_TS, y = Math.random() * FLOOR_TS;
+    const s = Math.random() < .18 ? 2.4 : 1.2;
+    g.fillStyle = Math.random() < .25 ? 'rgba(180,205,255,.30)' : 'rgba(150,135,225,.22)';
+    g.fillRect(x, y, s, s);
+  }
+  /* qualche segno più grande: punti di riferimento riconoscibili */
+  g.strokeStyle = 'rgba(150,132,240,.16)'; g.lineWidth = 1.4;
+  for (let i = 0; i < 3; i++) {
+    const x = Math.random() * FLOOR_TS, y = Math.random() * FLOOR_TS, r = 5 + Math.random() * 7;
+    g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y); g.moveTo(x, y - r); g.lineTo(x, y + r); g.stroke();
+  }
+  floorTile = c;
+}
+
 function drawArena() {
-  const step = 170;
-  ctx.strokeStyle = 'rgba(120,105,200,.085)'; ctx.lineWidth = 1;
-  ctx.beginPath();
-  const x0 = Math.floor((G.cam.x - W / 2) / step) * step, x1 = G.cam.x + W / 2;
-  const y0 = Math.floor((G.cam.y - H / 2) / step) * step, y1 = G.cam.y + H / 2;
-  for (let x = x0; x <= x1; x += step) { ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
-  for (let y = y0; y <= y1; y += step) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
-  ctx.stroke();
+  if (!floorTile) buildFloor();
+  const x0 = Math.floor((G.cam.x - W / 2) / FLOOR_TS) * FLOOR_TS;
+  const y0 = Math.floor((G.cam.y - H / 2) / FLOOR_TS) * FLOOR_TS;
+  const x1 = G.cam.x + W / 2, y1 = G.cam.y + H / 2;
+  for (let x = x0; x < x1; x += FLOOR_TS)
+    for (let y = y0; y < y1; y += FLOOR_TS) ctx.drawImage(floorTile, x, y);
   ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
   ctx.strokeRect(-ARENA, -ARENA, ARENA * 2, ARENA * 2);
   ctx.strokeStyle = 'rgba(255,61,110,.10)'; ctx.lineWidth = 22;
@@ -185,6 +219,46 @@ function drawZonesOver() {
     }
   }
   ctx.globalCompositeOperation = 'source-over';
+}
+
+/* eventi d'arena: devono leggersi da lontano, sono l'unico motivo per
+   attraversare la mappa invece di girare in tondo */
+function drawEvento() {
+  const v = G.ev; if (!v) return;
+  if (v.k === 'breccia') {
+    const rest = 1 - v.t / v.dur, pul = 1 + Math.sin(G.t * 4) * .07;
+    ctx.globalCompositeOperation = 'lighter';
+    const gt = glowTex('#b06bff', 64);
+    ctx.globalAlpha = .5 * pul; ctx.drawImage(gt, v.x - 150, v.y - 150, 300, 300); ctx.globalAlpha = 1;
+    for (let i = 0; i < 3; i++) {
+      const rr = v.r * (.55 + i * .38) * pul, a = G.t * (1.6 - i * .4) + i * 2;
+      ctx.strokeStyle = rgba('#b06bff', .75 - i * .18); ctx.lineWidth = 3 - i * .6;
+      ctx.beginPath(); ctx.arc(v.x, v.y, rr, a, a + 3.6); ctx.stroke();
+    }
+    /* quanto resta, letto come arco che si consuma */
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(v.x, v.y, v.r + 16, -PI / 2, -PI / 2 + TAU * rest); ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  } else if (v.k === 'caccia' && v.e && v.e.hp > 0) {
+    const e = v.e, pul = 1 + Math.sin(G.t * 7) * .12;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = rgba('#6ff2c4', .9); ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(e.x, e.y, (e.r + 16) * pul, 0, TAU); ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+/* freccia a bordo schermo verso un punto fuori campo */
+function bussola(x, y, col, size) {
+  const sx = x - G.cam.x + W / 2, sy = y - G.cam.y + H / 2;
+  if (sx > 26 && sx < W - 26 && sy > 26 && sy < H - 26) return;
+  const a = Math.atan2(y - G.cam.y, x - G.cam.x);
+  const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .41, iy = H / 2 + Math.sin(a) * Math.min(W, H) * .41;
+  ctx.save(); ctx.translate(ix, iy); ctx.rotate(a);
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(-size * .6, size * .6); ctx.lineTo(-size * .6, -size * .6);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
 }
 
 function drawBullets() {
@@ -397,16 +471,10 @@ function drawScreenUI() {
     }
   }
   /* bussola per gli scrigni */
-  for (const d of G.drops) {
-    if (d.k !== 'chest') continue;
-    const sx = d.x - G.cam.x + W / 2, sy = d.y - G.cam.y + H / 2;
-    if (sx > 20 && sx < W - 20 && sy > 20 && sy < H - 20) continue;
-    const a = Math.atan2(d.y - G.cam.y, d.x - G.cam.x);
-    const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .42, iy = H / 2 + Math.sin(a) * Math.min(W, H) * .42;
-    ctx.save(); ctx.translate(ix, iy); ctx.rotate(G.t * 1.4);
-    ctx.strokeStyle = 'rgba(255,200,87,.85)'; ctx.lineWidth = 2;
-    ctx.beginPath(); for (let i = 0; i < 4; i++) { const aa = i / 4 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(aa) * 7, Math.sin(aa) * 7); }
-    ctx.closePath(); ctx.stroke(); ctx.restore();
+  for (const d of G.drops) if (d.k === 'chest') bussola(d.x, d.y, 'rgba(255,200,87,.9)', 9);
+  if (G.ev) {
+    if (G.ev.k === 'breccia' && !G.ev.preso) bussola(G.ev.x, G.ev.y, 'rgba(176,107,255,.95)', 12);
+    if (G.ev.k === 'caccia' && G.ev.e && G.ev.e.hp > 0) bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.95)', 11);
   }
 }
 

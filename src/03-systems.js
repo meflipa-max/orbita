@@ -597,6 +597,91 @@ function spawnRing(type, opts) {
   }
   return spawnEnemy(type, x, y, opts);
 }
+/* ── eventi d'arena ────────────────────────────────────────────
+   Ogni novanta secondi succede qualcosa che HA UN LUOGO. Senza, i minuti
+   centrali sono una salita monotona in uno spazio identico ovunque: non
+   c'è mai un posto dove valga la pena andare.                          */
+const EVENTI = ['breccia', 'marea', 'caccia'];
+
+function apriEvento() {
+  const k = pick(EVENTI);
+  if (k === 'breccia') {
+    /* lontano abbastanza da essere una scelta, non un passo */
+    const a = rand(TAU), d = rand(1000, 620);
+    const x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
+    const y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
+    G.ev = { k, x, y, t: 0, dur: 22, r: 74, preso: 0 };
+    for (let i = 0; i < 3; i++) spawnEnemy(pick(currentPool()), x + rand(150, -150), y + rand(150, -150), { elite: i === 0, rMul: i === 0 ? 1.5 : 1 });
+    UI.toast('BRECCIA', 'Raggiungila prima che si chiuda', '#b06bff');
+  } else if (k === 'marea') {
+    G.ev = { k, t: 0, dur: 18, a: rand(TAU), acc: 0 };
+    UI.toast('MAREA', 'Ondata da una sola direzione', '#45d7ff');
+  } else {
+    const a = rand(TAU), d = 420;
+    const e = spawnEnemy('spettro', G.p.x + Math.cos(a) * d, G.p.y + Math.sin(a) * d, { hpMul: 7, spdMul: 1.5, xpMul: 8 });
+    e.c = '#6ff2c4'; e.corriere = 1;
+    G.ev = { k, t: 0, dur: 26, e };
+    UI.toast('CORRIERE', 'Abbattilo prima che sparisca', '#6ff2c4');
+  }
+  AU.play('awake');
+}
+
+function updateEventi(dt) {
+  if (!G.ev) {
+    G.evT -= dt;
+    if (G.evT <= 0 && G.t > 55 && !G.boss) { G.evT = rand(105, 80); apriEvento(); }
+    return;
+  }
+  const v = G.ev; v.t += dt;
+
+  if (v.k === 'breccia') {
+    const dx = G.p.x - v.x, dy = G.p.y - v.y;
+    if (!v.preso && dx * dx + dy * dy < v.r * v.r) {
+      v.preso = 1;
+      if (G.asc.noChest) { addGem(v.x, v.y, 220, 1); }
+      else for (let i = 0; i < 2; i++) G.drops.push({ x: v.x + rand(50, -50), y: v.y + rand(50, -50), k: 'chest', t: 0 });
+      addGem(v.x, v.y, 120, 1);
+      G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 460, t: 0, dur: .7, c: '#b06bff' });
+      UI.toast('BRECCIA APERTA', 'Ricompensa raccolta', '#b06bff');
+      AU.play('buy'); G.shake = Math.max(G.shake, 10);
+      G.ev = null; return;
+    }
+  } else if (v.k === 'marea') {
+    v.acc += dt * 9;
+    while (v.acc >= 1) {
+      v.acc -= 1;
+      if (G.enemies.length < 320) {
+        const a = v.a + rand(.5, -.5), d = Math.max(560, Math.hypot(W, H) * .55);
+        spawnEnemy(pick(currentPool()),
+          clamp(G.p.x + Math.cos(a) * d, -ARENA, ARENA),
+          clamp(G.p.y + Math.sin(a) * d, -ARENA, ARENA), { spdMul: 1.15 });
+      }
+    }
+  } else if (v.k === 'caccia') {
+    const e = v.e;
+    if (!e || e.hp <= 0) {
+      if (!G.asc.noChest) G.drops.push({ x: e ? e.x : G.p.x, y: e ? e.y : G.p.y, k: 'chest', t: 0 });
+      addGem(e ? e.x : G.p.x, e ? e.y : G.p.y, 160, 1);
+      UI.toast('CORRIERE ABBATTUTO', 'Bottino recuperato', '#6ff2c4');
+      AU.play('buy'); G.ev = null; return;
+    }
+    /* Fugge, ma al guinzaglio: se lo lasci scappare libero si incastra in un
+       angolo a 1800px e la caccia diventa impossibile. Sotto i 420 scappa,
+       oltre gli 820 torna a farsi vedere: resta sempre raggiungibile. */
+    const dx = e.x - G.p.x, dy = e.y - G.p.y, d = Math.hypot(dx, dy) || 1;
+    if (d < 420) { e.x += dx / d * 205 * dt; e.y += dy / d * 205 * dt; }
+    else if (d > 820) { e.x -= dx / d * 150 * dt; e.y -= dy / d * 150 * dt; }
+    e.x = clamp(e.x, -ARENA + e.r, ARENA - e.r); e.y = clamp(e.y, -ARENA + e.r, ARENA - e.r);
+    if (Math.random() < dt * 26) addPart(e.x, e.y, rand(40, -40), rand(40, -40), .5, 3, '#6ff2c4');
+  }
+
+  if (v.t >= v.dur) {
+    if (v.k === 'caccia' && v.e && v.e.hp > 0) { v.e.hp = 0; v.e.dead = true; }
+    if (v.k === 'breccia' && !v.preso) UI.toast('BRECCIA CHIUSA', null, '#6a6199');
+    G.ev = null;
+  }
+}
+
 function updateSpawns(dt) {
   /* la pressione cresce nel tempo: né un vuoto iniziale né un muro al 4° minuto */
   const cap = (W < 700 ? 200 : 300);

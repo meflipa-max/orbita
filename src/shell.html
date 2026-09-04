@@ -231,7 +231,17 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
   border:1px solid color-mix(in srgb,var(--c) 45%,transparent);
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,rgba(12,10,30,.9)),rgba(9,7,24,.92));
   transition:border-color .16s,box-shadow .16s}
-.slot.empty .in{border-style:dashed;border-color:rgba(120,110,180,.3);background:rgba(9,7,24,.55)}
+.slot.empty .in{border-style:dashed;border-width:2px;border-color:rgba(168,152,255,.62);
+  background:radial-gradient(circle,rgba(120,104,220,.20),rgba(9,7,24,.85) 72%)}
+.slot.empty svg.plus{stroke:rgba(190,178,255,.85);stroke-width:2;filter:none}
+/* in collocazione ogni alloggiamento libero si accende: prima erano
+   contorni tratteggiati quasi invisibili sul fondo scuro */
+.slot.aperto .in{border-color:#fff;border-style:solid;
+  background:radial-gradient(circle,rgba(150,134,255,.30),rgba(9,7,24,.85) 72%);
+  animation:vuotoPulse 1.4s ease-in-out infinite}
+.slot.aperto svg.plus{stroke:#fff}
+@keyframes vuotoPulse{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 14px -4px rgba(190,178,255,.8)}
+  50%{box-shadow:0 0 0 2px rgba(255,255,255,.75),0 0 30px -2px rgba(190,178,255,1)}}
 .slot svg{width:52%;height:52%;stroke:var(--c);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
   filter:drop-shadow(0 0 7px color-mix(in srgb,var(--c) 75%,transparent))}
 .slot .lv{position:absolute;right:-2px;bottom:-4px;font:700 10px/1 var(--ui);color:#0a0818;background:var(--c);padding:2px 4px}

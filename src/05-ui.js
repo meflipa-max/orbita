@@ -209,10 +209,15 @@ const UI = {
       let c = r ? EL[r.el].c : '#6a6199';
       let good = '';
       if (pel && !r && (fits(G.ring[(i - 1 + n) % n]) || fits(G.ring[(i + 1) % n]))) { good = ' good'; c = EL[pel].c; }
-      slots += '<button class="slot' + (r ? '' : ' empty') + good + (this.sel === i ? ' sel' : '') + (highlight === i ? ' sel' : '') + '"' +
+      /* un alloggiamento vuoto deve gridare "qui", non essere un contorno
+         tratteggiato appena percepibile su fondo nero */
+      const vuoto = !r;
+      const dentro = r ? svg(r.id)
+        : '<svg viewBox="0 0 24 24" class="plus" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>';
+      slots += '<button class="slot' + (vuoto ? ' empty' : '') + good + (this.sel === i ? ' sel' : '') + (highlight === i ? ' sel' : '') + (vuoto && pel ? ' aperto' : '') + '"' +
         (interactive ? ' data-a="slot" data-i="' + i + '"' : ' disabled tabindex="-1"') +
         ' style="left:' + x.toFixed(2) + '%;top:' + y.toFixed(2) + '%;--c:' + c + '">' +
-        '<span class="in clip" style="--c:' + c + '">' + (r ? svg(r.id) : '') + '</span>' +
+        '<span class="in clip" style="--c:' + c + '">' + dentro + '</span>' +
         (r && r.lv > 1 ? '<span class="lv" style="--c:' + c + '">' + r.lv + '</span>' : '') +
         '</button>';
     }
@@ -445,7 +450,7 @@ function resetRun(charId) {
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
   G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null;
-  G.diff = 0; G.gemT = 1.5; G.shake = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
+  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
