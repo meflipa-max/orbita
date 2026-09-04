@@ -31,16 +31,24 @@ const ARC = (r, a1, a2) => {
 
 const UI = {
   cur: null, sel: -1, placing: null, dissolving: false, chestMode: false,
+  /* armato: cosa attende conferma ("char:lyra"); spesa: quanto e' appena
+     uscito dal borsello, per farlo vedere sul contatore. */
+  armato: null, spesa: 0,
 
   /* ── infrastruttura ─────────────────────────────────────── */
   open(name, html) {
+    /* Ridipingere la stessa schermata non deve riportare in cima: comprare
+       nell'Osservatorio faceva saltare la pagina e sembrava un difetto. */
+    const vecchia = SCR.firstElementChild;
+    const stessa = !!(vecchia && this.cur === name);
+    const scorr = stessa ? vecchia.scrollTop : 0;
     this.cur = name;
     if (name === 'title' || name === 'hub' || name === 'guide') {
       if (G.state !== 'menu') enterMenu();
       G.state = 'menu'; HUD.classList.remove('on');
     }
-    SCR.innerHTML = '<section class="screen on" data-s="' + name + '">' + html + '</section>';
-    const s = SCR.firstElementChild; if (s) s.scrollTop = 0;
+    SCR.innerHTML = '<section class="screen on' + (stessa ? ' ferma' : '') + '" data-s="' + name + '">' + html + '</section>';
+    const s = SCR.firstElementChild; if (s) s.scrollTop = scorr;
   },
   close() { this.cur = null; SCR.innerHTML = ''; },
 
@@ -174,27 +182,46 @@ const UI = {
   hub() {
     const chars = CHARS.map(c => {
       const own = SAVE.chars.indexOf(c.id) >= 0, on = SAVE.char === c.id;
-      return '<button class="ch clip' + (on ? ' on' : '') + (own ? '' : ' locked') + '" data-a="char" data-id="' + c.id + '"><span class="face">' +
+      const arm = this.armato === 'char:' + c.id, manca = c.cost - SAVE.shards;
+      /* Lo stesso tocco prima selezionava (gratis) oppure comprava (caro)
+         senza dirlo: ora il piede della carta dichiara sempre cosa succede. */
+      const piede = own
+        ? '<span class="lk avuto">' + (on ? 'In uso' : 'Tocca per usarlo') + '</span>'
+        : arm
+          ? '<span class="lk">Spendi ' + shardIcon() + c.cost + '</span>' +
+            '<span class="sub arm">Tocca ancora per confermare · te ne restano ' + (SAVE.shards - c.cost) + '</span>'
+          : '<span class="lk">Sblocca ' + shardIcon() + c.cost + '</span>' +
+            (manca > 0 ? '<span class="sub caro">te ne mancano ' + manca + '</span>' : '');
+      return '<button class="ch clip' + (on ? ' on' : '') + (own ? '' : ' locked') + (arm ? ' arm' : '') +
+        '" data-a="char" data-id="' + c.id + '"><span class="face">' +
         '<span class="av" style="--c:' + c.c + '"></span>' +
         '<span class="nm">' + c.n + '</span>' +
         '<span class="ds">' + c.d + '</span>' +
         (c.ruleD ? '<span class="rule" style="--c:' + c.c + '">' + c.ruleD + '</span>' : '') +
-        (own ? '' : '<span class="lk">' + shardIcon() + c.cost + '</span>') +
+        piede +
         '</span></button>';
     }).join('');
     const ups = META.map(m => {
       const lv = mlv(m.id), max = lv >= m.max, cost = metaCost(m, lv);
       const poor = !max && SAVE.shards < cost;
-      return '<button class="up clip' + (max ? ' max' : '') + (poor ? ' poor' : '') + '" data-a="meta" data-id="' + m.id + '"><span class="face">' +
+      const arm = this.armato === 'meta:' + m.id;
+      const riga = arm
+        ? '<span class="ds conf">Tocca ancora: spendi ' + cost + ', te ne restano ' + (SAVE.shards - cost) + '</span>'
+        : poor
+          ? '<span class="ds">' + m.d + ' <span class="caro">· te ne mancano ' + (cost - SAVE.shards) + '</span></span>'
+          : '<span class="ds">' + m.d + '</span>';
+      return '<button class="up clip' + (max ? ' max' : '') + (poor ? ' poor' : '') + (arm ? ' arm' : '') +
+        '" data-a="meta" data-id="' + m.id + '"><span class="face">' +
         '<span class="ico clip">' + svg(m.ico) + '</span>' +
-        '<span><span class="nm">' + m.n + ' <span style="color:#6a6199">' + lv + '/' + m.max + '</span></span><span class="ds">' + m.d + '</span></span>' +
+        '<span><span class="nm">' + m.n + ' <span style="color:#6a6199">' + lv + '/' + m.max + '</span></span>' + riga + '</span>' +
         '<span class="cost' + (max ? ' done' : '') + '">' + (max ? 'MAX' : shardIcon() + cost) + '</span>' +
         '</span></button>';
     }).join('');
     this.open('hub',
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
       '<h2 class="ttl" style="text-align:left">Osservatorio</h2>' +
-      '<div class="reward">' + shardIcon() + SAVE.shards + '</div></div>' +
+      '<div class="reward' + (this.spesa ? ' spesa' : '') + '">' + shardIcon() + SAVE.shards +
+      (this.spesa ? '<span class="delta">-' + this.spesa + '</span>' : '') + '</div></div>' +
       '<div class="eyebrow" style="text-align:left">Nucleo</div>' +
       '<div class="chars">' + chars + '</div>' +
       this.ascHTML() +
@@ -218,6 +245,7 @@ const UI = {
       '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
       '</details>'
     );
+    this.spesa = 0;
   },
 
   /* ── sfide ──────────────────────────────────────────────── */
@@ -668,7 +696,10 @@ function winRun() {
 
 /* ── azioni dell’interfaccia ────────────────────────────────── */
 SCR.addEventListener('click', ev => {
-  const b = ev.target.closest('[data-a]'); if (!b) return;
+  const b = ev.target.closest('[data-a]');
+  /* toccare altrove annulla una spesa in attesa di conferma */
+  if (!b) { if (UI.armato) { UI.armato = null; UI.hub(); } return; }
+  const armato = UI.armato; UI.armato = null;
   const a = b.dataset.a;
   AU.init();
   if (a !== 'slot') AU.play('ui');
@@ -690,8 +721,13 @@ SCR.addEventListener('click', ev => {
     case 'char': {
       const c = CHARS.find(x => x.id === b.dataset.id);
       if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
-      else if (SAVE.shards >= c.cost) { SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave(); AU.play('buy'); UI.hub(); UI.toast(c.n, 'Nucleo sbloccato', c.c); }
-      else UI.toast('FRAMMENTI INSUFFICIENTI', null, '#ff3d6e');
+      else if (SAVE.shards < c.cost) UI.toast('TROPPO CARO', 'Ti mancano ' + (c.cost - SAVE.shards) + ' frammenti', '#ff3d6e');
+      else if (armato !== 'char:' + c.id) { UI.armato = 'char:' + c.id; UI.hub(); }
+      else {
+        SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave();
+        AU.play('buy'); UI.spesa = c.cost; UI.hub();
+        UI.toast(c.n + ' sbloccata', '-' + c.cost + ' frammenti · te ne restano ' + SAVE.shards, c.c);
+      }
       break;
     }
     case 'asc': {
@@ -723,8 +759,11 @@ SCR.addEventListener('click', ev => {
       const m = META.find(x => x.id === b.dataset.id), lv = mlv(m.id);
       if (lv >= m.max) return;
       const cost = metaCost(m, lv);
-      if (SAVE.shards < cost) { UI.toast('FRAMMENTI INSUFFICIENTI', null, '#ff3d6e'); return; }
-      SAVE.shards -= cost; SAVE.meta[m.id] = lv + 1; storeSave(); AU.play('buy'); UI.hub();
+      if (SAVE.shards < cost) { UI.toast('TROPPO CARO', 'Ti mancano ' + (cost - SAVE.shards) + ' frammenti', '#ff3d6e'); return; }
+      if (armato !== 'meta:' + m.id) { UI.armato = 'meta:' + m.id; UI.hub(); return; }
+      SAVE.shards -= cost; SAVE.meta[m.id] = lv + 1; storeSave(); AU.play('buy');
+      UI.spesa = cost; UI.hub();
+      UI.toast(m.n + ' ' + (lv + 1) + ' di ' + m.max, '-' + cost + ' frammenti · te ne restano ' + SAVE.shards, '#ffc857');
       break;
     }
     case 'reroll': {

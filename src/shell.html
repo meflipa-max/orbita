@@ -132,9 +132,15 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   background:radial-gradient(85% 65% at 50% 42%,rgba(10,7,28,.66),rgba(4,3,12,.93));
   backdrop-filter:blur(7px);overflow-y:auto;overscroll-behavior:contain;
   padding:calc(20px + var(--sat)) 16px calc(24px + var(--sab));}
-.screen.on{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+/* "safe center": centrato finche ci sta, ma quando il contenuto supera
+   l altezza deve ancorarsi in alto, altrimenti la parte iniziale finisce
+   fuori dal riquadro e non e raggiungibile scorrendo. */
+.screen.on{display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:20px;
   animation:fadein .22s ease-out}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
+/* Ridisegnare la stessa schermata non deve rifare la dissolvenza: ogni
+   acquisto nell Osservatorio faceva lampeggiare tutta la pagina. */
+.screen.on.ferma{animation:none}
 .screen>*{width:100%;max-width:760px}
 
 /* ---------- titolo: il gioco gira dietro, il velo tiene leggibile il testo ---------- */
@@ -325,6 +331,20 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .ch .lk svg{width:11px;height:11px}
 .up .cost svg{width:12px;height:12px}
 .ch.locked .face{opacity:.62}
+.ch.locked.arm .face{opacity:1}
+.ch .lk.avuto{color:var(--dim)}
+.ch.on .lk.avuto{color:var(--star)}
+.ch .sub{display:block;font:400 10px/1.35 var(--ui);color:var(--dim);margin-top:4px;text-wrap:balance}
+.ch .sub.caro{color:#ff7d9c}
+.ch .sub.arm{color:var(--gold)}
+/* La spesa e' l'unica azione irreversibile della schermata: si arma e si
+   conferma, e in entrambi i passi il bordo lo dichiara. */
+.ch.arm .face,.up.arm .face{border-color:var(--gold);box-shadow:0 0 24px -6px rgba(255,200,87,.55)}
+.up .ds .caro{color:#ff7d9c}
+.up .ds.conf{color:var(--gold);font-weight:600}
+.reward .delta{font:700 13px/1 var(--ui);color:#ff7d9c}
+.reward.spesa{animation:spesaFx .45s ease-out}
+@keyframes spesaFx{0%{transform:scale(1.16)}100%{transform:scale(1)}}
 
 /* statistiche fine partita */
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
