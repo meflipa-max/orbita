@@ -220,10 +220,18 @@ function updateRunes(dt) {
           const e = list[n]; if (e.hp <= 0 || (e.cryCd || 0) > 0) continue;
           const dx = e.x - o.x, dy = e.y - o.y, rr = e.r + s.size;
           if (dx * dx + dy * dy < rr * rr) {
-            e.cryCd = gelido ? .26 : .34;
+            e.cryCd = gelido ? .17 : .34;
             const m = Math.hypot(dx, dy) || 1;
-            hitEnemy(e, s.dmg, { color: EL.gelo.c, kb: 170, kbx: dx / m, kby: dy / m, el: 'gelo' });
-            if (gelido && !e.boss) e.froze = Math.max(e.froze, 1.1);   /* congela al tocco */
+            /* Il Glaciale congelava e nello stesso colpo SPINGEVA VIA: il
+               bersaglio usciva dall'anello e non veniva più toccato. Dieci
+               secondi di prova, 191 colpi, zero su un congelato — ecco
+               perché era la trasformazione che cambiava meno di tutte.
+               Adesso il ghiaccio tiene invece di respingere, e sul congelato
+               la scheggia non scheggia: frantuma. È la sua stessa presa a
+               prepararle il colpo. */
+            const frantuma = gelido && e.froze > 0 ? 2.4 : 1;
+            hitEnemy(e, s.dmg * frantuma, { color: EL.gelo.c, kb: gelido ? s.kb : 170, kbx: dx / m, kby: dy / m, el: 'gelo' });
+            if (gelido && !e.boss) e.froze = Math.max(e.froze, s.gelo);   /* congela al tocco */
           }
         }
       }
