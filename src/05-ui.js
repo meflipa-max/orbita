@@ -171,6 +171,7 @@ const UI = {
 
       sec('Sopravvivere',
         p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('I nemici con una <b>barra sopra la testa</b> — elite dorati, corrieri e guardiani — sono quelli che vale la pena finire: quella barra è la loro <b>vita</b>. La scia bianca è il danno appena inflitto, e il colore vira al rosso quando stanno per cedere. In cima allo schermo c’è la barra dei guardiani: se ne hai addosso più d’uno — gemelli compresi — si <b>divide in un tratto per ciascuno</b>, largo quanto la sua stazza, col nome dello stesso colore.') +
         p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e sfide.')) +
 
       '</div></div>' +
@@ -611,7 +612,7 @@ function resetRun(charId, seed) {
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
-  G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null;
+  G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;

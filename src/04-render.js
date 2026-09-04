@@ -248,11 +248,40 @@ function drawEnemies() {
     if (e.elite) { ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]); }
     if (e.boss && e.tell) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.globalAlpha = .3 + Math.sin(G.t * 40) * .3; ctx.stroke(); ctx.globalAlpha = 1; }
     ctx.restore();
-    if ((e.elite || e.boss) && !e.dead) {
-      const w = e.r * 2.6, f = clamp(e.hp / e.maxHp, 0, 1);
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(e.x - w / 2, e.y - e.r - 13, w, 4);
-      ctx.fillStyle = e.boss ? e.c : '#ffc857'; ctx.fillRect(e.x - w / 2, e.y - e.r - 13, w * f, 4);
-    }
+  }
+  drawBarreVita();
+}
+
+/* Una barra sopra la testa, da sola, può voler dire qualsiasi cosa: carica,
+   scudo, tempo che scade. Perché si legga come VITA parla la stessa lingua
+   della barra del giocatore: binario vuoto visibile, tacche regolari, scia
+   bianca del danno appena subito, e il rosa di pericolo quando si svuota. */
+function barraVita(x, y, w, h, f, g, col) {
+  f = clamp(f, 0, 1);
+  x = Math.round(x); y = Math.round(y); w = Math.round(w);
+  ctx.fillStyle = 'rgba(4,2,12,.86)'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+  ctx.fillStyle = rgba(col, .16); ctx.fillRect(x, y, w, h);
+  if (g > f) { ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(x + w * f, y, w * (g - f), h); }
+  ctx.fillStyle = f < .55 ? mixc(col, HPC, (.55 - f) / .55 * .9) : col;
+  ctx.fillRect(x, y, w * f, h);
+  /* tacche: la firma visiva della barra della vita del giocatore */
+  const step = Math.max(10, w / 10), tw = h > 7 ? 2 : 1;
+  ctx.fillStyle = 'rgba(6,4,18,.8)';
+  for (let sx = step; sx < w - 1; sx += step) ctx.fillRect(x + Math.round(sx), y, tw, h);
+  ctx.strokeStyle = rgba(col, .6); ctx.lineWidth = 1;
+  ctx.strokeRect(x - .5, y - .5, w + 1, h + 1);
+}
+
+/* passata a parte: prima le barre finivano sotto ai corpi dei nemici
+   disegnati dopo, e in mezzo alla folla sparivano */
+function drawBarreVita() {
+  const E = G.enemies, cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 90, mh = H / 2 + 90;
+  for (let i = 0; i < E.length; i++) {
+    const e = E[i];
+    if (e.dead || e.hp <= 0 || !(e.elite || e.boss || e.corriere)) continue;
+    if (Math.abs(e.x - cx) > mw || Math.abs(e.y - cy) > mh) continue;
+    const w = Math.max(38, e.r * 2.6), h = e.boss ? 7 : 5;
+    barraVita(e.x - w / 2, e.y - e.r - 16, w, h, e.hp / e.maxHp, e.hpG, e.boss ? e.c : e.elite ? '#ffc857' : e.c);
   }
 }
 
@@ -604,23 +633,76 @@ function drawFloats() {
   ctx.globalAlpha = 1;
 }
 
-/* HUD disegnato nel canvas: barra boss e indicatori fuori campo */
+/* HUD disegnato nel canvas: barra dei guardiani e indicatori fuori campo */
 function drawScreenUI() {
-  const b = G.boss;
-  if (b && b.hp > 0) {
-    const w = Math.min(W - 40, 520), x = (W - w) / 2, y = 76;
-    ctx.fillStyle = 'rgba(6,4,18,.72)'; ctx.fillRect(x - 2, y - 2, w + 4, 14);
-    ctx.fillStyle = rgba(b.c, .22); ctx.fillRect(x, y, w, 10);
-    ctx.fillStyle = b.c; ctx.fillRect(x, y, w * clamp(b.hp / b.maxHp, 0, 1), 10);
-    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 11px "Chakra Petch",system-ui,sans-serif';
-    ctx.textAlign = 'center'; ctx.fillText(b.boss.n, W / 2, y - 9);
-    const sx = b.x - G.cam.x + W / 2, sy = b.y - G.cam.y + H / 2;
-    if (sx < 30 || sx > W - 30 || sy < 30 || sy > H - 30) {
-      const a = Math.atan2(b.y - G.cam.y, b.x - G.cam.x);
-      const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .38, iy = H / 2 + Math.sin(a) * Math.min(W, H) * .38;
-      ctx.save(); ctx.translate(ix, iy); ctx.rotate(a);
-      ctx.fillStyle = b.c; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, 8); ctx.lineTo(-8, -8); ctx.closePath(); ctx.fill();
-      ctx.restore();
+  /* Una riga sola, sempre: impilare una barra per guardiano mangiava mezzo
+     schermo di telefono. Quando i guardiani sono più d'uno la barra si
+     DIVIDE in un tratto per ciascuno, largo quanto la sua stazza: la riga
+     misura la battaglia intera, i tratti dicono a che punto è ognuno. */
+  const B = G.bosses;
+  if (B.length) {
+    const w = Math.min(W - 40, 520), x = (W - w) / 2, y = 76, h = 11;
+    const font = '"Chakra Petch",system-ui,sans-serif';
+    /* i doppioni si contano invece di ripetersi: "ARACNE ×2" */
+    const voci = [];
+    let tot = 0, viva = 0;
+    for (const b of B) {
+      const u = voci[voci.length - 1];
+      if (u && u.n === b.boss.n) u.k++; else voci.push({ n: b.boss.n, k: 1, c: b.c });
+      tot += b.maxHp; viva += Math.max(0, b.hp);
+    }
+    for (const v of voci) v.t = v.k > 1 ? v.n + ' ×' + v.k : v.n;
+    const pct = Math.ceil(clamp(viva / tot, 0, 1) * 100) + '%';
+
+    /* il nome si stringe finché non sta nella riga, invece di sbordare */
+    const sep = '  +  ';
+    let px = 12, lw = 0;
+    for (; px > 8; px--) {
+      ctx.font = '700 ' + px + 'px ' + font;
+      lw = ctx.measureText(sep).width * (voci.length - 1);
+      for (const v of voci) lw += ctx.measureText(v.t).width;
+      if (lw <= w - 62) break;
+    }
+    /* ogni nome è del colore del suo tratto: dice quale barra è quale */
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(4,2,12,.85)';
+    let lx = W / 2 - lw / 2;
+    for (let i = 0; i < voci.length; i++) {
+      if (i) {
+        ctx.strokeText(sep, lx, y - 8); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillText(sep, lx, y - 8);
+        lx += ctx.measureText(sep).width;
+      }
+      const v = voci[i];
+      ctx.strokeText(v.t, lx, y - 8);
+      ctx.fillStyle = voci.length > 1 ? mixc(v.c, '#ffffff', .45) : 'rgba(255,255,255,.92)';
+      ctx.fillText(v.t, lx, y - 8);
+      lx += ctx.measureText(v.t).width;
+    }
+    /* la percentuale toglie ogni dubbio su cosa misuri la barra */
+    ctx.font = '700 10px ' + font; ctx.textAlign = 'right';
+    ctx.strokeText(pct, x + w, y - 8);
+    ctx.fillStyle = viva / tot < .3 ? HPC : 'rgba(255,255,255,.75)'; ctx.fillText(pct, x + w, y - 8);
+    ctx.textAlign = 'center';
+
+    /* larghezza dei tratti: per lo più proporzionale alla vita massima, ma
+       con una quota fissa a testa, così il gemello non diventa un filo */
+    const gap = 5, utile = w - gap * (B.length - 1);
+    let bx = x;
+    for (let i = 0; i < B.length; i++) {
+      const b = B[i];
+      const sw = utile * (.62 * b.maxHp / tot + .38 / B.length);
+      barraVita(bx, y, sw, h, b.hp / b.maxHp, b.hpG, b.c);
+      bx += sw + gap;
+      const sx = b.x - G.cam.x + W / 2, sy = b.y - G.cam.y + H / 2;
+      if (sx < 30 || sx > W - 30 || sy < 30 || sy > H - 30) {
+        const a = Math.atan2(b.y - G.cam.y, b.x - G.cam.x);
+        const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .38;
+        let iy = H / 2 + Math.sin(a) * Math.min(W, H) * .38;
+        if (Math.abs(ix - W / 2) < w / 2 + 24) iy = Math.max(iy, y + h + 16);   /* mai sopra alla barra */
+        ctx.save(); ctx.translate(ix, iy); ctx.rotate(a);
+        ctx.fillStyle = b.c; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, 8); ctx.lineTo(-8, -8); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
     }
   }
   /* bussola per gli scrigni */

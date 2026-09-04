@@ -338,7 +338,7 @@ const G = {
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
-  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, revives: 0, healCd: 0, gemT: 1.5,
+  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5,
   starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2
 };
@@ -492,6 +492,18 @@ function spawnEnemy(type, x, y, opts) {
   G.enemies.push(e); return e;
 }
 
+/* I guardiani in campo possono essere più d'uno: in coppia con l'ascensione,
+   o perché il successivo si sveglia mentre il primo è ancora vivo. Prima
+   G.boss teneva solo l'ultimo arrivato, quindi in alto si vedeva la vita del
+   gemello e uccidendolo sparivano tutte e due le barre. G.boss resta il
+   capofila (a chi chiede solo "c'è un guardiano?" basta), G.bosses è
+   l'elenco che l'interfaccia disegna. */
+function syncBosses() {
+  const b = G.bosses;
+  for (let i = b.length - 1; i >= 0; i--) if (b[i].hp <= 0 || b[i].dead) b.splice(i, 1);
+  G.boss = b[0] || null;
+}
+
 function spawnBoss(def) {
   const a = rand(TAU), d = Math.max(W, H) * .62 + 120;
   const mins = G.t / 60;
@@ -503,7 +515,7 @@ function spawnBoss(def) {
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 2, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
   };
-  G.enemies.push(e); G.boss = e;
+  G.enemies.push(e); G.bosses.push(e); syncBosses();
   UI.toast(def.n, 'Guardiano risvegliato', def.c);
   AU.play('boss'); G.shake = 16;
   return e;
@@ -621,7 +633,7 @@ function killEnemy(e, opt) {
     }
   }
   if (e.boss) {
-    G.boss = null; G.shake = 26; G.hitstop = .16;
+    syncBosses(); G.shake = 26; G.hitstop = .16;
     UI.toast('ABBATTUTO', e.boss.n, e.boss.c);
     if (G.asc.noChest) addGem(e.x, e.y, 140, 1);
     else for (let i = 0; i < 2; i++) G.drops.push({ x: e.x + rand(60, -60), y: e.y + rand(60, -60), k: 'chest', t: 0 });

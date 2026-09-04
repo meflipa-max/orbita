@@ -54,6 +54,15 @@ function rgbOf(hex) {
 }
 const rgba = (hex, a) => { const c = rgbOf(hex); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; };
 
+/* il rosa della barra del giocatore (--hp nel foglio di stile): ogni barra
+   della vita ci vira dentro mentre si svuota, così il colore stesso dice
+   "vita" e dice "sta finendo" */
+const HPC = '#ff3d6e';
+const mixc = (h1, h2, t) => {
+  const a = rgbOf(h1), b = rgbOf(h2);
+  return 'rgb(' + ((a[0] + (b[0] - a[0]) * t) | 0) + ',' + ((a[1] + (b[1] - a[1]) * t) | 0) + ',' + ((a[2] + (b[2] - a[2]) * t) | 0) + ')';
+};
+
 /* sprite di bagliore pre-renderizzati — shadowBlur è troppo lento nel loop */
 const GLOW = new Map();
 function glowTex(hex, size) {

@@ -137,7 +137,7 @@ function enterMenu() {
   G.demo = true;
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
-  G.boss = null; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
+  G.boss = null; G.bosses.length = 0; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
   G.rocks.length = 0; G.nodo = null; G.nodoK = null;   /* né ostacoli dietro al titolo */
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];

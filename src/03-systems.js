@@ -417,11 +417,28 @@ function bossAI(e, dt) {
   e.rush = rincorsa;
 }
 
+/* La scia bianca insegue la vita con un ritardo dopo ogni colpo: è il
+   segnale che fa leggere una barra come "vita" invece che come carica o
+   scudo, ed è lo stesso della barra del giocatore. */
+function tickBarra(e, dt) {
+  const f = clamp(e.hp / e.maxHp, 0, 1);
+  if (e.hpG === undefined) { e.hpG = f; e.hgT = 0; }
+  else if (f > e.hpG) e.hpG = f;                                  /* curato: la scia risale subito */
+  else if (e.hpF !== undefined && f < e.hpF) e.hgT = .26;          /* colpito adesso: la scia si ferma un attimo */
+  e.hpF = f;
+  if (e.hpG > f) {
+    if (e.hgT > 0) e.hgT -= dt;
+    else e.hpG = Math.max(f, e.hpG - dt * Math.max(.5, (e.hpG - f) * 3.4));
+  }
+}
+
 function updateEnemies(dt) {
   const E = G.enemies, px = G.p.x, py = G.p.y;
+  if (G.bosses.length) syncBosses();
   for (let i = E.length - 1; i >= 0; i--) {
     const e = E[i];
     if (e.hp <= 0) { E.splice(i, 1); continue; }
+    if (e.boss || e.elite || e.corriere) tickBarra(e, dt);
     if (e.flash > 0) e.flash -= dt;
     if (e.cryCd > 0) e.cryCd -= dt;
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slow = 0; }
@@ -779,6 +796,12 @@ function updateSpawns(dt) {
     G.eliteT = Math.max(44, 70 - G.t / 45);   /* gli scrigni erano la fonte dominante di potenziamenti */
     const e = spawnRing(pick(pool), { elite: true, rMul: 1.55, spdMul: .88 });
     if (e) { e.c = '#ffc857'; }
+    /* la prima volta va detto a parole, e solo alle prime partite: dopo
+       basta la barra, che ormai si riconosce */
+    if (e && !G.eliteHint && (SAVE.runs | 0) <= 3) {
+      G.eliteHint = 1;
+      UI.toast('ELITE', 'La barra sopra la testa è la sua vita', '#ffc857');
+    }
   }
   if (G.bossIdx < BOSSES.length && G.t >= Math.max(45, BOSSES[G.bossIdx].t + G.asc.boss)) {
     const def = BOSSES[G.bossIdx];
@@ -787,7 +810,7 @@ function updateSpawns(dt) {
        le cose da schivare contemporaneamente */
     if (G.asc.twin && G.bossIdx >= 2) {
       const g = spawnBoss(def);
-      g.hp = g.maxHp = g.maxHp * .55; g.r *= .82;
+      g.hp = g.maxHp = g.maxHp * .55; g.r *= .82; g.twin = 1;
     }
     G.bossIdx++;
   }
