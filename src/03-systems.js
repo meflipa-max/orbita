@@ -536,7 +536,7 @@ function updateEnemies(dt) {
        un nemico oltre il muro sembrerebbe sparito dalla mappa. */
     const lim = ARENA - e.r;
     e.x = clamp(e.x, -lim, lim); e.y = clamp(e.y, -lim, lim);
-    if (!e.boss) scostaDaRocce(e, e.r);   /* i guardiani sfondano gli asteroidi */
+    if (e.boss) sfondaRocce(e, dt); else scostaDaRocce(e, e.r);
 
     /* contatto */
     const dx = px - e.x, dy = py - e.y, rr = e.r + G.p.r;
@@ -567,19 +567,33 @@ function updateEBullets(dt) {
 /* ── raccolta ───────────────────────────────────────────────── */
 function updateGems(dt) {
   const g = G.gems, px = G.p.x, py = G.p.y, pr = P.pickR;
-  /* chi scappa lascia dietro centinaia di gemme: le più lontane si fondono.
-     Nessuna esperienza va persa, ma il numero di oggetti resta sotto controllo. */
+  /* Le gemme erano la cosa piu' numerosa dello schermo: centonovanta in
+     campo per tutta la partita, misurate, cioe' quasi il quadruplo dei
+     nemici. Puntini piccoli e accesi che l'occhio deve scartare uno per
+     uno mentre cerca la strada — buona parte del "troppi elementi" era
+     questa. La soglia scende da 220 a 80 e la fusione gira piu' spesso.
+     Nessuna esperienza va persa: le lontane diventano poche gemme grosse,
+     una per quadrante, che si vedono meglio di cento puntini e dicono
+     "di la' c'e' da raccogliere". */
   G.gemT -= dt;
   if (G.gemT <= 0) {
-    G.gemT = 1.2;
-    if (g.length > 220) {
+    G.gemT = .6;
+    if (g.length > 80) {
       g.sort((a, b) => ((b.x - px) * (b.x - px) + (b.y - py) * (b.y - py)) - ((a.x - px) * (a.x - px) + (a.y - py) * (a.y - py)));
-      const far = g.splice(0, Math.min(110, g.length - 150));
-      for (let kind = 0; kind < 2; kind++) {
-        let v = 0, sx = 0, sy = 0, n = 0;
-        for (let i = 0; i < far.length; i++) if (far[i].k === kind) { v += far[i].v; sx += far[i].x; sy += far[i].y; n++; }
-        if (n) g.push({ x: sx / n, y: sy / n, v, k: kind, t: 1, vx: 0, vy: 0, big: 1 });
+      const far = g.splice(0, g.length - 55);
+      /* per quadrante intorno al nucleo, cosi' l'esperienza resta dov'era
+         invece di raccogliersi tutta in un punto medio che magari e'
+         proprio dove non sei mai andato */
+      const b = new Map();
+      for (let i = 0; i < far.length; i++) {
+        const m = far[i];
+        const q = ((Math.atan2(m.y - py, m.x - px) + TAU) % TAU) / (TAU / 4) | 0;
+        const key = m.k + ':' + q;
+        let o = b.get(key);
+        if (!o) { o = { v: 0, sx: 0, sy: 0, n: 0, k: m.k }; b.set(key, o); }
+        o.v += m.v; o.sx += m.x; o.sy += m.y; o.n++;
       }
+      for (const o of b.values()) g.push({ x: o.sx / o.n, y: o.sy / o.n, v: o.v, k: o.k, t: 1, vx: 0, vy: 0, big: 1 });
     }
   }
   for (let i = g.length - 1; i >= 0; i--) {
@@ -608,10 +622,19 @@ function updateGems(dt) {
       if (d0.k === 'chest') { G.pending++; UI.toast('SCRIGNO', 'Potenziamento in arrivo', '#ffc857'); }
       else if (d0.k === 'cuore') { P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .3); addFloat(px, py - 30, '+VITA', '#6ff2c4', true); }
       else if (d0.k === 'bomba') {
-        G.zones.push({ k: 'ring', x: px, y: py, r0: 10, r1: 900, t: 0, dur: .6, c: '#fff' });
-        G.shake = 20; AU.play('blast');
-        for (const e of G.enemies) if (!e.boss) hitEnemy(e, 99999, { noCrit: true });
-        addFloat(px, py - 30, 'ANNICHILIMENTO', '#fff', true);
+        /* La bomba uccide OGNI nemico della mappa, guardiani esclusi. Si
+           vedeva un anello da novecento pixel — meno di uno schermo e
+           mezzo — e sembrava un'esplosione grossa fra tante: non si capiva
+           se prendesse i vicini o tutti. Adesso lo dice in tre modi
+           insieme: il lampo bianco a pieno schermo, l'onda che esce dai
+           bordi dell'arena, e il messaggio che lo scrive a parole. */
+        const quanti = G.enemies.reduce((n, e) => n + (e.boss ? 0 : 1), 0);
+        G.zones.push({ k: 'ring', x: px, y: py, r0: 10, r1: ARENA * 2.6, t: 0, dur: 1.1, c: '#fff' });
+        G.zones.push({ k: 'ring', x: px, y: py, r0: 10, r1: 620, t: 0, dur: .5, c: '#fff' });
+        G.shake = 26; G.flashT = .34; G.flashC = '#ffffff'; G.hitstop = .1; AU.play('blast');
+        for (const e of G.enemies) if (!e.boss) hitEnemy(e, 99999, { noCrit: true, spazzata: 1 });
+        addFloat(px, py - 30, 'TUTTA LA MAPPA', '#fff', true);
+        UI.toast('ANNICHILIMENTO', quanti + ' nemici, ovunque fossero', '#ffffff');
       }
       AU.play('buy');
     }
@@ -709,6 +732,39 @@ function nodoCorrente() {
   }
   G.nodoK = null; return null;
 }
+/* I guardiani non scivolano lungo gli asteroidi: li SFONDANO. Era gia'
+   cosi', ma non si vedeva — la roccia restava intatta mentre il guardiano
+   ci passava dentro, che e' esattamente come si vede un difetto di
+   collisione, non una regola. Adesso la roccia CEDE: prima si crepa, poi
+   si sbriciola, e resta un cratere di detriti. La stessa regola si legge
+   invece di doverla indovinare.
+   L'unica che non cede e' il cristallo di un Nodo: e' l'ancora della tua
+   build, e perderla per il passaggio di un guardiano sarebbe una perdita
+   che non hai potuto evitare. Quella lo respinge. */
+function sfondaRocce(e, dt) {
+  for (let i = G.rocks.length - 1; i >= 0; i--) {
+    const k = G.rocks[i];
+    const dx = e.x - k.x, dy = e.y - k.y, min = k.r + e.r * .82;
+    const d2 = dx * dx + dy * dy;
+    if (d2 > min * min || d2 < .01) continue;
+    if (k.nodo) {                                  /* il cristallo regge */
+      const d = Math.sqrt(d2);
+      e.x = k.x + dx / d * min; e.y = k.y + dy / d * min;
+      if (cchance(dt * 22)) addPart(k.x + dx / d * k.r, k.y + dy / d * k.r, crand(80, -80), crand(80, -80), .4, 2.6, EL[k.nodo].c);
+      continue;
+    }
+    k.crepe = (k.crepe || 0) + dt * 1.9;
+    if (cchance(dt * 26)) addPart(k.x + crand(k.r, -k.r), k.y + crand(k.r, -k.r), crand(90, -90), crand(90, -90), .5, 3, '#c8b6ff');
+    if (k.crepe < 1) continue;
+    G.rocks.splice(i, 1);
+    if (G.nodoK === k) { G.nodoK = null; }
+    burstPart(k.x, k.y, 26, '#c8b6ff', 260, 4.4, .9);
+    G.zones.push({ k: 'ring', x: k.x, y: k.y, r0: k.r * .5, r1: k.r * 2.4, t: 0, dur: .5, c: '#c8b6ff' });
+    G.shake = Math.max(G.shake, 12);
+    AU.play('blast');
+  }
+}
+
 /* spinge un corpo fuori dagli asteroidi */
 function scostaDaRocce(o, raggio) {
   for (let i = 0; i < G.rocks.length; i++) {
@@ -754,11 +810,22 @@ function apriEvento() {
     G.ev = { k, t: 0, dur: 18, a: rand(TAU), acc: 0 };
     UI.toast('MAREA', 'Ondata da una sola direzione', '#45d7ff');
   } else {
-    const a = rand(TAU), d = 420;
-    const e = spawnEnemy('spettro', G.p.x + Math.cos(a) * d, G.p.y + Math.sin(a) * d, { hpMul: 7, spdMul: 1.5, xpMul: 8 });
+    /* Nasceva a quattrocento pixel: dentro lo schermo, dove la freccia di
+       bordo non compare, e quindi senza nessuna indicazione di dove fosse.
+       Adesso nasce fuori campo — la freccia con distanza e conto alla
+       rovescia ti dice subito da che parte — e appena arrivi a vederlo ha
+       addosso il suo bersaglio (vedi bersaglio() in 04-render). */
+    const a = rand(TAU), d = rand(880, 700);
+    const e = spawnEnemy('spettro',
+      clamp(G.p.x + Math.cos(a) * d, -ARENA + 60, ARENA - 60),
+      clamp(G.p.y + Math.sin(a) * d, -ARENA + 60, ARENA - 60),
+      { hpMul: 7, spdMul: 1.5, xpMul: 8 });
     e.c = '#6ff2c4'; e.corriere = 1;
     G.ev = { k, t: 0, dur: 26, e };
-    UI.toast('CORRIERE', 'Abbattilo prima che sparisca', '#6ff2c4');
+    /* un'onda dal punto di comparsa: dice "e' successo li'" prima ancora
+       che tu legga il messaggio */
+    G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: 20, r1: 520, t: 0, dur: .8, c: '#6ff2c4' });
+    UI.toast('CORRIERE', 'Segui la freccia: sparisce fra 26s', '#6ff2c4');
   }
   AU.play('awake');
 }
@@ -822,16 +889,77 @@ function updateEventi(dt) {
   }
 }
 
+/* ── il direttore ──────────────────────────────────────────────
+   Il problema misurato: una build forte disintegra i nemici a 460-600
+   pixel, cioe' oltre il bordo dello schermo. Da quel momento la partita e'
+   finita anche se dura un'altra mezz'ora — fermi, senza toccare niente,
+   zero danno al minuto 8, 14, 20 e 28. Una build debole invece se li trova
+   addosso a 47 pixel e muore in quaranta secondi. Non c'e' una via di
+   mezzo, ed e' la via di mezzo il gioco.
+   Non fisso quindi la difficolta' col cronometro, che non sa niente di
+   quanto sei forte: fisso la DISTANZA a cui muoiono i nemici. Se muoiono
+   troppo lontano diventano piu' tenaci finche' qualcuno ti arriva a
+   portata; se ti arrivano addosso la tenacia scende da sola. Chi gioca
+   male non se ne accorge mai, perche' per lui la tenacia resta a uno.
+   E perche' tenaci non voglia dire folla — l'altro difetto, lo schermo
+   illeggibile — il ritmo di comparsa cala esattamente quanto la tenacia
+   sale: stessa quantita' di vita nemica al secondo, stessa densita', ma
+   distribuita su meno nemici che durano di piu'. */
+const RAGGIO_MIRA = 250;
+
+function direttore(dt) {
+  /* ritmo di uccisioni, media mobile di tre secondi */
+  const ist = G.kAcc / Math.max(dt, 1e-4); G.kAcc = 0;
+  G.kps += (ist - G.kps) * Math.min(1, dt / 3);
+  /* il primo minuto non si tocca: e' l'apertura, ed e' gia' tarata */
+  if (G.t < 60 || G.demo) { G.tenacia = 1; return; }
+
+  const errore = clamp((G.raggio - RAGGIO_MIRA) / RAGGIO_MIRA, -1, 1);
+  /* Quanto sto ancora falciando. Chi scappa bene uccide di natura lontano —
+     i nemici gli muoiono dietro mentre lo inseguono — e il direttore lo
+     leggeva come "build troppo forte" indurendo all'infinito: mezza
+     uccisione al secondo, nemici che incassano venti colpi prima di
+     scoppiare. Ma un bullet heaven e' anche la falciata, e questa e' la
+     condizione che ha la precedenza su tutto il resto. */
+  const falcia = clamp((G.kps - 3) / 3, 0, 1);
+  /* Sotto un terzo di vita il direttore smette di spingere: altrimenti la
+     sconfitta diventa una valanga — perdi vita, uccidi meno, i nemici si
+     induriscono, perdi altra vita. */
+  const vita = clamp((P.hp / P.maxHp - .34) / .46, 0, 1);
+
+  let passo;
+  if (errore < 0) passo = errore * 2.2;              /* ti arrivano addosso: molla, e in fretta */
+  else if (falcia < 1) passo = (falcia - 1) * 1.4;   /* non si falcia piu': molla lo stesso */
+  else passo = errore * vita;                        /* muoiono lontano e stai bene: stringi */
+
+  /* Il tetto e' alto perche' il campo di fuoco di una build vera non e'
+     piatto: si infittisce avvicinandosi, quindi per farsi trenta pixel in
+     piu' verso il nucleo un nemico ha bisogno di molta piu' vita di quanta
+     ne sia servita per i trenta precedenti (misurato: a nove volte la vita
+     il raggio scendeva solo da 484 a 301 pixel). Non e' un numero che si
+     vede: e' l'estremo che il regolatore non raggiunge quasi mai. */
+  G.tenacia = clamp(G.tenacia * (1 + passo * dt * .16), 1, 40);
+}
+
 function updateSpawns(dt) {
+  direttore(dt);
   /* la pressione cresce nel tempo: né un vuoto iniziale né un muro al 4° minuto */
-  const cap = (W < 700 ? 165 : 245);
+  /* Il tetto e' piu' basso di prima, ed e' il direttore a permetterlo: con
+     nemici piu' tenaci la pressione non ha piu' bisogno di venire dal
+     numero, e duecentoquaranta sagome a schermo erano una delle ragioni per
+     cui a meta' partita non si distingueva piu' la strada dai nemici. */
+  const cap = (W < 700 ? 115 : 160);
   const maxE = Math.round(cap * clamp(.42 + G.t / 900 + G.diff, .42, 1));
   /* L'apertura era troppo tranquilla: a mezzo minuto c'erano undici nemici
      in campo e il primo livello arrivava dopo venti secondi di niente. In un
      bullet heaven il primo minuto deve gia' dire cos'e' il gioco. Adesso si
      parte a 2.6 al secondo invece che a 0.8; la salita e' un po' piu' dolce
      cosi' dal quinto minuto in poi la pressione resta quella di prima. */
-  const rate = Math.min(13, (1.8 + G.t / 28 + G.diff * 2.4) * G.asc.rate);
+  /* Non la tenacia intera: dividendo per l'intera il campo si svuotava —
+     sei nemici a schermo con una build forte, che non e' piu' un bullet
+     heaven. Questo esponente e' quello che tiene la densita' ferma mentre
+     la vita nemica si concentra su meno bersagli piu' duri. */
+  const rate = Math.min(13, (1.8 + G.t / 28 + G.diff * 2.4) * G.asc.rate) / Math.pow(G.tenacia, .65);
   G.spawnAcc += dt * rate;
   const pool = currentPool();
   while (G.spawnAcc >= 1) {

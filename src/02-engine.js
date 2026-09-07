@@ -350,8 +350,12 @@ const G = {
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
-  starfield: [], flashT: 0, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
-  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2
+  starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
+  evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2,
+  /* il direttore: vedi updateSpawns. raggio = a che distanza muoiono i
+     nemici, tenacia = quanto sono duri perche' arrivino piu' vicino.
+     chiarezza = quanto spazio visivo resta agli effetti: vedi 04-render. */
+  raggio: 0, tenacia: 1, chiarezza: 1, kps: 0, kAcc: 0
 };
 const P = {}; /* statistiche derivate */
 
@@ -476,6 +480,10 @@ function runeStats(r) {
 /* ── entità: creazione ──────────────────────────────────────── */
 function addPart(x, y, vx, vy, life, size, color, kind) {
   if (G.parts.length > 460) return;
+  /* cchance e non chance: le scintille sono cosmetiche e non devono
+     consumare il flusso col seme, o due partite con lo stesso numero
+     divergerebbero fra un telefono e un desktop */
+  if (G.chiarezza < 1 && !cchance(G.chiarezza)) return;
   G.parts.push({ x, y, vx, vy, life, max: life, size, c: color, k: kind || 0 });
 }
 function burstPart(x, y, n, color, spd, size, life) {
@@ -486,7 +494,10 @@ function burstPart(x, y, n, color, spd, size, life) {
   }
 }
 function addFloat(x, y, txt, color, big) {
-  if (G.floats.length > 24) return;
+  /* i numeri che volano sono la cosa che l'occhio insegue per istinto, e
+     in mezzo alla folla sono quella che serve meno: sotto pressione ne
+     restano pochi, e solo i piu' grossi */
+  if (G.floats.length > (G.chiarezza < .7 && !big ? 8 : 24)) return;
   G.floats.push({ x: x + crand(14, -14), y, t: 0, txt, c: color, big: !!big });
 }
 function addGem(x, y, v, kind) {
@@ -501,11 +512,21 @@ function spawnEnemy(type, x, y, opts) {
   /* proporzionato alla crescita del giocatore, ora più lenta */
   /* compensa i nemici ridotti a schermo: meno bersagli, ognuno più duro,
      così la pressione resta quella ma il campo si legge */
-  const hpScale = (1 + mins * .37 + mins * mins * .023) * (o.hpMul || 1);
+  /* La tenacia decisa dal direttore moltiplica la vita: e' cosi' che un
+     nemico sopravvive abbastanza da arrivarti addosso invece di sciogliersi
+     a mezzo schermo. L'esperienza sale con lo stesso fattore, perche' il
+     ritmo di comparsa scende della stessa quota: meno nemici, ognuno che
+     conta di piu', stessa esperienza al secondo. */
+  const ten = o.grezzo ? 1 : G.tenacia;
+  const hpScale = (1 + mins * .37 + mins * mins * .023) * (o.hpMul || 1) * ten;
   const e = {
     type, x, y, vx: 0, vy: 0, r: d.r * (o.rMul || 1), c: d.c, shape: d.shape,
     hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * (1 + mins * .012) * G.asc.spd,
-    dmg: d.dmg * (1 + mins * .07), xp: d.xp * (o.xpMul || 1), flash: 0, slow: 0, slowT: 0,
+    /* Un nemico temprato picchia anche piu' forte, non solo piu' a lungo:
+       senza questo una build che si cura 9 vite al secondo pareggiava il
+       contatto e restava in stallo per sempre a vita piena. */
+    dmg: d.dmg * (1 + mins * .07) * (1 + (ten - 1) * .12), xp: d.xp * (o.xpMul || 1) * ten, flash: 0, slow: 0, slowT: 0,
+    ten,
     burn: 0, burnT: 0, froze: 0, elite: !!o.elite, boss: null, ph: rand(TAU),
     atk: d.ranged ? rand(d.ranged.cd) : 0, kb: 0, kbx: 0, kby: 0
   };
@@ -531,8 +552,11 @@ function spawnBoss(def) {
   const e = {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
-    vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss',
-    hp: def.hp * (1 + G.diff * .55) * G.asc.hp, maxHp: def.hp * (1 + G.diff * .55) * G.asc.hp, spd: def.spd * G.asc.spd,
+    vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
+    /* La tenacia arriva a meta' sui guardiani: a piena dose un direttore
+       alto li trasformerebbe in muri da tre minuti, ma senza affatto una
+       build che scioglie la folla scioglie anche loro. */
+    hp: def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (G.tenacia - 1) * .5), maxHp: def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (G.tenacia - 1) * .5), spd: def.spd * G.asc.spd,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 2, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
   };
@@ -673,6 +697,19 @@ function killEnemy(e, opt) {
     }
   }
 
+  /* Il segnale del direttore. Solo i nemici comuni: elite e guardiani hanno
+     una vita loro e falserebbero la misura. Media mobile corta - circa tre
+     secondi di uccisioni - cosi' segue la build senza inseguire il rumore. */
+  /* La bomba e la Rinascita spazzano decine di nemici in un colpo, molti
+     lontanissimi: senza escluderli la media schizzerebbe e il direttore
+     leggerebbe "li disintegro a mille pixel" un istante dopo che hai
+     ripulito il campo, indurendo l'arena proprio come premio. */
+  if (!e.boss && !e.elite && !e.corriere && !(opt && opt.spazzata)) {
+    const d = Math.hypot(e.x - G.p.x, e.y - G.p.y);
+    G.raggio += (d - G.raggio) * .02;
+    G.kAcc++;
+  }
+
   const n = e.boss ? 26 : e.elite ? 9 : 1;
   for (let i = 0; i < n; i++) addGem(e.x + rand(30, -30), e.y + rand(30, -30), Math.max(1, Math.round(e.xp / n)));
   if (e.elite || e.boss) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
@@ -703,7 +740,7 @@ function hurtPlayer(amount) {
   P.hp -= d; G.p.inv = .62; G.p.hurt = .3;
   if (G.char.rule === 'contraccolpo')
     G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 14, r1: 210 * P.areaMul, t: 0, dur: .45, dmg: 45 * P.dmgMul, hit: new Set(), c: EL.fuoco.c, kb: 320 });
-  G.shake = Math.max(G.shake, 8); G.flashT = .16;
+  G.shake = Math.max(G.shake, 8); G.flashT = .16; G.flashC = HPC;
   AU.play('hurt');
   burstPart(G.p.x, G.p.y, 10, '#ff3d6e', 200, 3.4, .5);
   if (P.hp <= 0) {
@@ -712,7 +749,7 @@ function hurtPlayer(amount) {
       UI.toast('RINASCITA', 'Il nucleo si riaccende', '#6ff2c4');
       G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 620, t: 0, dur: .6, c: '#6ff2c4' });
       const near = GRID.near(G.p.x, G.p.y, 620, []);
-      for (let i = 0; i < near.length; i++) if (!near[i].boss) hitEnemy(near[i], 9999, { noCrit: true });
+      for (let i = 0; i < near.length; i++) if (!near[i].boss) hitEnemy(near[i], 9999, { noCrit: true, spazzata: 1 });
     } else { P.hp = 0; endRun(false); }
   }
 }

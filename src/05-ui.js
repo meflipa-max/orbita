@@ -180,10 +180,15 @@ const UI = {
       sec('Gli asteroidi sono riparo',
         p('Gli asteroidi fermano te e i nemici, e <b>assorbono i colpi nemici</b>: quando ne bloccano uno lampeggiano nel punto d’impatto. Mettitici dietro quando il fuoco si fa fitto.') +
         p('<em>I tuoi colpi invece li attraversano</em>, ed è voluto: tu non miri, sparano le rune. E metà del tuo arsenale — aure, onde d’urto, pozze — non sarebbe comunque fermabile da un masso. Così la regola è una sola: l’asteroide è riparo tuo, non ostacolo tuo.') +
-        p('I guardiani li sfondano.')) +
+        p('<b>I guardiani li sfondano davvero</b>: un asteroide addosso a un guardiano prima si crepa e poi si sbriciola, e quel riparo non c’è più. L’unico che regge è il <b>cristallo di un Nodo</b>: quello nemmeno un guardiano te lo porta via.')) +
+
+      sec('Il campo si adatta a te',
+        p('I nemici non seguono solo il cronometro: seguono <b>quanto sei forte</b>. Il gioco misura a che distanza da te muoiono, e se li stai disintegrando prima ancora che entrino nello schermo li rende <b>più tenaci</b> — meno nemici, ognuno più duro e che vale di più — finché tornano ad arrivarti a tiro. Un nemico temprato si riconosce dal <b>bordo caldo</b>.') +
+        p('Vale anche al contrario: se ti stanno addosso la stretta si allenta da sola, e sotto un terzo di vita smette del tutto. Non è una punizione per chi gioca bene — schivare resta la risposta giusta e funziona sempre — è la garanzia che nessuna build ti renda intoccabile per i venti minuti che restano.')) +
 
       sec('Sopravvivere',
         p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('A terra cadono anche <b>cuori</b> (vita) e <b>bombe</b>: la bomba non colpisce i dintorni, <b>uccide ogni nemico della mappa</b> tranne i guardiani. Il dono più vicino porta scritto cos’è.') +
         p('I nemici con una <b>barra sopra la testa</b> — elite dorati, corrieri e guardiani — sono quelli che vale la pena finire: quella barra è la loro <b>vita</b>. La scia bianca è il danno appena inflitto, e il colore vira al rosso quando stanno per cedere. In cima allo schermo c’è la barra dei guardiani: se ne hai addosso più d’uno — gemelli compresi — si <b>divide in un tratto per ciascuno</b>, largo quanto la sua stazza, col nome dello stesso colore.') +
         p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e sfide.')) +
 
@@ -696,6 +701,7 @@ function resetRun(charId, seed) {
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
+  G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;

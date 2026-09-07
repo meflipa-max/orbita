@@ -50,7 +50,12 @@ pagano in frammenti, e due sbloccano un nucleo scavalcando il prezzo.
 Asteroidi che fermano te e i nemici e **assorbono i colpi nemici**: sono riparo, e lampeggiano
 nel punto d'impatto quando bloccano qualcosa. I tuoi proiettili passano sopra, perché bloccarli
 punirebbe un attacco che è automatico — e metà dell'arsenale (aure, onde d'urto, pozze) non
-sarebbe comunque fermabile da un masso. I guardiani li sfondano.
+sarebbe comunque fermabile da un masso.
+
+I guardiani li **sfondano davvero**: la roccia prima si crepa, poi si sbriciola in detriti, e
+quel riparo non c'è più. Prima ci passavano attraverso lasciandola intatta, che non si legge
+come una regola — si legge come un difetto di collisione. L'unico che regge è il cristallo di
+un Nodo: la tua ancora non te la porta via nemmeno un guardiano.
 
 Un quarto delle formazioni sono **Nodi elementali**: cristalli sintonizzati su un elemento,
 sorteggiato a ogni partita. Nella loro aura le rune di quell'elemento fanno +35% danno e la
@@ -63,7 +68,36 @@ diverse a ogni corsa.
 
 Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima
 che si chiuda, una marea di nemici da una sola direzione, un Corriere da abbattere prima che
-sparisca. Servono a dare un motivo per andare da qualche parte.
+sparisca. Servono a dare un motivo per andare da qualche parte, quindi devono **vedersi da
+lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
+alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
+
+### Il direttore
+
+La difficoltà non segue il cronometro: segue **quanto sei forte davvero**. Il gioco misura a
+che distanza da te muoiono i nemici e la tiene intorno ai 250 pixel. Se li disintegri prima
+ancora che entrino nello schermo, diventano più **tenaci** — meno nemici, ognuno più duro, che
+vale di più in esperienza — finché tornano ad arrivarti a tiro; un nemico temprato si riconosce
+dal bordo caldo. Se invece ti stanno addosso, la stretta si allenta da sola.
+
+Tre regole lo tengono onesto: **non spinge mai sotto un terzo di vita** (così una brutta
+partita non diventa una valanga), **molla più in fretta di quanto stringa** (una pausa dopo un
+guardiano non ti lascia l'arena indurita), e **si ferma se il ritmo di uccisioni cala troppo**
+— un bullet heaven è anche la falciata, e quella condizione ha la precedenza su tutto.
+
+Misurato prima: con una build forte si stava **fermi, senza toccare niente, a zero danno** al
+minuto 8, 14, 20 e 28. Dopo: fermi si muore, muovendosi bene si sopravvive prendendo colpi
+veri. Chi gioca con una build modesta non si accorge del direttore, perché per lui la tenacia
+resta a uno.
+
+### Leggibilità
+
+Regola unica: **ciò che ti può uccidere è la cosa più visibile dello schermo**. Le tue
+esplosioni sono decorazione — non le comandi — i nemici sono informazione. Quindi più il campo
+si affolla, più i tuoi effetti si fanno da parte: aloni, anelli, scintille e numeri volanti
+perdono peso insieme, mentre le sagome dei nemici hanno contorno spesso e schiarito. Le gemme
+a terra si fondono presto in poche gemme grosse — erano centonovanta in campo, quasi il
+quadruplo dei nemici — e i doni a terra dicono a parole cosa fanno.
 
 Niente dipendenze a runtime a parte due font Google, che degradano su stack di sistema se manca
 la rete. Tutto il resto — grafica, effetti, musica generativa — è prodotto a runtime da ~2.500
@@ -144,6 +178,9 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `rate` / `maxE` | `03-systems.js` → `updateSpawns` | ritmo di comparsa e tetto di nemici vivi |
 | `G.eliteT` | `03-systems.js` → `updateSpawns` | frequenza degli elite, cioè degli scrigni |
 | `rincorsa` | `03-systems.js` → `bossAI` | elastico del boss: accelera quanto più resta indietro |
+| `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
+| `G.tenacia` | `03-systems.js` → `direttore` | quanto il direttore ha indurito i nemici in questo momento (1 = non è intervenuto) |
+| `G.chiarezza` | `06-main.js` → `step` | quanto spazio visivo resta ai tuoi effetti: 1 quando il campo è vuoto, .42 quando è pieno |
 
 In console è esposto `window.ORBITA` con `G` (stato), `P` (statistiche derivate), `step()`,
 `start()`, `roll()`, `apply()`, `place()`, `recalc()`, `recalcRing()`: serve a far girare partite

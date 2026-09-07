@@ -72,8 +72,26 @@ function step(dt) {
     if (G.hintOff <= 0) elHint.className = 'clip';
   }
 
+  /* ── chiarezza ───────────────────────────────────────────────
+     La regola: cio' che ti puo' uccidere e' la cosa piu' visibile dello
+     schermo, tutto il resto cede il posto. I tuoi effetti sono decorazione
+     — sai gia' che le rune sparano, non le comandi — i nemici invece sono
+     informazione, e a meta' partita erano l'unica cosa che NON si vedeva,
+     sepolta sotto le tue stesse esplosioni. Quindi piu' il campo si
+     affolla, piu' i tuoi effetti si fanno da parte: restano leggibili,
+     smettono di essere un muro di luce. Non tocca il gioco, solo l'alfa. */
+  const carico = G.enemies.length / 70 + G.zones.length / 22 + G.bullets.length / 55;
+  const mira = clamp(1.28 - carico * .42, .42, 1);
+  G.chiarezza += (mira - G.chiarezza) * Math.min(1, dt * 2.2);
+
   G.shake = Math.max(0, G.shake - dt * 42);
-  if (G.flashT > 0) { G.flashT -= dt; elFlash.style.opacity = String(Math.max(0, G.flashT * 2.4)); }
+  /* il velo a pieno schermo e' rosa quando ti fai male e bianco quando
+     spazzi la mappa: due cose opposte non possono avere lo stesso colore */
+  if (G.flashT > 0) {
+    G.flashT -= dt;
+    elFlash.style.background = G.flashC;
+    elFlash.style.opacity = String(Math.max(0, G.flashT * 2.4));
+  }
   else if (elFlash.style.opacity !== '0') elFlash.style.opacity = '0';
 
   /* tracce per le sfide */
@@ -151,6 +169,7 @@ function enterMenu() {
   G.boss = null; G.bosses.length = 0; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
   G.rocks.length = 0; G.nodo = null; G.nodoK = null;   /* né ostacoli dietro al titolo */
+  G.tenacia = 1; G.raggio = RAGGIO_MIRA; G.chiarezza = 1;
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
   G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
   G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;

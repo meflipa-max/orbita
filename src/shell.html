@@ -438,12 +438,16 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .reward svg{width:19px;height:19px}
 
 /* toast */
-#toasts{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:15;pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;gap:7px}
-.toast{font:700 16px/1 var(--disp);letter-spacing:.03em;padding:9px 16px;--cut:7px;white-space:nowrap;
+/* I messaggi stavano al 22% dell'altezza, cioe' un palmo sopra il nucleo:
+   proprio dentro il cono di schermo che stai guardando per schivare, e a
+   coppie coprivano una striscia larga. Salgono sotto la barra dei guardiani
+   e si stringono: si leggono lo stesso e non stanno piu' in mezzo. */
+#toasts{position:absolute;left:50%;top:calc(100px + var(--sat));transform:translateX(-50%);z-index:15;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.94}
+.toast{font:700 13.5px/1 var(--disp);letter-spacing:.03em;padding:7px 13px;--cut:6px;white-space:nowrap;
   background:rgba(8,6,22,.86);border:1px solid currentColor;backdrop-filter:blur(5px);
   animation:toastIn .35s cubic-bezier(.2,1.5,.4,1),toastOut .5s 1.6s forwards}
-.toast small{display:block;font:500 9.5px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-top:5px}
+.toast small{display:block;font:500 9px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;opacity:.75;margin-top:4px}
 @keyframes toastIn{from{transform:translateY(14px) scale(.9);opacity:0}}
 @keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
 

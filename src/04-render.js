@@ -117,13 +117,25 @@ function buildFloor() {
   floorTile = c;
 }
 
-function drawArena() {
+function drawSuolo() {
   if (!floorTile) buildFloor();
   const x0 = Math.floor((G.cam.x - W / 2) / FLOOR_TS) * FLOOR_TS;
   const y0 = Math.floor((G.cam.y - H / 2) / FLOOR_TS) * FLOOR_TS;
   const x1 = G.cam.x + W / 2, y1 = G.cam.y + H / 2;
   for (let x = x0; x < x1; x += FLOOR_TS)
     for (let y = y0; y < y1; y += FLOOR_TS) ctx.drawImage(floorTile, x, y);
+  ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
+  ctx.strokeRect(-ARENA, -ARENA, ARENA * 2, ARENA * 2);
+  ctx.strokeStyle = 'rgba(255,61,110,.10)'; ctx.lineWidth = 22;
+  ctx.strokeRect(-ARENA - 11, -ARENA - 11, ARENA * 2 + 22, ARENA * 2 + 22);
+}
+
+/* Gli asteroidi si disegnano DOPO le zone a terra, e la ragione e' una sola:
+   la Singolarita' e' un disco nero pieno, e disegnata sopra copriva le rocce
+   che stanno sotto. Ci si muoveva dentro un buco nero convinti che fosse
+   spazio libero e ci si sbatteva contro un masso invisibile. Quello che ti
+   ferma sta sopra a quello che non ti ferma: sempre. */
+function drawRocce() {
   /* asteroidi: corpo scuro e bordo illuminato, così leggono come solidi
      e non come un altro effetto luminoso in mezzo agli altri */
   const cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 180, mh = H / 2 + 180;
@@ -192,12 +204,18 @@ function drawArena() {
     ctx.setLineDash([6, 9]);
     ctx.beginPath(); ctx.arc(0, 0, k.r + 7, 0, TAU); ctx.stroke();
     ctx.setLineDash([]); ctx.restore();
+    /* crepe: una roccia gia' sfondata da un guardiano si vede che ha ceduto */
+    if (k.crepe) {
+      ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(k.rot);
+      ctx.strokeStyle = 'rgba(255,168,120,' + (.18 + k.crepe * .5) + ')'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let j = 0; j < k.m; j += 3) {
+        const a = j / k.m * TAU;
+        ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * k.r * .9, Math.sin(a) * k.r * .9);
+      }
+      ctx.stroke(); ctx.restore();
+    }
   }
-
-  ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
-  ctx.strokeRect(-ARENA, -ARENA, ARENA * 2, ARENA * 2);
-  ctx.strokeStyle = 'rgba(255,61,110,.10)'; ctx.lineWidth = 22;
-  ctx.strokeRect(-ARENA - 11, -ARENA - 11, ARENA * 2 + 22, ARENA * 2 + 22);
 }
 
 function shape(e) {
@@ -242,8 +260,18 @@ function drawEnemies() {
       ctx.fillStyle = rgba(col, e.type === 'spettro' ? .3 : .22);
       ctx.fill();
     }
-    ctx.lineWidth = e.boss ? 3.5 : e.elite ? 2.6 : 1.8;
-    ctx.strokeStyle = flash ? '#ffffff' : col; ctx.stroke();
+    /* Il contorno era sottile e della tinta piena del nemico — viola pallido
+       su fondo viola scuro: la cosa meno visibile dello schermo era quella
+       che ti ammazza. Piu' spesso, e schiarito verso il bianco, cosi' la
+       sagoma regge anche sopra le tue esplosioni. */
+    if (e.ten > 1.6) {
+      /* temprato dal direttore: un bordo caldo dice che questo incassa piu'
+         del normale, invece di lasciartelo scoprire a furia di colpi */
+      ctx.strokeStyle = rgba('#ffc089', clamp((e.ten - 1.6) / 6, .2, .62));
+      ctx.lineWidth = (e.boss ? 3.5 : e.elite ? 2.6 : 2.4) + 3.4; ctx.stroke();
+    }
+    ctx.lineWidth = e.boss ? 3.5 : e.elite ? 2.6 : 2.4;
+    ctx.strokeStyle = flash ? '#ffffff' : mixc(col, '#ffffff', .26); ctx.stroke();
     if (e.burnT > 0) { ctx.strokeStyle = rgba(EL.fuoco.c, .8); ctx.lineWidth = 1.4; ctx.stroke(); }
     if (e.elite) { ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]); }
     if (e.boss && e.tell) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.globalAlpha = .3 + Math.sin(G.t * 40) * .3; ctx.stroke(); ctx.globalAlpha = 1; }
@@ -301,7 +329,7 @@ function drawZonesUnder() {
   for (const z of G.zones) {
     if (z.k === 'pool') {
       if (!zonaVisibile(z, z.r)) continue;
-      const f = 1 - z.t / z.dur, a = clamp(f * 1.6, 0, .55);
+      const f = 1 - z.t / z.dur, a = clamp(f * 1.4, 0, .42) * G.chiarezza;
       if (z.scia) {
         /* La scia è un alone morbido che pulsa, non un cerchio col contorno:
            erano quei cerchi netti, accavallati a centinaia, a fare il muro di
@@ -340,9 +368,10 @@ function drawZonesOver() {
     const f = z.t / z.dur;
     if (z.k === 'nova' || z.k === 'ring') {
       const r = z.k === 'nova' ? z.r : lerp(z.r0, z.r1, Math.sqrt(f));
-      ctx.strokeStyle = rgba(z.c, (1 - f) * .95); ctx.lineWidth = 3 + (1 - f) * 7;
+      const ch = G.chiarezza;
+      ctx.strokeStyle = rgba(z.c, (1 - f) * .95 * ch); ctx.lineWidth = (3 + (1 - f) * 7) * (.55 + ch * .45);
       ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, TAU); ctx.stroke();
-      ctx.strokeStyle = rgba('#ffffff', (1 - f) * .5); ctx.lineWidth = 1.5;
+      ctx.strokeStyle = rgba('#ffffff', (1 - f) * .5 * ch); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, TAU); ctx.stroke();
     } else if (z.k === 'spark' || z.k === 'beam') {
       const a = 1 - f;
@@ -384,7 +413,14 @@ function drawZonesOver() {
 }
 
 /* eventi d'arena: devono leggersi da lontano, sono l'unico motivo per
-   attraversare la mappa invece di girare in tondo */
+   attraversare la mappa invece di girare in tondo.
+   Questa funzione c'era gia' ed era scritta bene, ma NON VENIVA MAI
+   CHIAMATA: il ciclo di disegno saltava da drawZonesUnder a drawPickups.
+   Quindi la breccia non aveva il suo faro viola e il Corriere non aveva
+   niente addosso — nasceva a quattrocento pixel, cioe' dentro lo schermo,
+   dove la bussola di bordo non compare, e in mezzo alla folla era una
+   sagoma verde uguale alle altre. Da qui "il Corriere quando spawna non si
+   capisce dove sta": letteralmente non era segnato in nessun modo. */
 function drawEvento() {
   const v = G.ev; if (!v) return;
   if (v.k === 'breccia') {
@@ -402,12 +438,41 @@ function drawEvento() {
     ctx.beginPath(); ctx.arc(v.x, v.y, v.r + 16, -PI / 2, -PI / 2 + TAU * rest); ctx.stroke();
     ctx.globalCompositeOperation = 'source-over';
   } else if (v.k === 'caccia' && v.e && v.e.hp > 0) {
-    const e = v.e, pul = 1 + Math.sin(G.t * 7) * .12;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = rgba('#6ff2c4', .9); ctx.lineWidth = 2.4;
-    ctx.beginPath(); ctx.arc(e.x, e.y, (e.r + 16) * pul, 0, TAU); ctx.stroke();
-    ctx.globalCompositeOperation = 'source-over';
+    bersaglio(v.e, 1 - v.t / v.dur);
   }
+}
+
+/* Il marchio del Corriere. Deve dire tre cose a colpo d'occhio e da
+   qualunque distanza: DOV'E', che e' quello e non un altro nemico, e
+   QUANTO MANCA. Un cerchietto sottile addosso non bastava: in mezzo a
+   cinquanta sagome non lo vedevi nemmeno sapendo che c'era. */
+function bersaglio(e, rest) {
+  const R = e.r + 30, c = '#6ff2c4';
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  /* colonna di luce: si vede sopra la folla, che e' il punto */
+  const g = ctx.createLinearGradient(e.x, e.y - 620, e.x, e.y + 40);
+  g.addColorStop(0, rgba(c, 0)); g.addColorStop(.78, rgba(c, .16)); g.addColorStop(1, rgba(c, .42));
+  ctx.fillStyle = g; ctx.fillRect(e.x - 15, e.y - 620, 30, 660);
+  ctx.globalAlpha = .55; ctx.drawImage(glowTex(c, 48), e.x - 110, e.y - 110, 220, 220); ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  /* quattro parentesi che ruotano: la forma universale di "bersaglio" */
+  ctx.translate(e.x, e.y); ctx.rotate(G.t * .9);
+  ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    const a0 = i * (TAU / 4) - .34;
+    ctx.beginPath(); ctx.arc(0, 0, R, a0, a0 + .68); ctx.stroke();
+  }
+  ctx.rotate(-G.t * .9);
+  /* il tempo che resta, come arco che si consuma */
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, 0, R + 9, -PI / 2, -PI / 2 + TAU * clamp(rest, 0, 1)); ctx.stroke();
+  ctx.font = '700 11px "Chakra Petch",system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.9)';
+  ctx.strokeText('CORRIERE', 0, -R - 20); ctx.fillStyle = c; ctx.fillText('CORRIERE', 0, -R - 20);
+  ctx.restore();
 }
 
 /* Freccia a bordo schermo verso un punto fuori campo. Con etichetta:
@@ -454,7 +519,7 @@ function drawBullets() {
   ctx.globalCompositeOperation = 'lighter';
   for (const b of G.bullets) {
     const t = glowTex(b.c, 44), gs = b.r * 3.4;
-    ctx.globalAlpha = .55; ctx.drawImage(t, b.x - gs, b.y - gs, gs * 2, gs * 2); ctx.globalAlpha = 1;
+    ctx.globalAlpha = .55 * G.chiarezza; ctx.drawImage(t, b.x - gs, b.y - gs, gs * 2, gs * 2); ctx.globalAlpha = 1;
     ctx.save(); ctx.translate(b.x, b.y);
     if (b.kind === 'shard' || b.kind === 'bolt') {
       ctx.rotate(b.ang || 0);
@@ -533,6 +598,12 @@ function drawPickups() {
     ctx.globalAlpha = 1;
   }
 
+  /* un solo dono per volta porta la scritta: quello piu' vicino */
+  let vicino = null, vd = 1e18;
+  for (const d of G.drops) {
+    const q = (d.x - G.p.x) * (d.x - G.p.x) + (d.y - G.p.y) * (d.y - G.p.y);
+    if (q < vd) { vd = q; vicino = d; }
+  }
   for (const d of G.drops) {
     const c = d.k === 'chest' ? '#ffc857' : d.k === 'cuore' ? '#ff3d6e' : '#ffffff';
     const bob = Math.sin(G.t * 3 + d.t) * 4, s = 13, y = d.y + bob;
@@ -550,6 +621,20 @@ function drawPickups() {
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(0, 0, s * .34, 0, TAU); ctx.fill();
     ctx.restore();
+    /* Una losanga bianca che gira non dice cosa fa, e la bomba fa la cosa
+       piu' grossa del gioco: spazza l'intera mappa. Una parola sotto toglie
+       ogni dubbio — ma SOLO a quella che stai per raccogliere: i doni non
+       raccolti restano a terra per sempre e scritti tutti diventavano loro
+       il rumore, sei etichette a schermo al posto di sei losanghe. */
+    if (d !== vicino) continue;
+    const nome = d.k === 'chest' ? 'SCRIGNO' : d.k === 'cuore' ? 'VITA' : 'BOMBA · TUTTA LA MAPPA';
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.font = '700 10px "Chakra Petch",system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.9)';
+    ctx.strokeText(nome, d.x, y + s + 15);
+    ctx.fillStyle = rgba(c, .95); ctx.fillText(nome, d.x, y + s + 15);
+    ctx.globalCompositeOperation = 'lighter';
   }
   ctx.globalCompositeOperation = 'source-over';
 }
@@ -590,7 +675,11 @@ function drawPlayer() {
   /* bagliore del nucleo */
   const gt = glowTex(p.hurt > 0 ? '#ff3d6e' : G.char.c, 64);
   const pul = 1 + Math.sin(G.t * 4) * .07;
-  ctx.globalAlpha = .8; ctx.drawImage(gt, p.x - 62 * pul, p.y - 62 * pul, 124 * pul, 124 * pul); ctx.globalAlpha = 1;
+  /* l'alone del nucleo era largo centoventi pixel a piena opacita': in
+     mezzo alle tue stesse pozze diventava una palla di fuoco dentro cui il
+     nucleo — cioe' tu — non si vedeva piu' */
+  ctx.globalAlpha = .8 * (.42 + G.chiarezza * .58);
+  ctx.drawImage(gt, p.x - 62 * pul, p.y - 62 * pul, 124 * pul, 124 * pul); ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
 
   /* rune */
@@ -739,7 +828,8 @@ function drawScreenUI() {
     }
     if (G.ev.k === 'caccia' && G.ev.e && G.ev.e.hp > 0) {
       const d = Math.round(Math.hypot(G.ev.e.x - G.p.x, G.ev.e.y - G.p.y));
-      bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 13, d + '', false);
+      const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
+      bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 15, d + '  ·  ' + s + 's', s <= 8);
     }
   }
 }
@@ -751,8 +841,10 @@ function render() {
   drawBG(G.cam.x + sx, G.cam.y + sy);
   ctx.save();
   ctx.translate(Math.round(W / 2 - G.cam.x + sx), Math.round(H / 2 - G.cam.y + sy));
-  drawArena();
+  drawSuolo();
   drawZonesUnder();
+  drawRocce();
+  drawEvento();
   drawPickups();
   drawEnemies();
   drawBullets();
