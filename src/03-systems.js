@@ -775,9 +775,12 @@ function updateEventi(dt) {
     const dx = G.p.x - v.x, dy = G.p.y - v.y;
     if (!v.preso && dx * dx + dy * dy < v.r * v.r) {
       v.preso = 1;
+      /* uno scrigno, non due: ogni scrigno e' una schermata di carte, e fra
+         eventi, elite e guardiani le interruzioni erano una ogni sedici
+         secondi per tutta la partita. Il valore che tolgo torna in gemme. */
       if (G.asc.noChest) { addGem(v.x, v.y, 220, 1); }
-      else for (let i = 0; i < 2; i++) G.drops.push({ x: v.x + rand(50, -50), y: v.y + rand(50, -50), k: 'chest', t: 0 });
-      addGem(v.x, v.y, 120, 1);
+      else G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
+      addGem(v.x, v.y, 240, 1);
       G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 460, t: 0, dur: .7, c: '#b06bff' });
       UI.toast('BRECCIA APERTA', 'Ricompensa raccolta', '#b06bff');
       AU.play('buy'); G.shake = Math.max(G.shake, 10);
@@ -823,8 +826,12 @@ function updateSpawns(dt) {
   /* la pressione cresce nel tempo: né un vuoto iniziale né un muro al 4° minuto */
   const cap = (W < 700 ? 165 : 245);
   const maxE = Math.round(cap * clamp(.42 + G.t / 900 + G.diff, .42, 1));
-  /* apertura tranquilla (impari a muoverti), pressione vera dal sesto minuto */
-  const rate = Math.min(13, (.8 + G.t / 26 + G.diff * 2.4) * G.asc.rate);
+  /* L'apertura era troppo tranquilla: a mezzo minuto c'erano undici nemici
+     in campo e il primo livello arrivava dopo venti secondi di niente. In un
+     bullet heaven il primo minuto deve gia' dire cos'e' il gioco. Adesso si
+     parte a 2.6 al secondo invece che a 0.8; la salita e' un po' piu' dolce
+     cosi' dal quinto minuto in poi la pressione resta quella di prima. */
+  const rate = Math.min(13, (1.8 + G.t / 28 + G.diff * 2.4) * G.asc.rate);
   G.spawnAcc += dt * rate;
   const pool = currentPool();
   while (G.spawnAcc >= 1) {
@@ -833,7 +840,12 @@ function updateSpawns(dt) {
   }
   G.eliteT -= dt;
   if (G.eliteT <= 0) {
-    G.eliteT = Math.max(44, 70 - G.t / 45);   /* gli scrigni erano la fonte dominante di potenziamenti */
+    /* Lo scrigno di un elite vale una carta, esattamente come un livello.
+       Con gli elite che acceleravano (da uno ogni 70s a uno ogni 44) mentre
+       i livelli rallentavano, il totale delle interruzioni non calava mai:
+       una schermata di carte ogni tredici-diciotto secondi per mezz'ora.
+       Adesso la cadenza degli elite resta ferma. */
+    G.eliteT = Math.max(78, 88 - G.t / 50);
     const e = spawnRing(pick(pool), { elite: true, rMul: 1.55, spdMul: .88 });
     if (e) { e.c = '#ffc857'; }
     /* la prima volta va detto a parole, e solo alle prime partite: dopo

@@ -360,7 +360,17 @@ const P = {}; /* statistiche derivate */
 /* Curva cubica: i primi livelli restano rapidi — servono a riempire l'anello e
    ad accendere il primo Risveglio, che è il cuore del gioco — poi si impenna,
    così a metà partita ogni scelta pesa invece di essere l'ennesima di una fila. */
-function xpFor(lv) { return Math.floor(9 + 7 * lv + lv * lv * .9 + lv * lv * lv * .12); }
+/* Quanta esperienza per salire. La curva vecchia era ripida in fondo e
+   piatta all'inizio, e dava il ritmo sbagliato: un livello ogni quindici
+   secondi per tutta la prima meta' della partita - una schermata di carte
+   in mezzo all'azione di continuo - e poi uno ogni sessanta nella seconda,
+   quando si secca. Questa e' piu' cara nei primi livelli e piu' economica
+   dal ventesimo in su: meno interruzioni quando sono troppe, e qualcosa da
+   scegliere ancora quando prima non arrivava piu' niente. */
+/* I primi due livelli restano a buon mercato: nei primi secondi devi
+   sbloccare qualcosa, non guardare una barra. Da li' in poi sale piu'
+   ripida di prima, ed e' li' che stavano le interruzioni di troppo. */
+function xpFor(lv) { return Math.floor(4 + 13 * lv + lv * lv * 3 + lv * lv * lv * .07); }
 
 /* ── statistiche derivate ───────────────────────────────────── */
 function recalc() {
@@ -680,7 +690,9 @@ function killEnemy(e, opt) {
     syncBosses(); G.shake = 26; G.hitstop = .16;
     UI.toast('ABBATTUTO', e.boss.n, e.boss.c);
     if (G.asc.noChest) addGem(e.x, e.y, 140, 1);
-    else for (let i = 0; i < 2; i++) G.drops.push({ x: e.x + rand(60, -60), y: e.y + rand(60, -60), k: 'chest', t: 0 });
+    /* un guardiano vale uno scrigno grosso, non due schermate di carte
+       di fila: la seconda arrivava mentre stavi ancora leggendo la prima */
+    else { G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); addGem(e.x, e.y, 220, 1); }
     if (e.boss.id === 'eclissi') winRun();
   }
 }
