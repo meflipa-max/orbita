@@ -36,7 +36,7 @@ function step(dt) {
      proprio la porzione di schermo che la mano ti stava rubando. */
   let bx = 0, by = 0;
   if (IN.touchId !== null) {
-    const m = Math.min(W, H) * .13;
+    const m = Math.min(G.vw, G.vh) * .13;   /* uno spostamento di mondo, non di schermo */
     bx = clamp((IN.ox - W / 2) / (W / 2), -1, 1) * m;
     by = clamp((IN.oy - H / 2) / (H / 2), -1, 1) * m;
   }
@@ -46,7 +46,7 @@ function step(dt) {
   const ck = Math.min(1, dt * 7);
   G.cam.x += (p.x + p.vx * .2 + G.biasX - G.cam.x) * ck;
   G.cam.y += (p.y + p.vy * .2 + G.biasY - G.cam.y) * ck;
-  const mx = Math.max(0, ARENA - W / 2 + 70), my = Math.max(0, ARENA - H / 2 + 70);
+  const mx = Math.max(0, ARENA - G.vw / 2 + 70), my = Math.max(0, ARENA - G.vh / 2 + 70);
   G.cam.x = clamp(G.cam.x, -mx, mx); G.cam.y = clamp(G.cam.y, -my, my);
 
   GRID.clear();

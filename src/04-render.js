@@ -62,11 +62,12 @@ function drawBG(cx, cy) {
   ctx.fillStyle = '#070613'; ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'lighter';
   for (const n of NEB) {
-    const sx = n.x - cx + W / 2, sy = n.y - cy + H / 2;
-    if (sx < -n.r || sx > W + n.r || sy < -n.r || sy > H + n.r) continue;
-    const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, n.r);
+    const z = G.zoom, nr = n.r * z;
+    const sx = (n.x - cx) * z + W / 2, sy = (n.y - cy) * z + H / 2;
+    if (sx < -nr || sx > W + nr || sy < -nr || sy > H + nr) continue;
+    const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, nr);
     g.addColorStop(0, rgba(n.c, .34)); g.addColorStop(.55, rgba(n.c, .11)); g.addColorStop(1, rgba(n.c, 0));
-    ctx.fillStyle = g; ctx.fillRect(sx - n.r, sy - n.r, n.r * 2, n.r * 2);
+    ctx.fillStyle = g; ctx.fillRect(sx - nr, sy - nr, nr * 2, nr * 2);
   }
   ctx.globalCompositeOperation = 'source-over';
   /* respiro lento e sfasato per strato: il cielo vive, e il ritmo è
@@ -74,8 +75,8 @@ function drawBG(cx, cy) {
   for (let i = 0; i < starLayers.length; i++) {
     const L = starLayers[i];
     ctx.globalAlpha = .84 + Math.sin(G.t * (.22 + i * .09) + i * 2.1) * .13;
-    let ox = (-cx * L.p) % STAR_TS; if (ox > 0) ox -= STAR_TS;
-    let oy = (-cy * L.p) % STAR_TS; if (oy > 0) oy -= STAR_TS;
+    let ox = (-cx * L.p * G.zoom) % STAR_TS; if (ox > 0) ox -= STAR_TS;
+    let oy = (-cy * L.p * G.zoom) % STAR_TS; if (oy > 0) oy -= STAR_TS;
     for (let x = ox; x < W; x += STAR_TS) for (let y = oy; y < H; y += STAR_TS) ctx.drawImage(L.cn, x | 0, y | 0);
   }
   ctx.globalAlpha = 1;
@@ -119,9 +120,9 @@ function buildFloor() {
 
 function drawSuolo() {
   if (!floorTile) buildFloor();
-  const x0 = Math.floor((G.cam.x - W / 2) / FLOOR_TS) * FLOOR_TS;
-  const y0 = Math.floor((G.cam.y - H / 2) / FLOOR_TS) * FLOOR_TS;
-  const x1 = G.cam.x + W / 2, y1 = G.cam.y + H / 2;
+  const x0 = Math.floor((G.cam.x - G.vw / 2) / FLOOR_TS) * FLOOR_TS;
+  const y0 = Math.floor((G.cam.y - G.vh / 2) / FLOOR_TS) * FLOOR_TS;
+  const x1 = G.cam.x + G.vw / 2, y1 = G.cam.y + G.vh / 2;
   for (let x = x0; x < x1; x += FLOOR_TS)
     for (let y = y0; y < y1; y += FLOOR_TS) ctx.drawImage(floorTile, x, y);
   ctx.strokeStyle = 'rgba(255,61,110,.42)'; ctx.lineWidth = 3;
@@ -138,7 +139,7 @@ function drawSuolo() {
 function drawRocce() {
   /* asteroidi: corpo scuro e bordo illuminato, così leggono come solidi
      e non come un altro effetto luminoso in mezzo agli altri */
-  const cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 180, mh = H / 2 + 180;
+  const cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 180, mh = G.vh / 2 + 180;
   for (let i = 0; i < G.rocks.length; i++) {
     const k = G.rocks[i];
     if (Math.abs(k.x - cx) > mw || Math.abs(k.y - cy) > mh) continue;
@@ -232,7 +233,7 @@ function shape(e) {
 }
 
 function drawEnemies() {
-  const E = G.enemies, cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 90, mh = H / 2 + 90;
+  const E = G.enemies, cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 90, mh = G.vh / 2 + 90;
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
@@ -268,9 +269,9 @@ function drawEnemies() {
       /* temprato dal direttore: un bordo caldo dice che questo incassa piu'
          del normale, invece di lasciartelo scoprire a furia di colpi */
       ctx.strokeStyle = rgba('#ffc089', clamp((e.ten - 1.6) / 6, .2, .62));
-      ctx.lineWidth = (e.boss ? 3.5 : e.elite ? 2.6 : 2.4) + 3.4; ctx.stroke();
+      ctx.lineWidth = sz((e.boss ? 3.5 : e.elite ? 2.6 : 2.4) + 3.4); ctx.stroke();
     }
-    ctx.lineWidth = e.boss ? 3.5 : e.elite ? 2.6 : 2.4;
+    ctx.lineWidth = sz(e.boss ? 3.5 : e.elite ? 2.6 : 2.4);
     ctx.strokeStyle = flash ? '#ffffff' : mixc(col, '#ffffff', .26); ctx.stroke();
     if (e.burnT > 0) { ctx.strokeStyle = rgba(EL.fuoco.c, .8); ctx.lineWidth = 1.4; ctx.stroke(); }
     if (e.elite) { ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]); }
@@ -303,7 +304,7 @@ function barraVita(x, y, w, h, f, g, col) {
 /* passata a parte: prima le barre finivano sotto ai corpi dei nemici
    disegnati dopo, e in mezzo alla folla sparivano */
 function drawBarreVita() {
-  const E = G.enemies, cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 90, mh = H / 2 + 90;
+  const E = G.enemies, cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 90, mh = G.vh / 2 + 90;
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
     if (e.dead || e.hp <= 0 || !(e.elite || e.boss || e.corriere)) continue;
@@ -316,7 +317,7 @@ function drawBarreVita() {
 /* una zona fuori campo costa quanto una dentro: gradiente, arco, contorno.
    Con le pozze a decine erano tutte disegnate comunque */
 function zonaVisibile(z, r) {
-  const mx = W / 2 + r + 40, my = H / 2 + r + 40;
+  const mx = G.vw / 2 + r + 40, my = G.vh / 2 + r + 40;
   if (z.x === undefined) {                     /* zone a segmento: saetta, fascio */
     return Math.max(z.x1, z.x2) > G.cam.x - mx && Math.min(z.x1, z.x2) < G.cam.x + mx &&
            Math.max(z.y1, z.y2) > G.cam.y - my && Math.min(z.y1, z.y2) < G.cam.y + my;
@@ -442,6 +443,13 @@ function drawEvento() {
   }
 }
 
+/* Quel che si disegna dentro la telecamera viene rimpicciolito dallo zoom
+   insieme a tutto il resto. Per le scritte e per i contorni non va bene:
+   una scritta di dieci pixel su un telefono zoomato a .74 ne diventa sette
+   e non si legge piu'. Questi due la annullano, e restano della stessa
+   grandezza fisica ovunque. */
+const sz = v => v / G.zoom;
+
 /* Il marchio del Corriere. Deve dire tre cose a colpo d'occhio e da
    qualunque distanza: DOV'E', che e' quello e non un altro nemico, e
    QUANTO MANCA. Un cerchietto sottile addosso non bastava: in mezzo a
@@ -459,19 +467,19 @@ function bersaglio(e, rest) {
 
   /* quattro parentesi che ruotano: la forma universale di "bersaglio" */
   ctx.translate(e.x, e.y); ctx.rotate(G.t * .9);
-  ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.strokeStyle = c; ctx.lineWidth = sz(3); ctx.lineCap = 'round';
   for (let i = 0; i < 4; i++) {
     const a0 = i * (TAU / 4) - .34;
     ctx.beginPath(); ctx.arc(0, 0, R, a0, a0 + .68); ctx.stroke();
   }
   ctx.rotate(-G.t * .9);
   /* il tempo che resta, come arco che si consuma */
-  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = sz(3);
   ctx.beginPath(); ctx.arc(0, 0, R + 9, -PI / 2, -PI / 2 + TAU * clamp(rest, 0, 1)); ctx.stroke();
-  ctx.font = '700 11px "Chakra Petch",system-ui,sans-serif';
+  ctx.font = '700 ' + sz(11).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.9)';
-  ctx.strokeText('CORRIERE', 0, -R - 20); ctx.fillStyle = c; ctx.fillText('CORRIERE', 0, -R - 20);
+  ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';
+  ctx.strokeText('CORRIERE', 0, -R - sz(20)); ctx.fillStyle = c; ctx.fillText('CORRIERE', 0, -R - sz(20));
   ctx.restore();
 }
 
@@ -479,7 +487,7 @@ function bersaglio(e, rest) {
    la sola direzione non basta a trovare una breccia a ottocento pixel,
    serve sapere quanto manca e quanto tempo resta. */
 function bussola(x, y, col, size, etichetta, pulsa) {
-  const sx = x - G.cam.x + W / 2, sy = y - G.cam.y + H / 2;
+  const sx = (x - G.cam.x) * G.zoom + W / 2, sy = (y - G.cam.y) * G.zoom + H / 2;
   if (sx > 26 && sx < W - 26 && sy > 26 && sy < H - 26) return;
   const a = Math.atan2(y - G.cam.y, x - G.cam.x);
   const k = pulsa ? 1 + Math.sin(G.t * 5) * .16 : 1;
@@ -562,7 +570,7 @@ function drawBullets() {
      nemico        = contornato, spigoloso, riempimento scuro
    Prima gemme e nemici erano entrambi rombi: impossibile distinguerli al volo. */
 function drawPickups() {
-  const cx = G.cam.x, cy = G.cam.y, mw = W / 2 + 60, mh = H / 2 + 60;
+  const cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 60, mh = G.vh / 2 + 60;
 
   ctx.globalCompositeOperation = 'lighter';
   for (const m of G.gems) {
@@ -629,11 +637,12 @@ function drawPickups() {
     if (d !== vicino) continue;
     const nome = d.k === 'chest' ? 'SCRIGNO' : d.k === 'cuore' ? 'VITA' : 'BOMBA · TUTTA LA MAPPA';
     ctx.globalCompositeOperation = 'source-over';
-    ctx.font = '700 10px "Chakra Petch",system-ui,sans-serif';
+    ctx.font = '700 ' + sz(10).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.9)';
-    ctx.strokeText(nome, d.x, y + s + 15);
-    ctx.fillStyle = rgba(c, .95); ctx.fillText(nome, d.x, y + s + 15);
+    ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';
+    const ty = y + s + sz(15);
+    ctx.strokeText(nome, d.x, ty);
+    ctx.fillStyle = rgba(c, .95); ctx.fillText(nome, d.x, ty);
     ctx.globalCompositeOperation = 'lighter';
   }
   ctx.globalCompositeOperation = 'source-over';
@@ -739,8 +748,8 @@ function drawFloats() {
   for (const f of G.floats) {
     const a = clamp(1 - (f.t - .45) / .37, 0, 1);
     ctx.globalAlpha = a;
-    ctx.font = (f.big ? '700 21px ' : '600 14px ') + '"Chakra Petch",system-ui,sans-serif';
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(4,2,12,.85)';
+    ctx.font = '' + (f.big ? '700 ' + sz(21).toFixed(1) : '600 ' + sz(14).toFixed(1)) + 'px "Chakra Petch",system-ui,sans-serif';
+    ctx.lineWidth = sz(3); ctx.strokeStyle = 'rgba(4,2,12,.85)';
     ctx.strokeText(f.txt, f.x, f.y); ctx.fillStyle = f.c; ctx.fillText(f.txt, f.x, f.y);
   }
   ctx.globalAlpha = 1;
@@ -806,7 +815,7 @@ function drawScreenUI() {
       const sw = utile * (.62 * b.maxHp / tot + .38 / B.length);
       barraVita(bx, y, sw, h, b.hp / b.maxHp, b.hpG, b.c);
       bx += sw + gap;
-      const sx = b.x - G.cam.x + W / 2, sy = b.y - G.cam.y + H / 2;
+      const sx = (b.x - G.cam.x) * G.zoom + W / 2, sy = (b.y - G.cam.y) * G.zoom + H / 2;
       if (sx < 30 || sx > W - 30 || sy < 30 || sy > H - 30) {
         const a = Math.atan2(b.y - G.cam.y, b.x - G.cam.x);
         const ix = W / 2 + Math.cos(a) * Math.min(W, H) * .38;
@@ -840,7 +849,9 @@ function render() {
   if (G.shake > .1) { sx = crand(G.shake, -G.shake); sy = crand(G.shake, -G.shake); }
   drawBG(G.cam.x + sx, G.cam.y + sy);
   ctx.save();
-  ctx.translate(Math.round(W / 2 - G.cam.x + sx), Math.round(H / 2 - G.cam.y + sy));
+  ctx.translate(Math.round(W / 2 + sx), Math.round(H / 2 + sy));
+  ctx.scale(G.zoom, G.zoom);
+  ctx.translate(-G.cam.x, -G.cam.y);
   drawSuolo();
   drawZonesUnder();
   drawRocce();

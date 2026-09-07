@@ -85,8 +85,41 @@ const FIRE = {
     hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
   },
   singolarita(r, s) {
-    const t = nearest(G.p.x, G.p.y, 620);
-    const x = t ? t.x : G.p.x + rand(240, -240), y = t ? t.y : G.p.y + rand(240, -240);
+    /* Si agganciava al nemico piu' vicino a TE, che in mezzo alla folla e'
+       quello che ti sta addosso: misurato, il pozzo si apriva a una mediana
+       di 1-80 pixel dal nucleo. Poi risucchia tutto verso quel punto a 300
+       px/s, piu' veloce di quanto qualsiasi nemico sappia camminare: cioe'
+       era una macchina per consegnarti l'orda in braccio, e tu non decidi
+       dove spara perche' le rune sparano da sole.
+       E peggiorava salendo di livello, perche' il raggio di risucchio e'
+       tre volte l'area: a livello 8 con Ampiezza al massimo arrivava a 1138
+       pixel. Misurato contro lo Sciame, stesso elemento e stesso livello,
+       novanta secondi su tre semi: livello 3 faceva prendere 27.6 danni al
+       secondo contro 31.7 (faceva il suo mestiere), livello 8 ne faceva
+       prendere 43.5 contro 33.3, e con Ampiezza 5 arrivava a 49.2 contro
+       33.3. Una runa che punisce chi la potenzia non e' tesa, e' rotta.
+       Adesso il pozzo non si apre mai a meno di MINIMO dal nucleo: resta
+       una calamita per l'orda, ma ammassata a distanza di braccio invece
+       che sui tuoi piedi. Stesse misure: 15.7, 32.6 e 26.5. */
+    const MINIMO = 210;
+    let t = null, bd = 1e18;
+    GRID.near(G.p.x, G.p.y, 620, _q);
+    for (let i = 0; i < _q.length; i++) {
+      const e = _q[i]; if (e.hp <= 0) continue;
+      const dx = e.x - G.p.x, dy = e.y - G.p.y, d2 = dx * dx + dy * dy;
+      if (d2 < MINIMO * MINIMO || d2 >= bd) continue;
+      bd = d2; t = e;
+    }
+    let x, y;
+    if (t) { x = t.x; y = t.y; }
+    else {
+      /* nessuno abbastanza lontano: lo apro comunque verso la folla, ma
+         alla distanza minima, invece che a caso */
+      const n0 = nearest(G.p.x, G.p.y, 620);
+      const a = n0 ? Math.atan2(n0.y - G.p.y, n0.x - G.p.x) : rand(TAU);
+      x = G.p.x + Math.cos(a) * MINIMO; y = G.p.y + Math.sin(a) * MINIMO;
+    }
+    x = clamp(x, -ARENA, ARENA); y = clamp(y, -ARENA, ARENA);
     G.zones.push({ k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto' });
     AU.play('blast');
   },
@@ -675,7 +708,7 @@ function spawnRing(type, opts) {
   /* i nemici compaiono fuori campo. Contro un muro non basta schiacciare la posizione
      dentro l'arena — comparirebbero addosso: si riprova l'angolo, poi si ripiega
      verso il centro, che a questa distanza cade sempre dentro i confini. */
-  const d = Math.max(520, Math.hypot(W, H) * .5) + rand(180, 60);
+  const d = Math.max(520, Math.hypot(G.vw, G.vh) * .5) + rand(180, 60);   /* appena oltre il bordo del campo visivo */
   let x = 0, y = 0, ok = false;
   for (let i = 0; i < 12 && !ok; i++) {
     const a = rand(TAU);
@@ -858,7 +891,7 @@ function updateEventi(dt) {
     while (v.acc >= 1) {
       v.acc -= 1;
       if (G.enemies.length < 260) {
-        const a = v.a + rand(.5, -.5), d = Math.max(560, Math.hypot(W, H) * .55);
+        const a = v.a + rand(.5, -.5), d = Math.max(560, Math.hypot(G.vw, G.vh) * .55);
         spawnEnemy(pick(currentPool()),
           clamp(G.p.x + Math.cos(a) * d, -ARENA, ARENA),
           clamp(G.p.y + Math.sin(a) * d, -ARENA, ARENA), { spdMul: 1.15 });

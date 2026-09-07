@@ -85,10 +85,34 @@ partita non diventa una valanga), **molla più in fretta di quanto stringa** (un
 guardiano non ti lascia l'arena indurita), e **si ferma se il ritmo di uccisioni cala troppo**
 — un bullet heaven è anche la falciata, e quella condizione ha la precedenza su tutto.
 
+Siccome è il direttore a fare la difficoltà, la **velocità** dei nemici smette di farla: la
+sua crescita ha un tetto che la tiene sotto la tua andatura base. Senza, al minuto 20 lo
+Spettro ti pareggiava e al 30 ti superava — cioè Celerità smetteva di essere una scelta e
+diventava una tassa, e un passivo obbligatorio è una carta in meno di varietà a ogni partita.
+
 Misurato prima: con una build forte si stava **fermi, senza toccare niente, a zero danno** al
 minuto 8, 14, 20 e 28. Dopo: fermi si muore, muovendosi bene si sopravvive prendendo colpi
 veri. Chi gioca con una build modesta non si accorge del direttore, perché per lui la tenacia
 resta a uno.
+
+### Quanto mondo entra nello schermo
+
+Il mondo era disegnato uno a uno in pixel, quindi lo schermo non decideva quanto è grande la
+grafica: decideva **quanta arena esiste per te**. Un telefono vedeva un terzo di quello che
+vede un desktop, e un 4K quattro volte tanto — sullo stesso gioco, con le stesse regole.
+
+| | prima: nemici a schermo | ora |
+|---|---|---|
+| telefono 390×750 | **2** | 20 |
+| telefono 430×880 | 9 | 24 |
+| tablet 820×1180 | 41 | 37 |
+| desktop 1280×800 | 42 | 38 |
+| 4K 2560×1440 | **132** | 55 |
+
+Adesso la telecamera si allarga o si stringe per tenere confrontabile l'area di mondo. Non del
+tutto: compensare per intero rimpicciolirebbe le sagome sul telefono fino a renderle
+illeggibili, che è il difetto opposto. Contorni e scritte disegnati nel mondo si ingrandiscono
+di `1/zoom`, così restano della stessa grandezza fisica ovunque.
 
 ### Leggibilità
 
@@ -181,6 +205,7 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
 | `G.tenacia` | `03-systems.js` → `direttore` | quanto il direttore ha indurito i nemici in questo momento (1 = non è intervenuto) |
 | `G.chiarezza` | `06-main.js` → `step` | quanto spazio visivo resta ai tuoi effetti: 1 quando il campo è vuoto, .42 quando è pieno |
+| `AREA_RIF` | `02-engine.js` → `calcolaZoom` | l'area di schermo di riferimento: da qui esce `G.zoom`, cioè quanto mondo vedi |
 
 In console è esposto `window.ORBITA` con `G` (stato), `P` (statistiche derivate), `step()`,
 `start()`, `roll()`, `apply()`, `place()`, `recalc()`, `recalcRing()`: serve a far girare partite

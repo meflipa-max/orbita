@@ -6,6 +6,28 @@ const ARENA = 1700;              /* semilato dell'arena */
 const app = $('#app'), cv = $('#cv'), ctx = cv.getContext('2d', { alpha: false });
 let W = 800, H = 600, DPR = 1;
 
+/* ── quanto mondo entra nello schermo ────────────────────────────
+   Il mondo era disegnato uno a uno in pixel, quindi lo schermo non
+   decideva quanto e' grande la grafica: decideva QUANTA ARENA esiste per
+   te. Misurato: un desktop 1280x800 vede l'8,9% dell'arena, un telefono
+   430x880 il 3,3% — un terzo. E infatti sul telefono si vedevano 3-9
+   nemici alla volta contro i 16-35 del desktop: un bullet heaven con
+   l'orda quasi tutta fuori campo, proprio sul dispositivo per cui il
+   gioco e' fatto. Dalla parte opposta, un 4K vedeva quattro volte
+   l'arena di un 1080p e la partita gli si apriva in mano.
+   Adesso la telecamera si allarga o si stringe per tenere l'area di
+   mondo confrontabile. Non del tutto: compensare per intero (esponente
+   .5) rimpicciolirebbe le sagome sul telefono fino a renderle illeggibili,
+   che e' il difetto opposto. L'esponente .28 e' il compromesso misurato -
+   il telefono passa dal 37% al 66% del mondo che vede un desktop - e i
+   contorni dei nemici e le scritte a terra si ispessiscono di 1/zoom per
+   restare della stessa grandezza fisica. */
+const AREA_RIF = 1050000;             /* il desktop di riferimento, 1280x800 */
+function calcolaZoom() {
+  G.zoom = clamp(Math.pow(W * H / AREA_RIF, .28), .74, 1.55);
+  G.vw = W / G.zoom; G.vh = H / G.zoom;     /* il mondo visibile, in unita' di mondo */
+}
+
 function resize() {
   /* un viewport nullo (scheda nascosta, transizioni della barra del browser) azzererebbe il canvas */
   W = Math.max(1, app.clientWidth); H = Math.max(1, app.clientHeight);
@@ -15,6 +37,7 @@ function resize() {
   DPR = dpr;
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  calcolaZoom();
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => { resize(); setTimeout(resize, 260); });
@@ -355,7 +378,9 @@ const G = {
   /* il direttore: vedi updateSpawns. raggio = a che distanza muoiono i
      nemici, tenacia = quanto sono duri perche' arrivino piu' vicino.
      chiarezza = quanto spazio visivo resta agli effetti: vedi 04-render. */
-  raggio: 0, tenacia: 1, chiarezza: 1, kps: 0, kAcc: 0
+  raggio: 0, tenacia: 1, chiarezza: 1, kps: 0, kAcc: 0,
+  /* vedi calcolaZoom: quanto mondo entra nello schermo di questo dispositivo */
+  zoom: 1, vw: 1280, vh: 800
 };
 const P = {}; /* statistiche derivate */
 
@@ -521,7 +546,14 @@ function spawnEnemy(type, x, y, opts) {
   const hpScale = (1 + mins * .37 + mins * mins * .023) * (o.hpMul || 1) * ten;
   const e = {
     type, x, y, vx: 0, vy: 0, r: d.r * (o.rMul || 1), c: d.c, shape: d.shape,
-    hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * (1 + mins * .012) * G.asc.spd,
+    /* La crescita di velocita' ha un tetto. Senza, al minuto 20 lo Spettro
+       arrivava esattamente ai 196 px/s della tua andatura base e al minuto
+       30 la superava (215): da li' in poi, senza Celerita', non potevi piu'
+       staccarti da niente — cioe' Celerita' smetteva di essere una scelta e
+       diventava una tassa, e un passivo obbligatorio e' una carta in meno di
+       varieta' a ogni partita. Il tetto tiene il piu' veloce sotto la tua
+       andatura base; la difficolta' la fa il direttore, non la corsa. */
+    hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * Math.min(1.22, 1 + mins * .012) * G.asc.spd,
     /* Un nemico temprato picchia anche piu' forte, non solo piu' a lungo:
        senza questo una build che si cura 9 vite al secondo pareggiava il
        contatto e restava in stallo per sempre a vita piena. */
@@ -547,7 +579,7 @@ function syncBosses() {
 }
 
 function spawnBoss(def) {
-  const a = rand(TAU), d = Math.max(W, H) * .62 + 120;
+  const a = rand(TAU), d = Math.max(G.vw, G.vh) * .62 + 120;   /* mondo, non schermo */
   const mins = G.t / 60;
   const e = {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
