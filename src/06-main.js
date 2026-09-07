@@ -72,6 +72,8 @@ function step(dt) {
     if (G.hintOff <= 0) elHint.className = 'clip';
   }
 
+  flushUccisioni(dt);
+
   /* ── chiarezza ───────────────────────────────────────────────
      La regola: cio' che ti puo' uccidere e' la cosa piu' visibile dello
      schermo, tutto il resto cede il posto. I tuoi effetti sono decorazione
@@ -100,6 +102,44 @@ function step(dt) {
 
   UI.hud();
   if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
+}
+
+/* Il riepilogo di fine fotogramma. Le uccisioni si accumulano durante il
+   passo e si tirano le somme qui, una volta sola: cosi' una Nova che ne
+   spazza venti insieme e' UN evento con un suono suo, invece di venti
+   suoni identici sovrapposti che si annullano a vicenda.
+   Il contatore che decide l'altezza avanza anche quando il suono viene
+   scartato dal limitatore: cosi' l'arpeggio continua a scorrere invece di
+   inchiodarsi sulla stessa nota. */
+function flushUccisioni(dt) {
+  if (G.raffCd > 0) G.raffCd -= dt;
+  /* conto quante ne sono cadute negli ultimi decimi di secondo: decade da
+     solo, cosi' non serve tenere una lista di istanti */
+  G.raffFin *= Math.exp(-dt / .13);
+
+  if (G.raffN > 0) {
+    AU.pop(G.raffN, G.combo);
+    G.combo++; G.comboT = .55;
+    G.raffFin += G.raffN;
+    /* Cinque in un decimo di secondo non capita falciando: capita quando
+       una Nova apre un buco o quando una cascata di implosioni si porta
+       via un grappolo. Quello e' il momento che merita un tonfo — e la
+       pausa obbligata lo tiene un evento invece di un tamburo. */
+    if (G.raffFin >= 5 && G.raffCd <= 0) {
+      G.raffCd = .34;
+      AU.raffica(.55 + G.raffFin / 22);
+      /* un anello solo al centro del grappolo, invece di venti anelli
+         sovrapposti che fanno una macchia */
+      G.zones.push({ k: 'ring', x: G.raffX / G.raffN, y: G.raffY / G.raffN,
+        r0: G.raffR, r1: G.raffR + 46 + Math.min(30, G.raffFin) * 8,
+        t: 0, dur: .36, c: G.raffC });
+      G.raffFin = 0;
+    }
+    G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0;
+  } else if (G.comboT > 0) {
+    G.comboT -= dt;
+    if (G.comboT <= 0) G.combo = 0;     /* la scala riparte dal basso */
+  }
 }
 
 /* misurazione leggera: sotto i 40 fps riduco le particelle */
@@ -210,6 +250,8 @@ function menuStep(dt) {
   updateEnemies(dt);
   updateGems(dt);
   updateParts(dt);
+
+  flushUccisioni(dt);
 
   /* la vetrina non fa progredire niente */
   G.pending = 0; G.drops.length = 0; P.hp = P.maxHp; p.inv = 999;

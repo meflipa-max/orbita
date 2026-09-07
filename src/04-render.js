@@ -396,6 +396,28 @@ function drawZonesOver() {
       ctx.beginPath(); ctx.arc(z.x, z.y, rr, z.a - mez, z.a + mez); ctx.stroke();
       ctx.strokeStyle = rgba('#ffffff', a * .7); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(z.x, z.y, rr, z.a - mez * .6, z.a + mez * .6); ctx.stroke();
+    } else if (z.k === 'guscio') {
+      /* Il guscio: la sagoma che stavi colpendo lampeggia e si sfalda.
+         Dura un settimo di secondo — meno di un battito di ciglia — ed e'
+         proprio la brevita' a farlo leggere come uno scoppio invece che
+         come l'ennesimo effetto acceso in mezzo agli altri. Cede alla
+         chiarezza come tutto il resto: in mezzo alla folla si smorza. */
+      /* Scatta e si spegne, non cresce piano: un contorno che si allarga
+         con calma somiglia a un nemico vivo, e l'ultima cosa che voglio e'
+         aggiungere sagome finte in mezzo a quelle vere. Cosi' invece a
+         meta' della sua vita ha gia' fatto tre quarti di strada ed e' quasi
+         trasparente — in movimento e' un lampo, mai un oggetto. */
+      const e = 1 - (1 - f) * (1 - f);
+      const a = Math.pow(1 - f, 1.7) * G.chiarezza;
+      const sc = 1 + e * (z.grosso ? 1.6 : 1.05);
+      ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(z.rot); ctx.scale(sc, sc);
+      shape({ shape: z.forma, r: z.r });
+      /* il primo terzo e' bianco pieno: e' il lampo che dice "adesso" */
+      if (f < .3) { ctx.fillStyle = rgba('#ffffff', (1 - f / .3) * .55 * G.chiarezza); ctx.fill(); }
+      ctx.strokeStyle = rgba(mixc(z.c, '#ffffff', .6), a * .95);
+      ctx.lineWidth = sz(2.4 + (z.grosso ? 2 : 0)) * (.45 + a);
+      ctx.stroke();
+      ctx.restore();
     } else if (z.k === 'bolt') {
       if (z.t < .17) {
         ctx.strokeStyle = rgba(z.c, .55); ctx.lineWidth = 1.6;

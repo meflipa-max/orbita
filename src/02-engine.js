@@ -161,6 +161,46 @@ const AU = {
     g.gain.exponentialRampToValueAtTime(.0001, t + d);
     o.connect(g); g.connect(dest || this.sfxG); o.start(t); o.stop(t + d + .02);
   },
+  /* ── il pop ───────────────────────────────────────────────────
+     Il suono di uccisione era sempre lo stesso: stessa nota, stesso
+     rumore, dodici volte al secondo. Suoni identici ripetuti in fretta
+     l'orecchio smette di sentirli come eventi e li fonde in un ronzio —
+     e' letteralmente il contrario della soddisfazione, perche' la
+     soddisfazione E' distinguere il singolo colpo.
+     Due cambi. Primo, l'altezza CICLA su una pentatonica minore invece di
+     stare ferma: a ritmo alto diventa un arpeggio, a ritmo basso un
+     rintocco che sale. Ciclare invece di salire senza fine e' voluto —
+     una scala che sale sempre, a venti uccisioni al secondo, si inchioda
+     sull'acuto dopo un secondo e strilla per venti minuti.
+     Secondo, quando cadono in molti nello stesso istante non suonano in
+     venti: suona UN colpo piu' grosso e piu' basso. Meno rumore, piu'
+     evento. */
+  scala: [0, 3, 5, 7, 10, 12],
+  /* Il pop parte SUBITO, nel fotogramma in cui il nemico muore: mezzo
+     decimo di secondo di ritardo e la ricompensa si stacca dal gesto, che
+     e' esattamente quello che la rende insoddisfacente. */
+  pop(n, indice) {
+    if (!this.ready || !SAVE.sfx) return;
+    const t = this.ctx.currentTime;
+    if (t - (this._last.pop || 0) < .062) return;   /* non piu' di sedici al secondo */
+    this._last.pop = t;
+    const semi = this.scala[indice % this.scala.length];
+    const f = 430 * Math.pow(2, semi / 12);
+    this.tone(f, .075, 'triangle', n > 1 ? .075 : .058, f * .38);
+    this.burst(.055, .085, 1500 + semi * 55, 1.3);
+  },
+  /* La raffica e' un secondo strato, non un sostituto: si aggiunge sopra i
+     pop quando ne cadono tanti ravvicinati (una Nova, una cascata di
+     implosioni). Ha una pausa obbligata fra una e l'altra, se no a ritmo
+     alto diventerebbe un tamburo continuo e smetterebbe di voler dire
+     "adesso e' successo qualcosa". */
+  raffica(forza) {
+    if (!this.ready || !SAVE.sfx) return;
+    const v = clamp(forza, .5, 1.35);
+    this.tone(124, .28, 'sine', .15 * v, 42);
+    this.tone(310, .13, 'triangle', .06 * v, 148);
+    this.burst(.18, .11 * v, 2000, .9);
+  },
   burst(d, gain, freq, q) {
     if (!this.ready) return;
     const c = this.ctx, t = c.currentTime;
@@ -175,12 +215,13 @@ const AU = {
     if (!this.ready || !SAVE.sfx) return;
     /* Griglia anti-mitraglia: senza, con l'anello pieno si sovrappongono
        decine di suoni al secondo e la musica sparisce sotto il rumore. */
-    const t = this.ctx.currentTime, gate = { shoot: .10, hit: .07, kill: .085, pick: .075, crit: .09 }[k];
+    const t = this.ctx.currentTime, gate = { shoot: .10, hit: .07, pick: .075, crit: .09 }[k];
     if (gate) { if (t - (this._last[k] || 0) < gate) return; this._last[k] = t; }
     switch (k) {
       case 'shoot': this.tone(620 + crand(80), .07, 'triangle', .07, 300); break;
       case 'hit': this.burst(.05, .09, 2000, 1.4); break;
-      case 'kill': this.burst(.13, .13, 900, .8); this.tone(180, .1, 'sawtooth', .045, 60); break;
+      /* 'kill' non si usa piu': la morte di un nemico passa da AU.pop,
+         raccolta una volta per fotogramma da flushUccisioni */
       case 'crit': this.tone(1180, .1, 'square', .1, 700); this.burst(.08, .12, 3200, 2); break;
       case 'hurt': this.tone(160, .26, 'sawtooth', .2, 52); this.burst(.18, .16, 420, .7); break;
       case 'pick': this.tone(880 + crand(200), .06, 'sine', .09, 1300); break;
@@ -380,7 +421,9 @@ const G = {
      chiarezza = quanto spazio visivo resta agli effetti: vedi 04-render. */
   raggio: 0, tenacia: 1, chiarezza: 1, kps: 0, kAcc: 0,
   /* vedi calcolaZoom: quanto mondo entra nello schermo di questo dispositivo */
-  zoom: 1, vw: 1280, vh: 800
+  zoom: 1, vw: 1280, vh: 800,
+  /* il colpo di grazia: vedi flushUccisioni in 06-main */
+  raffN: 0, raffX: 0, raffY: 0, raffR: 0, raffC: '#ffffff', combo: 0, comboT: 0, raffFin: 0, raffCd: 0
 };
 const P = {}; /* statistiche derivate */
 
@@ -510,6 +553,19 @@ function addPart(x, y, vx, vy, life, size, color, kind) {
      divergerebbero fra un telefono e un desktop */
   if (G.chiarezza < 1 && !cchance(G.chiarezza)) return;
   G.parts.push({ x, y, vx, vy, life, max: life, size, c: color, k: kind || 0 });
+}
+/* Detriti che vanno DA QUALCHE PARTE. Un'esplosione radiale e' una palla
+   che si gonfia; una schizzata nella direzione del colpo si legge come
+   impatto — sai da dove e' arrivata la botta. Il cono e' largo (mezzo
+   giro), non un getto: deve sembrare che la sagoma si sfaldi, non che
+   sputi. */
+function burstDir(x, y, n, color, spd, size, life, dx, dy) {
+  n = Math.max(1, Math.round(n * G.q));
+  const a0 = (dx || dy) ? Math.atan2(dy, dx) : crand(TAU);
+  for (let i = 0; i < n; i++) {
+    const a = a0 + crand(1.5, -1.5), sp = crand(spd, spd * .3);
+    addPart(x, y, Math.cos(a) * sp, Math.sin(a) * sp, crand(life, life * .4), crand(size, 1.4), color);
+  }
 }
 function burstPart(x, y, n, color, spd, size, life) {
   n = Math.max(1, Math.round(n * G.q));
@@ -705,9 +761,34 @@ function chainFrom(src, dmg, jumps, range) {
 function killEnemy(e, opt) {
   e.hp = 0; e.dead = true;
   G.kills++;
-  AU.play('kill');
-  burstPart(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 6), e.c, e.boss ? 420 : 230, e.boss ? 6 : 3.4, e.boss ? 1.1 : .48);
+  /* ── il colpo di grazia ────────────────────────────────────────
+     Prima un nemico spariva e basta: sei scintille e un anello. Il piacere
+     di un bullet heaven sta tutto nel POP, e il pop non e' una cosa grossa
+     — e' una cosa BREVE e precisa, sincronizzata all'istante esatto. Tre
+     pezzi, nessuno dei quali dura piu' di un settimo di secondo:
+       · il GUSCIO: la sagoma che stavi colpendo lampeggia bianca e si
+         sfalda verso l'esterno. E' la forma che riconoscevi che si rompe,
+         quindi l'occhio lega la ricompensa al bersaglio giusto.
+       · i DETRITI vanno nella direzione del colpo invece che in tondo: si
+         legge come impatto e non come palloncino che scoppia.
+       · il SUONO non parte da qui ma finisce in coda, e viene raccolto una
+         volta per fotogramma (vedi flushUccisioni): venti uccisioni al
+         secondo di suoni identici sono una raffica di mitra, non venti
+         soddisfazioni.
+     Niente sussulto e niente tremore sui nemici comuni: a venti al secondo
+     lo schermo non si fermerebbe piu'. Quelli restano ai bersagli che
+     contano. */
+  const kbx = (opt && opt.kbx) || 0, kby = (opt && opt.kby) || 0;
+  const rot = Math.atan2(G.p.y - e.y, G.p.x - e.x) + PI / 2;
+  G.zones.push({ k: 'guscio', x: e.x, y: e.y, r: e.r, forma: e.shape, rot,
+    t: 0, dur: e.boss ? .3 : e.elite ? .2 : .14, c: e.c, grosso: e.boss ? 2 : e.elite ? 1 : 0 });
+  burstDir(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 7), e.c, e.boss ? 420 : 250, e.boss ? 6 : 3.4, e.boss ? 1.1 : .46, kbx, kby);
   G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c });
+  /* in coda per il riepilogo di fine fotogramma */
+  G.raffN++; G.raffX += e.x; G.raffY += e.y;
+  if (e.r > G.raffR) { G.raffR = e.r; G.raffC = e.c; }
+  /* il sussulto resta ai bersagli che contano: un elite e' una carta */
+  if (e.elite && !e.boss) G.hitstop = Math.max(G.hitstop, .05);
 
   /* Implosione: ogni uccisione detona i vicini. Ma chi moriva DENTRO
      un'implosione ne scatenava un'altra, e quella un'altra ancora: una

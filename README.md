@@ -114,6 +114,25 @@ tutto: compensare per intero rimpicciolirebbe le sagome sul telefono fino a rend
 illeggibili, che è il difetto opposto. Contorni e scritte disegnati nel mondo si ingrandiscono
 di `1/zoom`, così restano della stessa grandezza fisica ovunque.
 
+### Il colpo di grazia
+
+Il piacere di un bullet heaven è il **pop**, e il pop non è una cosa grossa: è una cosa
+**breve** e sincronizzata all'istante esatto. Un nemico che muore lascia un *guscio* — la sua
+stessa sagoma che lampeggia bianca e si sfalda in un settimo di secondo — e detriti che vanno
+nella direzione del colpo invece che in tondo, così si legge come impatto.
+
+Il suono non parte dalla morte: le uccisioni si accumulano e si tirano le somme una volta per
+fotogramma. Venti suoni identici al secondo l'orecchio li fonde in un ronzio, che è
+letteralmente il contrario della soddisfazione — la soddisfazione *è* distinguere il singolo
+colpo. Quindi l'altezza **cicla su una pentatonica minore**: a ritmo alto diventa un arpeggio,
+a ritmo basso un rintocco. E quando ne cadono cinque in un decimo di secondo — una Nova che
+apre un buco, una cascata di implosioni — sopra ai pop si aggiunge **un tonfo solo**, con una
+pausa obbligata perché resti un evento e non un tamburo.
+
+Misurato in partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 secondi, e in
+media **1,4 gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti
+uccisioni al secondo lo schermo non si fermerebbe più.
+
 ### Leggibilità
 
 Regola unica: **ciò che ti può uccidere è la cosa più visibile dello schermo**. Le tue
