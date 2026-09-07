@@ -254,8 +254,13 @@ function drawEnemies() {
     shape(e);
     /* corpo scuro e pieno sotto il contorno acceso: i nemici diventano
        sagome solide invece di contorni trasparenti persi nel caos luminoso */
-    if (flash) { ctx.fillStyle = '#ffffff'; ctx.fill(); }
-    else {
+    /* colpito: il corpo scuro resta e sopra ci va un velo bianco, cosi' si
+       vede il morso senza che la sagoma diventi una macchia bianca. Il
+       bianco pieno e' riservato al guscio della morte. */
+    if (flash) {
+      ctx.fillStyle = 'rgba(10,6,26,.88)'; ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.62)'; ctx.fill();
+    } else {
       ctx.fillStyle = e.type === 'spettro' ? 'rgba(10,6,26,.44)' : 'rgba(10,6,26,.88)';
       ctx.fill();
       ctx.fillStyle = rgba(col, e.type === 'spettro' ? .3 : .22);
@@ -398,24 +403,33 @@ function drawZonesOver() {
       ctx.beginPath(); ctx.arc(z.x, z.y, rr, z.a - mez * .6, z.a + mez * .6); ctx.stroke();
     } else if (z.k === 'guscio') {
       /* Il guscio: la sagoma che stavi colpendo lampeggia e si sfalda.
-         Dura un settimo di secondo — meno di un battito di ciglia — ed e'
-         proprio la brevita' a farlo leggere come uno scoppio invece che
-         come l'ennesimo effetto acceso in mezzo agli altri. Cede alla
-         chiarezza come tutto il resto: in mezzo alla folla si smorza. */
-      /* Scatta e si spegne, non cresce piano: un contorno che si allarga
-         con calma somiglia a un nemico vivo, e l'ultima cosa che voglio e'
-         aggiungere sagome finte in mezzo a quelle vere. Cosi' invece a
-         meta' della sua vita ha gia' fatto tre quarti di strada ed e' quasi
-         trasparente — in movimento e' un lampo, mai un oggetto. */
-      const e = 1 - (1 - f) * (1 - f);
-      const a = Math.pow(1 - f, 1.7) * G.chiarezza;
-      const sc = 1 + e * (z.grosso ? 1.6 : 1.05);
+         La prima versione non si vedeva, e misurando ho capito perche':
+         alzava la luminosita' media del riquadro di 3.5 su un fondo di 11
+         per due fotogrammi, e il suo pixel piu' luminoso non superava mai
+         quelli che c'erano gia'. Era un velo, non un lampo — e un lampo si
+         riconosce proprio dal fatto che per un istante SATURA.
+         Due errori. Il primo: era legato alla chiarezza, che a meta'
+         partita sta a .42-.7, quindi sbiadiva proprio quando uccidi di
+         piu'. Ma la chiarezza serve a spegnere la DECORAZIONE per far
+         posto all'informazione, e questo lampo e' informazione: dice che
+         hai ucciso. Adesso la chiarezza lo smorza al massimo di un quinto.
+         Il secondo: durava 0.14s con un contorno sottile. Ora il primo
+         quinto e' la sagoma piena di bianco additivo — satura davvero — e
+         il resto e' il contorno che si allarga e svanisce. */
+      const ch = .8 + G.chiarezza * .2;
+      const e = 1 - (1 - f) * (1 - f);                 /* scatta, poi rallenta */
+      const sc = 1 + e * (z.grosso ? 1.9 : 1.35);
+      const a = (f < .3 ? 1 : 1 - (f - .3) / .7) * ch;
       ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(z.rot); ctx.scale(sc, sc);
       shape({ shape: z.forma, r: z.r });
-      /* il primo terzo e' bianco pieno: e' il lampo che dice "adesso" */
-      if (f < .3) { ctx.fillStyle = rgba('#ffffff', (1 - f / .3) * .55 * G.chiarezza); ctx.fill(); }
-      ctx.strokeStyle = rgba(mixc(z.c, '#ffffff', .6), a * .95);
-      ctx.lineWidth = sz(2.4 + (z.grosso ? 2 : 0)) * (.45 + a);
+      /* Pieno SOLO durante il lampo. Riempiendolo anche dopo — col colore
+         del nemico, in additivo — restava una sagoma piena per due decimi
+         di secondo e tornava a leggersi come un oggetto solido in mezzo ai
+         nemici veri. Dopo il lampo resta solo il contorno che si allarga:
+         un fantasma, non una cosa. */
+      if (f < .22) { ctx.fillStyle = rgba('#ffffff', (1 - f / .22) * ch); ctx.fill(); }
+      ctx.strokeStyle = rgba(mixc(z.c, '#ffffff', .7), a);
+      ctx.lineWidth = sz(3.4 + (z.grosso ? 2.6 : 0)) * (.5 + a);
       ctx.stroke();
       ctx.restore();
     } else if (z.k === 'bolt') {

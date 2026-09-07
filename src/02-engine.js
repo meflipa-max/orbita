@@ -677,7 +677,12 @@ function _hit(e, amount, opt) {
   /* la statistica conta il danno utile, non l'eccesso (una bomba fa 99999 a testa) */
   G.dmgDone += Math.max(0, Math.min(dmg, e.hp));
   e.hp -= dmg;
-  e.flash = .13;
+  /* Il lampo di "colpito" durava 0.13s. Con otto rune che sparano da sole
+     un nemico viene colpito molto piu' spesso di così, quindi restava
+     bianco pieno praticamente sempre: un segnale sempre acceso non dice
+     piu' niente, e soprattutto rubava il bianco saturo alla MORTE, che e'
+     l'unica cosa che deve saturare. Adesso e' un guizzo. */
+  e.flash = .07;
   /* Un numero per ogni colpo, con otto rune e trecento nemici, era una
      bufera di cifre che copriva l'azione. Restano i colpi che dicono
      qualcosa: critici, bersagli importanti, e le mazzate vere. */
@@ -781,7 +786,7 @@ function killEnemy(e, opt) {
   const kbx = (opt && opt.kbx) || 0, kby = (opt && opt.kby) || 0;
   const rot = Math.atan2(G.p.y - e.y, G.p.x - e.x) + PI / 2;
   G.zones.push({ k: 'guscio', x: e.x, y: e.y, r: e.r, forma: e.shape, rot,
-    t: 0, dur: e.boss ? .3 : e.elite ? .2 : .14, c: e.c, grosso: e.boss ? 2 : e.elite ? 1 : 0 });
+    t: 0, dur: e.boss ? .38 : e.elite ? .28 : .2, c: e.c, grosso: e.boss ? 2 : e.elite ? 1 : 0 });
   burstDir(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 7), e.c, e.boss ? 420 : 250, e.boss ? 6 : 3.4, e.boss ? 1.1 : .46, kbx, kby);
   G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c });
   /* in coda per il riepilogo di fine fotogramma */

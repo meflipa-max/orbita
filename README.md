@@ -129,9 +129,23 @@ a ritmo basso un rintocco. E quando ne cadono cinque in un decimo di secondo —
 apre un buco, una cascata di implosioni — sopra ai pop si aggiunge **un tonfo solo**, con una
 pausa obbligata perché resti un evento e non un tamburo.
 
-Misurato in partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 secondi, e in
-media **1,4 gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti
-uccisioni al secondo lo schermo non si fermerebbe più.
+Il **bianco saturo è riservato alla morte**. Prima non lo era: il lampo di "colpito" durava
+0,13 s e riempiva il nemico di bianco pieno, ma con otto rune che sparano da sole un nemico
+viene colpito molto più spesso di così — quindi restava bianco quasi sempre. Un segnale sempre
+acceso non dice più niente, e rubava la saturazione all'unica cosa che deve saturare. Ora
+essere colpiti è un guizzo di 0,07 s sopra il corpo scuro; morire è l'unica cosa che diventa
+davvero bianca.
+
+Misurato leggendo i pixel del canvas, su un fondo di 11 di luminosità media: il pop alza la
+media del riquadro di **11** e il suo pixel più luminoso di **+110 su 255** per due fotogrammi,
+poi lascia un contorno che si allarga per 200 ms. (La prima versione alzava la media di 3,5 e
+il picco di **2**: era un velo, non un lampo — e infatti non si notava.) Nel fotogramma
+peggiore di una partita — 14 gusci in volo con 48 nemici a schermo — i pixel saturi sono
+l'**1,99%** contro l'1,56% di un fotogramma senza morti: lo schermo non si sbianca.
+
+In partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 secondi, in media **2
+gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti uccisioni al
+secondo lo schermo non si fermerebbe più.
 
 ### Leggibilità
 
