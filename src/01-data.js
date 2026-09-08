@@ -305,6 +305,39 @@ const CHARS = [
     rule: 'anelloCorto', ruleD: 'Anello dimezzato, ma ogni runa conta doppia per le catene.' }
 ];
 
+/* ── aspetto del nucleo ─────────────────────────────────────────
+   Solo estetica: nessuna di queste forme tocca una statistica, e si
+   cambiano quando si vuole senza costo. Vale la stessa regola dei nemici —
+   «l'identità la porta la forma, non la tinta» — che qui serve due volte:
+   il colore resta quello del nucleo che stai giocando, e il centro resta
+   bianco e pieno, l'unica cosa bianca e piena dello schermo. Se un giorno
+   in campo ci sarà più di un giocatore, la sagoma è ciò che si legge da
+   lontano, quando il colore è già sepolto sotto gli effetti.
+   `lati` sono i vertici (0 = cerchio), `punte` accorcia quelli dispari per
+   le forme a stella, `rot` è quanto in fretta gira.                       */
+const SKINS = [
+  { id: 'nucleo',  n: 'Nucleo',  d: 'Esagono',    lati: 6, rot: .7 },
+  { id: 'prisma',  n: 'Prisma',  d: 'Triangolo',  lati: 3, rot: .5 },
+  { id: 'rombo',   n: 'Rombo',   d: 'Quadrato',   lati: 4, rot: .55 },
+  { id: 'sigillo', n: 'Sigillo', d: 'Pentagono',  lati: 5, rot: .6 },
+  { id: 'quarzo',  n: 'Quarzo',  d: 'Ottagono',   lati: 8, rot: .45 },
+  { id: 'anello',  n: 'Anello',  d: 'Cerchio',    lati: 0, rot: 0 },
+  { id: 'astro',   n: 'Astro',   d: 'Sei punte',  lati: 6, punte: .54, rot: .35 }
+];
+/* i vertici della sagoma, in ordine, su un raggio dato: la usano il gioco
+   (canvas) e l'anteprima nell'Osservatorio (svg), così quello che scegli è
+   esattamente quello che vedi in partita */
+function skinPunti(sk, r) {
+  const out = [];
+  const n = sk.punte ? sk.lati * 2 : sk.lati;
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU;
+    const rr = sk.punte && (i % 2) ? r * sk.punte : r;
+    out.push([Math.cos(a) * rr, Math.sin(a) * rr]);
+  }
+  return out;
+}
+
 /* ── potenziamenti permanenti ───────────────────────────────── */
 const META = [
   { id: 'nucleo',    n: 'Nucleo Denso',   max: 5, c: 60,   step: 1.7, ico: 'vigore',     d: '+8% Vita massima' },

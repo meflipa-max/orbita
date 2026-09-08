@@ -55,7 +55,7 @@ if (window.visualViewport) {
    sicurezza i progressi sparirebbero in silenzio, che per un gioco
    costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
-const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
+const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', skin: 'nucleo', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
 let SAVE = Object.assign({}, DEFAULT_SAVE);
 let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
 const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
@@ -90,6 +90,7 @@ function sanitizeSave(o) {
   s.sfide = s.sfide.filter(id => SFIDE.some(x => x.id === id));
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
   if (!APERTURE.some(a => a.el === s.apertura)) s.apertura = 'fuoco';
+  if (!SKINS.some(k => k.id === s.skin)) s.skin = 'nucleo';
   s.asc = Math.min(s.asc | 0, ASC.length - 1);
   s.ascSel = Math.min(Math.max(s.ascSel | 0, 0), s.asc);
   for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs', 'asc', 'ascSel']) {
@@ -408,7 +409,7 @@ const G = {
   state: 'title', t: 0, scale: 1, hitstop: 0,
   p: { x: 0, y: 0, vx: 0, vy: 0, r: 15, inv: 0, hurt: 0 },
   ring: [], slots: 6, ringRot: 0,
-  passives: {}, char: CHARS[0],
+  passives: {}, char: CHARS[0], skin: SKINS[0],
   enemies: [], bullets: [], ebul: [], gems: [], zones: [], parts: [], floats: [], drops: [],
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,

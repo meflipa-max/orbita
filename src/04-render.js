@@ -684,6 +684,14 @@ function drawPickups() {
   ctx.globalCompositeOperation = 'source-over';
 }
 
+function sagomaNucleo(sk, r) {
+  ctx.beginPath();
+  if (!sk.lati) { ctx.arc(0, 0, r, 0, TAU); return; }
+  const pt = skinPunti(sk, r);
+  for (let i = 0; i < pt.length; i++) ctx[i ? 'lineTo' : 'moveTo'](pt[i][0], pt[i][1]);
+  ctx.closePath();
+}
+
 function drawPlayer() {
   const p = G.p, sl = G.slots;
   /* anello di orbita */
@@ -744,23 +752,19 @@ function drawPlayer() {
 
   /* nucleo */
   /* Il nucleo deve restare l'unica cosa bianca e piena dello schermo:
-     doppio contorno e centro pieno, così non si perde nella mischia. */
+     doppio contorno e centro pieno, così non si perde nella mischia. La
+     sagoma la sceglie il giocatore (SKINS): cambia la forma, non la regola. */
+  const sk = G.skin || SKINS[0];
   ctx.save(); ctx.translate(p.x, p.y);
   const inv = p.inv > 0 && (Math.floor(G.t * 22) % 2 === 0);
   ctx.globalAlpha = inv ? .45 : 1;
-  ctx.rotate(G.t * .7);
+  ctx.rotate(G.t * (sk.rot || 0));
   ctx.fillStyle = 'rgba(6,4,18,.85)';
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * (p.r + 3), Math.sin(a) * (p.r + 3)); }
-  ctx.closePath(); ctx.fill();
+  sagomaNucleo(sk, p.r + 3); ctx.fill();
   ctx.strokeStyle = G.char.c; ctx.lineWidth = 3;
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * p.r, Math.sin(a) * p.r); }
-  ctx.closePath(); ctx.stroke();
+  sagomaNucleo(sk, p.r); ctx.stroke();
   ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * (p.r - 4), Math.sin(a) * (p.r - 4)); }
-  ctx.closePath(); ctx.stroke();
+  sagomaNucleo(sk, p.r - 4); ctx.stroke();
   ctx.fillStyle = p.hurt > 0 ? '#ff8fae' : '#ffffff';
   ctx.beginPath(); ctx.arc(0, 0, p.r * .46, 0, TAU); ctx.fill();
   ctx.globalAlpha = 1;

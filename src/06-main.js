@@ -211,6 +211,7 @@ function enterMenu() {
   G.rocks.length = 0; G.nodo = null; G.nodoK = null;   /* né ostacoli dietro al titolo */
   G.tenacia = 1; G.raggio = RAGGIO_MIRA; G.chiarezza = 1;
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+  G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
   G.passives = { impeto: 3, ampiezza: 2, frenesia: 2 };
   G.p.x = 0; G.p.y = 0; G.p.inv = 999; G.cam.x = 0; G.cam.y = 0;
   demoRing();

@@ -40,6 +40,16 @@ Il nucleo dice *che regola* giochi. Da *dove parti* è una scelta a parte: l'**a
 decide la prima runa dell'anello, cioè la tua prima catena e il primo Risveglio a cui punti.
 Sei aperture, una per elemento più l'Iride, e non costano nulla: si scelgono a ogni partita.
 
+### Aspetto
+
+La sagoma del nucleo si sceglie: esagono, triangolo, quadrato, pentagono, ottagono, cerchio,
+stella a sei punte. È solo estetica — nessuna forma tocca una statistica, si cambiano quando si
+vuole e non costano niente — e vale la stessa regola dei nemici: **l'identità la porta la
+forma, non la tinta**. Il colore resta quello del nucleo che giochi e il centro resta bianco e
+pieno, l'unica cosa bianca e piena dello schermo. Se un giorno in campo ci sarà più di un
+giocatore, la sagoma è ciò che si legge da lontano, quando il colore è già sepolto sotto gli
+effetti.
+
 ### Sfide
 
 Dodici obiettivi che danno una direzione alle partite e insegnano i sistemi. Non medaglie:

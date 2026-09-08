@@ -283,6 +283,7 @@ const UI = {
 
       nucleo +
       this.ascHTML() +
+      this.aspettoHTML() +
       /* la semenza serve a chi rigioca una partita precisa: chiusa di
          default, cosi' Inizia sta a portata di pollice */
       '<details class="seedbox"><summary>Semenza</summary>' +
@@ -329,6 +330,33 @@ const UI = {
     }).join('');
     return '<div class="eyebrow" style="text-align:left;margin-top:4px">Sfide · ' + fatte + ' di ' + SFIDE.length + '</div>' +
       '<div class="sfidelist">' + righe + '</div>';
+  },
+
+  /* ── aspetto ─────────────────────────────────────────────
+     Sta in un pannello richiudibile accanto alla Semenza, non fra le
+     scelte di partenza: non cambia niente di come si gioca, e la riga
+     sopra a «Inizia» deve restare quella che decide la partita. La
+     scelta e' immediata e senza costo — si vede subito sul nucleo che
+     gira dietro al menu, quindi il pannello non si richiude e la
+     schermata non si ridisegna. */
+  skinSvg(sk) {
+    const inner = '<circle cx="12" cy="12" r="2.6"/>';
+    if (!sk.lati) return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/>' + inner + '</svg>';
+    const d = skinPunti(sk, 8.4)
+      .map(([x, y], i) => (i ? 'L' : 'M') + (12 + x).toFixed(1) + ' ' + (12 + y).toFixed(1)).join('') + 'Z';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/>' + inner + '</svg>';
+  },
+  aspettoHTML() {
+    const c = (CHARS.find(x => x.id === SAVE.char) || CHARS[0]).c;
+    const righe = SKINS.map(k =>
+      '<button class="ap clip' + (SAVE.skin === k.id ? ' on' : '') + '" style="--c:' + c + '"' +
+      ' data-a="skin" data-id="' + k.id + '"><span class="face">' +
+      '<span class="ico clip">' + this.skinSvg(k) + '</span>' +
+      '<span class="nm">' + k.n + '</span><span class="ds">' + k.d + '</span>' +
+      '</span></button>').join('');
+    return '<details class="seedbox"><summary>Aspetto</summary>' +
+      '<div class="hint" style="text-align:left;margin:0 0 8px">Solo la sagoma del nucleo: nessuna di queste forme cambia una statistica. Il colore resta quello del nucleo che giochi.</div>' +
+      '<div class="aprow">' + righe + '</div></details>';
   },
 
   /* ── ascensioni ─────────────────────────────────────────── */
@@ -688,6 +716,7 @@ function resetRun(charId, seed) {
   srand(G.seed);
   const c = CHARS.find(x => x.id === charId) || CHARS[0];
   G.char = c;
+  G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
   G.ascLv = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
   G.asc = ascMods(G.ascLv);
   G.slots = Math.max(4, 6 + mlv('orbita') + G.asc.slots);
@@ -799,6 +828,15 @@ SCR.addEventListener('click', ev => {
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
     case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
+    case 'skin': {
+      SAVE.skin = b.dataset.id; storeSave();
+      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
+      for (const el of SCR.querySelectorAll('[data-a="skin"]')) el.classList.toggle('on', el.dataset.id === SAVE.skin);
+      /* se c'era una spesa in attesa il tocco l'ha disarmata: quella riga
+         va ridisegnata, o resta a dire «tocca ancora per confermare» */
+      if (armato) UI.hub();
+      break;
+    }
     case 'title': UI.title(); break;
     case 'guide': UI.guide(); break;
     case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
