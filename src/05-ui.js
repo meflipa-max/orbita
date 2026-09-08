@@ -933,6 +933,10 @@ SCR.addEventListener('click', ev => {
     case 'wipe': {
       if (armato !== 'wipe') { UI.armato = 'wipe'; UI.hub(); return; }
       wipeSave();
+      /* dietro al menu gira il gioco vero: se il nucleo e la sagoma restano
+         quelli di prima, l'azzeramento sembra a meta' */
+      G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
       AU.play('die');
       UI.hub();
       UI.toast('PROGRESSI AZZERATI', 'Si riparte da zero', '#ff3d6e');
