@@ -85,7 +85,11 @@ function sanitizeSave(o) {
   if (!Array.isArray(s.chars) || !s.chars.length) s.chars = ['vega'];
   s.chars = s.chars.filter(id => CHARS.some(c => c.id === id));
   if (!s.chars.length) s.chars = ['vega'];
+  /* copia, non riferimento: senza questa riga un salvataggio senza 'meta'
+     si portava dietro l'oggetto di DEFAULT_SAVE e comprare un potenziamento
+     sporcava i valori predefiniti — cioe' l'azzeramento non azzerava. */
   if (!s.meta || typeof s.meta !== 'object' || Array.isArray(s.meta)) s.meta = {};
+  else s.meta = Object.assign({}, s.meta);
   if (!Array.isArray(s.sfide)) s.sfide = [];
   s.sfide = s.sfide.filter(id => SFIDE.some(x => x.id === id));
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
@@ -126,6 +130,16 @@ function importSave(code) {
     SAVE = sanitizeSave(o); storeSave(); return true;
   } catch (e) { return false; }
 }
+/* azzeramento: l'unico modo di ricominciare davvero da capo. Sta sotto al
+   codice di backup apposta — chi vuole ripartire senza bruciare i progressi
+   lo copia prima. Le preferenze audio non sono progressi: restano. */
+function wipeSave() {
+  const sfx = SAVE.sfx, mus = SAVE.mus;
+  SAVE = sanitizeSave(null);
+  SAVE.sfx = sfx; SAVE.mus = mus;
+  storeSave();
+}
+
 const mlv = id => SAVE.meta[id] | 0;
 
 /* ── audio procedurale ──────────────────────────────────────── */

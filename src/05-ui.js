@@ -34,6 +34,10 @@ const UI = {
   /* armato: cosa attende conferma ("char:lyra"); spesa: quanto e' appena
      uscito dal borsello, per farlo vedere sul contatore. */
   armato: null, spesa: 0,
+  /* l'Osservatorio si ridisegna a ogni tocco: senza ricordarsi che il
+     pannello Backup era aperto, si richiuderebbe in faccia a chi ci sta
+     lavorando — proprio mentre conferma un azzeramento. */
+  backupOpen: false,
 
   /* ── infrastruttura ─────────────────────────────────────── */
   open(name, html) {
@@ -304,13 +308,14 @@ const UI = {
         : '') +
       this.sfideHTML() +
       (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
-      '<details class="backup"><summary>Backup dei progressi</summary>' +
+      '<details class="backup"' + (this.backupOpen ? ' open' : '') + '><summary>Backup dei progressi</summary>' +
       '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
       '<textarea id="savecode" readonly rows="3" spellcheck="false">' + exportSave() + '</textarea>' +
       '<div class="btnrow" style="margin-top:8px">' +
       '<button class="btn ghost clip" data-a="copy"><span class="face">Copia codice</span></button></div>' +
       '<input id="loadcode" placeholder="Incolla qui un codice da ripristinare" spellcheck="false" autocomplete="off">' +
       '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
+      this.wipeHTML() +
       '</details>'
     );
     this.spesa = 0;
@@ -379,6 +384,36 @@ const UI = {
       (attive.length
         ? '<ul class="ascrules">' + attive.join('') + '</ul>'
         : '<div class="hint" style="text-align:left">Nessuna regola aggiuntiva. Vinci per sbloccare il livello successivo.</div>');
+  },
+
+  /* ── azzeramento ─────────────────────────────────────────
+     Sta in fondo al pannello di backup, non fra i bottoni della partenza:
+     l'unico posto in cui ci si arriva e' dopo aver letto come si salva.
+     E non parte al primo tocco — il primo tocco apre la domanda, e la
+     domanda dice per nome che cosa sparisce. */
+  wipeHTML() {
+    const arm = this.armato === 'wipe';
+    const niente = !SAVE.shards && !SAVE.wins && !(SAVE.runs | 0) && !SAVE.asc &&
+      SAVE.chars.length < 2 && !SAVE.sfide.length && !Object.keys(SAVE.meta).length;
+    const conta = [
+      SAVE.shards + ' frammenti',
+      SAVE.chars.length + (SAVE.chars.length === 1 ? ' nucleo' : ' nuclei'),
+      SAVE.sfide.length + (SAVE.sfide.length === 1 ? ' sfida' : ' sfide'),
+      'ascensione ' + (SAVE.asc | 0),
+      (SAVE.runs | 0) + (SAVE.runs === 1 ? ' partita' : ' partite')
+    ].join(' · ');
+    return '<div class="danger">' +
+      '<span class="dt">Azzera i progressi</span>' +
+      (arm
+        ? '<p class="hint dwarn" style="text-align:left;margin:0 0 9px">Stai per cancellare <b>' + conta + '</b>. Si riparte da Vega, zero frammenti, ascensione 0. Non si torna indietro: senza il codice qui sopra non c\'è modo di recuperarli.</p>' +
+          '<div class="btnrow">' +
+          '<button class="btn ghost clip" data-a="wipeno"><span class="face">Annulla</span></button>' +
+          '<button class="btn ghost clip bad" data-a="wipe"><span class="face">Sì, azzera tutto</span></button>' +
+          '</div>'
+        : '<p class="hint" style="text-align:left;margin:0 0 9px">Cancella frammenti, potenziamenti, nuclei, sfide, ascensioni e record: il gioco torna come alla prima apertura. Le impostazioni audio restano.</p>' +
+          '<div class="btnrow"><button class="btn ghost clip bad"' + (niente ? ' disabled' : ' data-a="wipe"') +
+          '><span class="face">' + (niente ? 'Niente da azzerare' : 'Azzera tutto') + '</span></button></div>') +
+      '</div>';
   },
 
   /* ── anello (compatto, informativo) ─────────────────────── */
@@ -813,6 +848,12 @@ function winRun() {
 }
 
 /* ── azioni dell’interfaccia ────────────────────────────────── */
+/* 'toggle' non risale: serve la fase di cattura per sapere che il pannello
+   Backup e' aperto e ridisegnarlo aperto. */
+SCR.addEventListener('toggle', ev => {
+  const d = ev.target;
+  if (d && d.classList && d.classList.contains('backup')) UI.backupOpen = !!d.open;
+}, true);
 SCR.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]');
   /* toccare altrove annulla una spesa in attesa di conferma */
@@ -885,6 +926,20 @@ SCR.addEventListener('click', ev => {
       if (!inp.value.trim()) { UI.toast('NESSUN CODICE', 'Incolla prima un codice', '#ff3d6e'); return; }
       if (importSave(inp.value)) { AU.play('buy'); UI.hub(); UI.toast('RIPRISTINATO', SAVE.shards + ' frammenti', '#6ff2c4'); }
       else UI.toast('CODICE NON VALIDO', 'Controlla di averlo copiato tutto', '#ff3d6e');
+      break;
+    }
+    /* due passaggi, come per gli acquisti: il primo tocco arma la domanda,
+       il secondo cancella davvero. Toccare altrove la disarma da solo. */
+    case 'wipe': {
+      if (armato !== 'wipe') { UI.armato = 'wipe'; UI.hub(); return; }
+      wipeSave();
+      AU.play('die');
+      UI.hub();
+      UI.toast('PROGRESSI AZZERATI', 'Si riparte da zero', '#ff3d6e');
+      break;
+    }
+    case 'wipeno': {
+      UI.hub();
       break;
     }
     case 'meta': {
