@@ -539,6 +539,16 @@ ol.tips b{color:#fff;font-weight:600}
   resize:vertical;word-break:break-all}
 .backup input{margin-top:10px;font-size:12px}
 .backup textarea:focus,.backup input:focus{outline:none;border-color:var(--line-hot)}
+/* zona rossa: separata da una riga, cosi' non si tocca per sbaglio uscendo
+   dal campo del codice, e rossa solo lei */
+.backup .danger{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.backup .danger .dt{display:block;font:600 10px/1 var(--ui);letter-spacing:.22em;
+  text-transform:uppercase;color:#ff3d6e;margin-bottom:8px}
+.hint.dwarn{color:var(--dim)}
+.hint.dwarn b{color:#ff8aa8;font-weight:600}
+.btn.bad .face{border-color:rgba(255,61,110,.4);color:#ff8aa8}
+.btn.bad:hover .face,.btn.bad:focus-visible .face{border-color:#ff3d6e;color:#fff;
+  background:linear-gradient(165deg,rgba(255,61,110,.3),rgba(90,14,40,.5))}
 
 .hint{font:400 11.5px/1.5 var(--ui);color:var(--faint);text-align:center}
 .hint kbd{font:600 11px var(--ui);background:rgba(255,255,255,.08);border:1px solid var(--line);padding:2px 5px;color:var(--dim)}
