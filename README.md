@@ -95,6 +95,52 @@ minuto 8, 14, 20 e 28. Dopo: fermi si muore, muovendosi bene si sopravvive prend
 veri. Chi gioca con una build modesta non si accorge del direttore, perché per lui la tenacia
 resta a uno.
 
+### Colpi nemici e guardiani
+
+Misurato col gioco vero e non a occhio: banco di prova headless, un contatore su ogni colpo
+sparato, assorbito, mancato e andato a segno, e un bot che schiva scegliendo fra ventiquattro
+direzioni quella più libera a mezzo secondo.
+
+**Prima.** In una partita vinta da venti minuti i cinque guardiani facevano **zero danni**. Non
+pochi: zero, in otto partite su quattro livelli di ascensione. E i colpi rossi dei tiratori
+erano decorazione: di novecento passati vicino, **sei** entravano nei trenta pixel, e in venti
+minuti dieci arrivavano addosso. Tre cause, tutte geometriche:
+
+- **si mirava a dove sei**, non a dove sarai — e il proiettile più lento (210 px/s) è appena
+  più veloce di un giocatore fermo a piedi (196). Fermi si veniva colpiti il 98% delle volte,
+  in movimento lo 0,7%: non una schivata, un interruttore.
+- **la volata radiale è uno steccato**: fra due colpi ci sono `2πr/n` pixel e ne bastano 40 per
+  passare, quindi oltre i 95 pixel dal guardiano il cerchio ha già i buchi — e a 220 px/s ci
+  arriva in mezzo secondo.
+- **nessun guardiano tiene il passo**: il più veloce fa 158 px/s. Nei duelli isolati restavano
+  parcheggiati a 143–172 pixel dietro le spalle per un minuto intero, e le diciannove cariche
+  del Titano andavano a vuoto tutte e diciannove.
+
+E il volume di fuoco non era progettato: un tiratore spara a cadenza fissa finché è vivo,
+quindi **tutto ciò che allunga la vita dei nemici lo moltiplica** — il direttore, che scambia
+numero per durezza, e le ascensioni. Dalla 0 alla 12 la quota di colpi che va a segno passava
+dallo 0,7% al 25% senza che nessuna regola di ascensione nominasse i tiratori.
+
+**Adesso.** I tiratori mirano dove sarai, con metà del tempo di volo di anticipo: schivare
+torna a essere una decisione — cambiare direzione — invece che uno stato. Il danno ha un tetto
+a 2,2× (cresceva dell'8% al minuto senza fine: era l'unica cosa del gioco a non fermarsi mai).
+La cadenza compensa il direttore ma **non** l'ascensione, che è una scala di difficoltà e deve
+pesare. E l'ondata del 7:30 ha di nuovo un tiratore: erano due minuti senza un colpo a
+distanza, l'unico gradino all'indietro in tutta la curva di pressione.
+
+I guardiani sparano **due corone sfalsate di mezzo passo** a 0,35 s l'una dall'altra: stessa
+densità nello stesso istante, buchi dimezzati, minaccia vera fino a ~200 pixel, cioè alla
+distanza a cui li si combatte. Sotto i 450 pixel hanno un pavimento di velocità all'88% della
+tua — sotto al rallentamento, così congelarli funziona ancora — e la carica punta dove sarai,
+perché 0,8 s di preavviso servano a decidere qualcosa. La loro vita non segue più il direttore
+all'infinito: aveva prodotto un'Aracne da **settantamila** punti vita, quaranta secondi in
+campo senza lasciare un graffio.
+
+Misurato dopo, stessi duelli isolati: i contatti al minuto su un giocatore che gira passano da
+15–95 a **52–181**, i colpi radiali a segno raddoppiano, la distanza a cui il guardiano ti tiene
+scende a 99 pixel. Su partite intere ad ascensione 0 il danno preso dai colpi rossi va da una
+media di 63 a **194**, e si vince ancora; alla 6 il danno da contatto quasi triplica.
+
 ### Quanto mondo entra nello schermo
 
 Il mondo era disegnato uno a uno in pixel, quindi lo schermo non decideva quanto è grande la

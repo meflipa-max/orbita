@@ -261,7 +261,9 @@ const WAVES = [
   { t: 150,  pool: ['sciamante', 'vagante', 'dardo'] },
   { t: 240,  pool: ['vagante', 'dardo', 'scissore', 'sciamante'] },
   { t: 330,  pool: ['vagante', 'scissore', 'spettro', 'dardo'] },
-  { t: 450,  pool: ['scissore', 'spettro', 'bruto', 'vagante'] },
+  /* senza il Dardo qui, fra il 7:30 e il 9:30 non arrivava un solo colpo a
+     distanza: l'unico gradino all'indietro in tutta la curva di pressione */
+  { t: 450,  pool: ['scissore', 'spettro', 'bruto', 'vagante', 'dardo'] },
   { t: 570,  pool: ['spettro', 'bruto', 'lancia', 'scissore'] },
   { t: 700,  pool: ['bruto', 'lancia', 'spettro', 'scissore', 'dardo'] },
   { t: 860,  pool: ['bruto', 'lancia', 'spettro', 'bruto', 'scissore'] },

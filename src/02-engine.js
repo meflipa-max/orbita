@@ -637,16 +637,21 @@ function syncBosses() {
 function spawnBoss(def) {
   const a = rand(TAU), d = Math.max(G.vw, G.vh) * .62 + 120;   /* mondo, non schermo */
   const mins = G.t / 60;
+  /* La tenacia arriva a meta' sui guardiani: a piena dose un direttore alto
+     li trasformerebbe in muri da tre minuti, ma senza affatto una build che
+     scioglie la folla scioglie anche loro. E ha un tetto: serve a regolare il
+     raggio a cui muore la FOLLA, e su un guardiano faceva una spugna da
+     settantamila punti vita (misurata) che restava in campo quaranta secondi
+     senza fare un solo danno. Con il tetto lo scontro resta un evento invece
+     che un muro il cui unico effetto e' durare. */
+  const vita = def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (Math.min(G.tenacia, 10) - 1) * .5);
   const e = {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
-    /* La tenacia arriva a meta' sui guardiani: a piena dose un direttore
-       alto li trasformerebbe in muri da tre minuti, ma senza affatto una
-       build che scioglie la folla scioglie anche loro. */
-    hp: def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (G.tenacia - 1) * .5), maxHp: def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (G.tenacia - 1) * .5), spd: def.spd * G.asc.spd,
+    hp: vita, maxHp: vita, spd: def.spd * G.asc.spd,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
-    elite: false, boss: def, ph: 0, atk: 2, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
+    elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
   };
   G.enemies.push(e); G.bosses.push(e); syncBosses();
   UI.toast(def.n, 'Guardiano risvegliato', def.c);

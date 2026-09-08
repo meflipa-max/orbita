@@ -429,11 +429,21 @@ function updateZones(dt) {
 }
 
 /* ── nemici ─────────────────────────────────────────────────── */
+function volata(e, d, n, off) {
+  for (let i = 0; i < n; i++) {
+    const a = off + i / n * TAU;
+    eShoot(e.x, e.y, Math.cos(a) * 220, Math.sin(a) * 220, d.dmg * .55, 8, d.c);
+  }
+}
 function bossAI(e, dt) {
   const d = e.boss, px = G.p.x, py = G.p.y;
   const dx = px - e.x, dy = py - e.y, dd = Math.hypot(dx, dy) || 1;
   const hpf = e.hp / e.maxHp;
   e.atk -= dt; e.atk2 -= dt;
+  if (e.volata) {
+    e.volata.t -= dt;
+    if (e.volata.t <= 0) { volata(e, e.volata.d, e.volata.n, e.volata.off); e.volata = null; }
+  }
 
   if (d.pat === 'charge' || (d.pat === 'final' && hpf < .4)) {
     if (e.charge > 0) {
@@ -450,16 +460,29 @@ function bossAI(e, dt) {
       }
       return;
     }
-    if (e.atk <= 0) { e.atk = 3.2; e.charge = 1.3; e.cdir = Math.atan2(dy, dx); return; }
+    if (e.atk <= 0) {
+      /* La carica mirava al punto in cui eri alla partenza, e fra preavviso
+         e volata passa piu' di un secondo: bastava camminare. Adesso punta
+         dove sarai, cosi' gli 0,8s di preavviso servono a decidere una
+         schivata invece che a guardare il guardiano sbagliare da solo. */
+      e.atk = 3.2; e.charge = 1.3;
+      e.cdir = Math.atan2(dy + G.p.vy * .55, dx + G.p.vx * .55);
+      return;
+    }
   }
   if (d.pat === 'radial' || d.pat === 'mix' || d.pat === 'final') {
     if (e.atk <= 0) {
       e.atk = d.pat === 'final' ? 2.1 : 3.0;
       const n = d.pat === 'final' ? 22 : 15, off = rand(TAU);
-      for (let i = 0; i < n; i++) {
-        const a = off + i / n * TAU;
-        eShoot(e.x, e.y, Math.cos(a) * 220, Math.sin(a) * 220, d.dmg * .55, 8, d.c);
-      }
+      volata(e, d, n, off);
+      /* Una corona sola e' uno steccato, non un muro: fra due colpi ci sono
+         2πr/n pixel e ne bastano 40 per passare, quindi oltre i 95 pixel dal
+         guardiano il cerchio ha gia' buchi piu' larghi del giocatore — e a
+         220 px/s ci arriva in mezzo secondo. La seconda corona sfalsata di
+         mezzo passo tappa quei buchi senza raddoppiare i colpi a schermo
+         nello stesso istante: la minaccia arriva fino a ~200 pixel, cioe'
+         alla distanza a cui il guardiano si combatte davvero. */
+      e.volata = { n, off: off + Math.PI / n, t: .35, d };
       AU.play('blast');
     }
   }
@@ -482,7 +505,14 @@ function bossAI(e, dt) {
      un boss più lento del giocatore non lo raggiunge mai e la battaglia
      non avviene: resta a bordo mappa e sembra parcheggiato in un angolo. */
   const rincorsa = 1 + clamp((dd - 450) / 780, 0, 2.0);
-  const sp = e.spd * (1 - e.slow) * (hpf < .35 ? 1.25 : 1) * rincorsa;
+  /* Nessun guardiano arrivava a toccare chi si muove: il piu' veloce fa 158
+     px/s contro i 196 di un giocatore appena uscito dal menu, e l'elastico
+     serve solo da lontano — appena si avvicinava tornava lento e restava
+     parcheggiato dietro le spalle per tutto lo scontro. Il pavimento sta
+     sotto al rallentamento, non sopra: congelarlo funziona ancora, e la
+     scelta di quanto avvicinarsi torna a costare qualcosa. */
+  const base = Math.max(e.spd, P.spd * .88);
+  const sp = base * (1 - e.slow) * (hpf < .35 ? 1.25 : 1) * rincorsa;
   e.vx = dx / dd * sp; e.vy = dy / dd * sp;
   e.x += e.vx * dt; e.y += e.vy * dt;
   e.rush = rincorsa;
@@ -535,11 +565,33 @@ function updateEnemies(dt) {
       if (md && md.ranged) {
         e.atk -= dt;
         if (d < 460 && e.atk <= 0) {
-          e.atk = md.ranged.cd;
-          const a0 = Math.atan2(dy, dx), n = md.ranged.n || 1;
+          /* Un tiratore piu' duro vive di piu', e con la cadenza fissa sparava
+             in proporzione a quanto viveva: alle ascensioni alte i colpi rossi
+             diventavano la sola causa di morte senza che nessuna regola lo
+             dicesse. La cadenza compensa il direttore — che scambia numero per
+             durezza, e non deve farlo di nascosto sui colpi rossi — ma non
+             l'ascensione: quella e' una scala di difficolta', deve pesare. */
+          e.atk = md.ranged.cd * Math.min(2, Math.pow(1 + (G.tenacia - 1) * .5, .4));
+          /* Mirare dove sei adesso vuol dire mancare sempre: il proiettile
+             piu' lento (210) e' appena piu' veloce del giocatore fermo a
+             piedi (196) e piu' lento di chiunque abbia preso Celerita'. Il
+             risultato era binario — fermo: colpito, in moto: intoccabile.
+             Ma anticipare e basta si batte con un'altra mossa sola, lo
+             zigzag (misurato: un bot che cambia direzione quattro volte al
+             secondo veniva colpito MENO di prima). Quindi un colpo su due
+             anticipa e l'altro no: chi corre dritto scappa dai secondi e
+             incontra i primi, chi zigzaga inganna i primi e resta dove
+             arrivano i secondi. Nessuna delle due contromosse basta. */
+          e.tiro = (e.tiro | 0) + 1;
+          const volo = (e.tiro % 2) ? 0 : d / md.ranged.spd * .6;
+          const mx = dx + G.p.vx * volo, my = dy + G.p.vy * volo;
+          const a0 = Math.atan2(my, mx), n = md.ranged.n || 1;
+          /* il danno cresceva dell'8% al minuto senza tetto: nel senza fine
+             era l'unica cosa del gioco a crescere per sempre */
+          const dmg = md.ranged.dmg * Math.min(2.2, 1 + G.t / 60 * .08);
           for (let k = 0; k < n; k++) {
             const a = a0 + (k - (n - 1) / 2) * (md.ranged.spread || 0);
-            eShoot(e.x, e.y, Math.cos(a) * md.ranged.spd, Math.sin(a) * md.ranged.spd, md.ranged.dmg * (1 + G.t / 60 * .08), 6, e.c);
+            eShoot(e.x, e.y, Math.cos(a) * md.ranged.spd, Math.sin(a) * md.ranged.spd, dmg, 6, e.c);
           }
         }
         if (d < 300) sp *= -.55;
