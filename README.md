@@ -140,16 +140,22 @@ distanza, l'unico gradino all'indietro in tutta la curva di pressione.
 
 I guardiani sparano **due corone sfalsate di mezzo passo** a 0,35 s l'una dall'altra: stessa
 densità nello stesso istante, buchi dimezzati, minaccia vera fino a ~200 pixel, cioè alla
-distanza a cui li si combatte. Sotto i 450 pixel hanno un pavimento di velocità all'88% della
-tua — sotto al rallentamento, così congelarli funziona ancora — e la carica punta dove sarai,
-perché 0,8 s di preavviso servano a decidere qualcosa. La loro vita non segue più il direttore
-all'infinito: aveva prodotto un'Aracne da **settantamila** punti vita, quaranta secondi in
-campo senza lasciare un graffio.
+distanza a cui li si combatte. Sotto i 450 pixel hanno un **pavimento di velocità**, in
+frazione della tua e diverso per ciascuno — 72% il Custode, 92% l'Eclissi — messo sotto al
+rallentamento, così congelarli funziona ancora. Un pavimento unico per tutti li appiattiva
+sulla stessa andatura, e a pagarlo era il più lento: il Custode saltava da 118 a 172 px/s
+(+46%, e +86% a fine partita) proprio al 2:30, quando la tua build è la più debole. E quando è
+il guardiano a starti addosso, gli evocati non compaiono più dentro di te: uno su cinque nasceva
+entro sessanta pixel dal nucleo, il più vicino a otto — non una minaccia da schivare, un danno
+già successo. La loro vita non segue più il direttore all'infinito: aveva prodotto un'Aracne da
+**settantamila** punti vita, quaranta secondi in campo senza lasciare un graffio.
 
-Misurato dopo, stessi duelli isolati: i contatti al minuto su un giocatore che gira passano da
-15–95 a **52–181**, i colpi radiali a segno raddoppiano, la distanza a cui il guardiano ti tiene
-scende a 99 pixel. Su partite intere ad ascensione 0 il danno preso dai colpi rossi va da una
-media di 63 a **194**, e si vince ancora; alla 6 il danno da contatto quasi triplica.
+Misurato dopo, stessi duelli isolati: i contatti al minuto su un giocatore che gira seguono
+finalmente l'ordine dei guardiani invece di essere tutti uguali — 39 il Custode, 54 l'Aracne,
+41 il Titano, 106 l'Aurora, **350** l'Eclissi (erano 15, 24, 29, 47, 95) — e la distanza a cui
+ti tengono scende da 143–172 pixel a 148, 127, 225, 107, **81**. I colpi radiali a segno
+raddoppiano. Su partite intere ad ascensione 0 il danno preso dai colpi rossi va da una media di
+63 a **194**, e si vince ancora; alla 6 il danno da contatto quasi triplica.
 
 ### Quanto mondo entra nello schermo
 

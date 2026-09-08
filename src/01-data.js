@@ -271,12 +271,20 @@ const WAVES = [
 ];
 /* Guardiani ogni ~3,5 minuti. Il cronometro si ferma durante le scelte,
    quindi gli intervalli sono più stretti di quanto sembri all'orologio da polso. */
+/* `passo` e' il pavimento di velocita' sotto i 450 pixel, in frazione di
+   quella del giocatore: senza, nessun guardiano arrivava a toccare chi si
+   muove. Ma un pavimento unico li appiattiva tutti sulla stessa andatura —
+   e a pagarlo era il piu' lento, il Custode, che al 2:30 saltava da 118 a
+   172 px/s (+46%, +86% a fine partita) proprio mentre la tua build e' la
+   piu' debole. Ora il pavimento segue la velocita' di ciascuno, quindi
+   l'ordine resta quello scritto qui: il Custode si stacca ancora, l'Eclissi
+   quasi no.                                                              */
 const BOSSES = [
-  { t: 150,  id: 'custode', n: 'CUSTODE', hp: 1150,  spd: 118, r: 44, dmg: 22, c: '#ff6a2b', xp: 90,  pat: 'summon' },
-  { t: 360,  id: 'aracne',  n: 'ARACNE',  hp: 3600,  spd: 132, r: 40, dmg: 28, c: '#b06bff', xp: 170, pat: 'radial' },
-  { t: 570,  id: 'titano',  n: 'TITANO',  hp: 7800,  spd: 120, r: 52, dmg: 34, c: '#45d7ff', xp: 260, pat: 'charge' },
-  { t: 810,  id: 'aurora',  n: 'AURORA',  hp: 13500, spd: 145, r: 46, dmg: 34, c: '#ffe14f', xp: 380, pat: 'mix' },
-  { t: 1080, id: 'eclissi', n: 'ECLISSI', hp: 26000, spd: 158, r: 58, dmg: 44, c: '#ff3d6e', xp: 700, pat: 'final' }
+  { t: 150,  id: 'custode', n: 'CUSTODE', hp: 1150,  spd: 118, passo: .72, r: 44, dmg: 22, c: '#ff6a2b', xp: 90,  pat: 'summon' },
+  { t: 360,  id: 'aracne',  n: 'ARACNE',  hp: 3600,  spd: 132, passo: .80, r: 40, dmg: 28, c: '#b06bff', xp: 170, pat: 'radial' },
+  { t: 570,  id: 'titano',  n: 'TITANO',  hp: 7800,  spd: 120, passo: .74, r: 52, dmg: 34, c: '#45d7ff', xp: 260, pat: 'charge' },
+  { t: 810,  id: 'aurora',  n: 'AURORA',  hp: 13500, spd: 145, passo: .86, r: 46, dmg: 34, c: '#ffe14f', xp: 380, pat: 'mix' },
+  { t: 1080, id: 'eclissi', n: 'ECLISSI', hp: 26000, spd: 158, passo: .92, r: 58, dmg: 44, c: '#ff3d6e', xp: 700, pat: 'final' }
 ];
 const RUN_LEN = 1200; /* 20 minuti */
 

@@ -492,7 +492,16 @@ function bossAI(e, dt) {
       const n = d.pat === 'final' ? 8 : 5;
       for (let i = 0; i < n; i++) {
         const a = rand(TAU), r = 110;
-        spawnEnemy(d.pat === 'summon' ? 'sciamante' : 'spettro', e.x + Math.cos(a) * r, e.y + Math.sin(a) * r, { spdMul: 1.1 });
+        let sx = e.x + Math.cos(a) * r, sy = e.y + Math.sin(a) * r;
+        /* Mai addosso. Col guardiano che adesso ti sta vicino, un evocato su
+           cinque compariva entro sessanta pixel dal nucleo (misurato, il piu'
+           vicino a otto): cinque sciamanti che si materializzano sul
+           giocatore non sono una minaccia da schivare, sono un danno gia'
+           successo. Restano dove il guardiano li ha chiamati, ma non dentro
+           di te. */
+        const qx = sx - G.p.x, qy = sy - G.p.y, qd = Math.hypot(qx, qy) || 1;
+        if (qd < 95) { sx = G.p.x + qx / qd * 95; sy = G.p.y + qy / qd * 95; }
+        spawnEnemy(d.pat === 'summon' ? 'sciamante' : 'spettro', sx, sy, { spdMul: 1.1 });
       }
       G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: 20, r1: 170, t: 0, dur: .4, c: d.c });
     }
@@ -510,8 +519,10 @@ function bossAI(e, dt) {
      serve solo da lontano — appena si avvicinava tornava lento e restava
      parcheggiato dietro le spalle per tutto lo scontro. Il pavimento sta
      sotto al rallentamento, non sopra: congelarlo funziona ancora, e la
-     scelta di quanto avvicinarsi torna a costare qualcosa. */
-  const base = Math.max(e.spd, P.spd * .88);
+     scelta di quanto avvicinarsi torna a costare qualcosa. Quanto alto sia
+     lo dice ogni guardiano (`passo`): unico per tutti li rendeva la stessa
+     cosa che insegue alla stessa andatura. */
+  const base = Math.max(e.spd, P.spd * (d.passo || .88));
   const sp = base * (1 - e.slow) * (hpf < .35 ? 1.25 : 1) * rincorsa;
   e.vx = dx / dd * sp; e.vy = dy / dd * sp;
   e.x += e.vx * dt; e.y += e.vy * dt;
