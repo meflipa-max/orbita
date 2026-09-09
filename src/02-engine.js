@@ -65,6 +65,8 @@ const DEFAULT_SAVE = {
   /* le ultime venti partite: è lo storico che si legge nell'Osservatorio ed
      è anche l'unica telemetria possibile in un gioco che non tocca la rete */
   storico: [],
+  /* le prime volte già spiegate: vedi BRIEFING in 01-data */
+  visti: [],
   /* la corsa del giorno: quale data, e il miglior risultato di oggi */
   giorno: { d: '', t: 0, k: 0, w: 0 }
 };
@@ -117,6 +119,8 @@ function sanitizeSave(o) {
   if (!Array.isArray(s.contratti)) s.contratti = [];
   s.contratti = s.contratti.filter(id => CONTRATTI.some(c => c.id === id));
   if (!MODI.some(m => m.id === s.modo)) s.modo = 'corsa';
+  if (!Array.isArray(s.visti)) s.visti = [];
+  s.visti = s.visti.filter(id => PRIMEVOLTE.indexOf(id) >= 0);
   if (!Array.isArray(s.storico)) s.storico = [];
   s.storico = s.storico.filter(r => r && typeof r === 'object').slice(0, 20);
   if (!s.giorno || typeof s.giorno !== 'object' || Array.isArray(s.giorno)) s.giorno = { d: '', t: 0, k: 0, w: 0 };
@@ -491,6 +495,9 @@ const G = {
      pattern rimescolati. Vedi rosterGuardiani(). */
   roster: BOSSES,
   /* tracce per sblocchi e contratti */
+  /* la ripresa al rallentatore dopo una schermata, e la prima volta da
+     spiegare che aspetta di essere mostrata (vedi 06-main) */
+  ripresa: 0, briefing: null, elAnello: new Set(),
   bossKills: 0, maxLv: 1, tier2: 0, rerollUsati: 0, respiro: 0, giornaliera: false,
   runaNuova: null, contrattiFatti: [], sfideNuove: []
 };
@@ -599,6 +606,16 @@ function recalcRing(announce) {
       UI.toast('RISVEGLIO · ' + EL[e].aw.toUpperCase(), EL[e].awd[tier - 1], EL[e].c);
       AU.play('awake'); G.shake = Math.max(G.shake, 9);
     }
+  }
+  /* Quali elementi hai davvero nell'anello. Serve al terreno: un Nodo si
+     accende solo se e' sintonizzato su un elemento che stai giocando
+     (vedi drawRocce in 04-render). L'Iride vale come tutti, perche' in
+     campo si comporta come i suoi vicini. */
+  G.elAnello.clear();
+  for (let i = 0; i < n; i++) {
+    const r = R[i]; if (!r) continue;
+    if (r.el === 'iride') { for (const k of ELKEYS) G.elAnello.add(k); }
+    else G.elAnello.add(r.el);
   }
   /* traccia per le sfide: quanti Risvegli insieme, e se uno ha toccato il terzo grado */
   let acc = 0;

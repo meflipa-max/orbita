@@ -706,6 +706,21 @@ function updateGems(dt) {
         else { gainXP(m.v); }
         AU.play('pick');
         addPart(px, py, 0, 0, .3, 6, m.k === 1 ? '#ffc857' : '#6ff2c4');
+        /* La prima scheggia raccolta in assoluto. Da qui in poi la parola
+           sotto alla gemma più vicina sparisce per sempre (vedi drawGemme
+           in 04-render): il concetto è insegnato, e ripeterlo sarebbe
+           rumore addosso alla cosa più numerosa dello schermo.
+           Il numero che vola è verde e dice ESPERIENZA a lettere, non
+           "+3": la prima volta serve il nome della cosa, non il suo
+           valore, e la barra in alto si muove nello stesso istante. */
+        if (m.k === 0 && !visto('gemme')) {
+          SAVE.visti.push('gemme'); storeSave();
+          addFloat(px, py - 18, 'ESPERIENZA', '#6ff2c4', true);
+          if (elXpLine) {
+            elXpLine.classList.add('primo');
+            setTimeout(() => elXpLine.classList.remove('primo'), 1600);
+          }
+        }
       }
     }
   }
@@ -944,6 +959,10 @@ function apriEvento() {
     UI.toast('CORRIERE', 'Segui la freccia: sparisce fra 26s', '#6ff2c4');
   }
   AU.play('awake');
+  /* la prima volta questo evento va spiegato fermando il gioco: il messaggio
+     in alto dura due secondi e passa mentre stai schivando. Il flag lo
+     raccoglie la fine del passo, in 06-main. */
+  if (!G.demo && !visto(k)) G.briefing = k;
 }
 
 function updateEventi(dt) {

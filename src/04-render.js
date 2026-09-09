@@ -140,25 +140,46 @@ function drawRocce() {
   /* asteroidi: corpo scuro e bordo illuminato, così leggono come solidi
      e non come un altro effetto luminoso in mezzo agli altri */
   const cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 180, mh = G.vh / 2 + 180;
+  /* Un solo Nodo per volta porta la scritta: il più vicino, e solo se sei
+     abbastanza vicino da doverci decidere qualcosa. Stessa regola dei doni
+     a terra — dieci etichette a schermo diventano loro il rumore. */
+  let nodoVicino = null, nvd = 1e18;
+  for (let i = 0; i < G.rocks.length; i++) {
+    const k = G.rocks[i]; if (!k.nodo) continue;
+    const q = (k.x - G.p.x) * (k.x - G.p.x) + (k.y - G.p.y) * (k.y - G.p.y);
+    if (q < nvd && q < (k.aura + 260) * (k.aura + 260)) { nvd = q; nodoVicino = k; }
+  }
   for (let i = 0; i < G.rocks.length; i++) {
     const k = G.rocks[i];
     if (Math.abs(k.x - cx) > mw || Math.abs(k.y - cy) > mh) continue;
     const col = k.nodo ? EL[k.nodo].c : null;
-    /* Aura del Nodo: si accende quando ci sei dentro. È il segnale che
-       stai raccogliendo il bonus, quindi deve essere inequivocabile. */
+    /* Aura del Nodo. Prima si accendeva uguale per tutti, quindi «si
+       illumina» non voleva dire niente e si leggeva come «sto raccogliendo
+       un potenziamento» — che e' il modo in cui un giocatore nuovo capisce
+       una luce addosso al suo personaggio. Adesso il Nodo si accende solo
+       se e' sintonizzato su un elemento che stai DAVVERO giocando: quello
+       che brilla e' quello che ti serve. E siccome l'anello cambia durante
+       la partita, un Nodo spento puo' accendersi al minuto sei quando
+       peschi la runa giusta — cioe' l'arena reagisce alla tua build sotto
+       i tuoi occhi, che e' il modo migliore di spiegare la regola. */
+    const utile = k.nodo ? G.elAnello.has(k.nodo) : false;
     if (k.nodo) {
       const dentro = G.nodoK === k;
       const pul = 1 + Math.sin(G.t * (dentro ? 3.4 : 1.5)) * (dentro ? .035 : .015);
-      ctx.globalCompositeOperation = 'lighter';
-      const g = ctx.createRadialGradient(k.x, k.y, k.r * .8, k.x, k.y, k.aura * pul);
-      g.addColorStop(0, rgba(col, dentro ? .17 : .05));
-      g.addColorStop(.72, rgba(col, dentro ? .09 : .028));
-      g.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(k.x, k.y, k.aura * pul, 0, TAU); ctx.fill();
-      ctx.strokeStyle = rgba(col, dentro ? .62 : .22);
-      ctx.lineWidth = dentro ? 2.4 : 1.2;
-      ctx.setLineDash(dentro ? [] : [9, 11]);
+      /* spento: nessun alone, solo un anello sottile e tratteggiato che
+         dice «c'e' un confine qui», senza promettere niente */
+      if (utile) {
+        ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(k.x, k.y, k.r * .8, k.x, k.y, k.aura * pul);
+        g.addColorStop(0, rgba(col, dentro ? .17 : .05));
+        g.addColorStop(.72, rgba(col, dentro ? .09 : .028));
+        g.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(k.x, k.y, k.aura * pul, 0, TAU); ctx.fill();
+      } else ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = rgba(col, utile ? (dentro ? .62 : .22) : .12);
+      ctx.lineWidth = utile && dentro ? 2.4 : 1;
+      ctx.setLineDash(utile && dentro ? [] : [9, 11]);
       ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(G.t * .2);
       ctx.beginPath(); ctx.arc(0, 0, k.aura * pul, 0, TAU); ctx.stroke();
       ctx.restore(); ctx.setLineDash([]);
@@ -173,11 +194,11 @@ function drawRocce() {
     }
     ctx.closePath();
     ctx.fillStyle = k.nodo ? rgba(col, .12) : 'rgba(13,10,30,.96)';
-    if (k.nodo) { ctx.fillStyle = 'rgba(13,10,30,.94)'; ctx.fill(); ctx.fillStyle = rgba(col, .16); }
+    if (k.nodo) { ctx.fillStyle = 'rgba(13,10,30,.94)'; ctx.fill(); ctx.fillStyle = rgba(col, utile ? .16 : .05); }
     ctx.fill();
-    ctx.strokeStyle = k.nodo ? rgba(col, .8) : 'rgba(132,118,206,.5)';
+    ctx.strokeStyle = k.nodo ? rgba(col, utile ? .8 : .32) : 'rgba(132,118,206,.5)';
     ctx.lineWidth = k.nodo ? 2.6 : 2; ctx.stroke();
-    ctx.strokeStyle = k.nodo ? rgba(col, .34) : 'rgba(196,182,255,.16)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = k.nodo ? rgba(col, utile ? .34 : .14) : 'rgba(196,182,255,.16)'; ctx.lineWidth = 1;
     ctx.beginPath();
     for (let j = 0; j < k.m; j++) {
       const a = j / k.m * TAU, rr = k.r * k.pts[j] * .72;
@@ -193,11 +214,37 @@ function drawRocce() {
         ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
       }
       ctx.stroke();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.drawImage(glowTex(col, 40), -k.r * .5, -k.r * .5, k.r, k.r);
-      ctx.globalCompositeOperation = 'source-over';
+      /* il cuore acceso e' riservato ai Nodi che ti servono */
+      if (utile) {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.drawImage(glowTex(col, 40), -k.r * .5, -k.r * .5, k.r, k.r);
+        ctx.globalCompositeOperation = 'source-over';
+      }
     }
     ctx.restore();
+
+    /* La scritta. Un cristallo che brilla, da solo, un giocatore nuovo lo
+       legge come «bottino»: la parola dice che è TERRENO, e dice cosa
+       cambia. Quando il Nodo non è del tuo elemento dice anche perché è
+       spento — che è l'unica informazione utile in quel momento. */
+    if (k === nodoVicino) {
+      const dentro = G.nodoK === k;
+      const titolo = 'NODO DI ' + EL[k.nodo].n.toUpperCase();
+      const sotto = !utile ? 'ti serve una runa di ' + EL[k.nodo].n.toLowerCase()
+        : dentro ? '+35% danno · catena +1'
+        : 'entra per potenziare il ' + EL[k.nodo].n.toLowerCase();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';
+      const ty = k.y + k.r + sz(17);
+      ctx.font = '700 ' + sz(10).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
+      ctx.strokeText(titolo, k.x, ty);
+      ctx.fillStyle = rgba(col, utile ? .95 : .45); ctx.fillText(titolo, k.x, ty);
+      ctx.font = '600 ' + sz(8.5).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
+      ctx.strokeText(sotto, k.x, ty + sz(12));
+      ctx.fillStyle = utile ? 'rgba(236,232,255,.7)' : 'rgba(156,147,198,.55)';
+      ctx.fillText(sotto, k.x, ty + sz(12));
+    }
     /* velo di campo: appena percettibile da fermo, ma dice che la roccia
        è qualcosa di attivo e non solo un sasso. Ruota lentamente. */
     ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(G.t * .12);
@@ -609,6 +656,16 @@ function drawPickups() {
   const cx = G.cam.x, cy = G.cam.y, mw = G.vw / 2 + 60, mh = G.vh / 2 + 60;
 
   ctx.globalCompositeOperation = 'lighter';
+  /* la gemma piu' vicina, e solo finche' non se n'e' mai raccolta una */
+  let primaGemma = null;
+  if (!visto('gemme')) {
+    let pd = 1e18;
+    for (const m of G.gems) {
+      if (m.k !== 0) continue;
+      const q = (m.x - G.p.x) * (m.x - G.p.x) + (m.y - G.p.y) * (m.y - G.p.y);
+      if (q < pd) { pd = q; primaGemma = m; }
+    }
+  }
   for (const m of G.gems) {
     if (Math.abs(m.x - cx) > mw || Math.abs(m.y - cy) > mh) continue;
     /* Tondo e pieno basta a distinguerle dai nemici (spigolosi e contornati).
@@ -640,6 +697,20 @@ function drawPickups() {
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(m.x, m.y, s * .3, 0, TAU); ctx.fill();
     ctx.globalAlpha = 1;
+    /* Finche' non ne hai raccolta UNA in vita tua, la scheggia piu' vicina
+       porta scritto cos'e'. I doni a terra hanno gia' questa regola, le
+       gemme no — e chi comincia non ha modo di sapere che quei puntini
+       verdi sono l'esperienza: li scavalca, non sale di livello, e conclude
+       che il gioco e' impossibile. Una parola sola, su una gemma sola, e
+       sparisce per sempre al primo tocco. */
+    if (primaGemma && m === primaGemma) {
+      ctx.font = '700 ' + sz(10).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';
+      const ty = m.y + sz(17);
+      ctx.strokeText('ESPERIENZA', m.x, ty);
+      ctx.fillStyle = 'rgba(111,242,196,.95)'; ctx.fillText('ESPERIENZA', m.x, ty);
+    }
   }
 
   /* un solo dono per volta porta la scritta: quello piu' vicino */

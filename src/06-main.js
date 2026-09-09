@@ -13,7 +13,15 @@ function step(dt) {
   /* entrare o uscire da un Nodo cambia le catene: ricalcolo solo sulla
      transizione, non a ogni fotogramma */
   const nd = nodoCorrente();
-  if (nd !== G.nodo) { G.nodo = nd; recalcRing(!!nd); }
+  if (nd !== G.nodo) {
+    G.nodo = nd; recalcRing(!!nd);
+    /* entrare in un Nodo cambia le catene, cioè la regola centrale del
+       gioco, e finora lo diceva solo una targhetta in un angolo dell'HUD */
+    /* solo su un Nodo che ti sta davvero potenziando: spiegare «+35% al
+       tuo elemento» dentro l'aura di un elemento che non giochi insegna
+       la regola nel momento in cui è falsa */
+    if (nd && G.elAnello.has(nd) && !G.demo && !visto('nodo')) G.briefing = 'nodo';
+  }
   /* La prima volta che tieni la levetta a fondo corsa per piu' di un
      secondo, diglielo: spingere piu' lontano non aumenta la velocita', e
      spingendo il dito ti cammina addosso all'azione. Solo nelle prime
@@ -101,6 +109,13 @@ function step(dt) {
   if (!G.pieno) { let v = 0; for (let n = 0; n < G.slots; n++) if (G.ring[n]) v++; if (v >= G.slots) G.pieno = 1; }
 
   UI.hud();
+  /* La prima volta che succede una cosa che chiede di ANDARE da qualche
+     parte, il gioco si ferma e la spiega. Un avviso che passa in due
+     secondi mentre schivi non lo legge nessuno, e un evento d'arena che
+     non capisci è solo un pezzo di schermo che lampeggia. Ha la
+     precedenza sulla schermata delle carte: l'evento è già in corso e il
+     suo tempo scorre, la carta aspetta. */
+  if (G.briefing) { G.state = 'briefing'; UI.briefing(G.briefing); return; }
   if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
 }
 
@@ -171,6 +186,17 @@ function frame(t) {
   if (G.state === 'play') {
     let dt = rdt;
     if (G.hitstop > 0) { G.hitstop -= rdt; dt *= .18; }
+    /* La ripresa dopo una schermata: vedi riprendiGioco() in 05-ui. Scorre
+       sull'orologio vero e non sul tempo di gioco, o rallentandola
+       rallenterebbe anche se stessa e non finirebbe mai. La curva è al
+       quadrato apposta: il tempo che serve sta tutto all'inizio, quando
+       devi capire dove sei, e la velocità piena torna in fretta invece di
+       trascinarsi. */
+    if (G.ripresa > 0) {
+      G.ripresa -= rdt;
+      const f = clamp(1 - G.ripresa / RIPRESA, 0, 1);
+      dt *= lerp(.16, 1, f * f);
+    }
     step(dt);
     intensity = clamp(G.t / 780 * .55 + G.enemies.length / 190 * .35 + (G.boss ? .3 : 0), 0, 1);
   } else if (G.state === 'menu') {

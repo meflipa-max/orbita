@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 const SCR = $('#screens'), HUD = $('#hud');
-const elLv = $('#lvnum'), elXp = $('#xpfill'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
+const elLv = $('#lvnum'), elXp = $('#xpfill'), elXpLine = $('#xpline'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
   elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip');
 
@@ -20,6 +20,23 @@ function showMoveHint() {
   G.hint = 9; G.hintOff = 0;
 }
 function hideMoveHint() { elHint.className = 'clip'; G.hint = 0; G.hintOff = 0; }
+
+/* Si torna a giocare da una schermata sola: una schermata di carte, la
+   pausa, l'anello, un briefing. In tutti questi casi il mondo era fermo e
+   riparte esattamente com'era — con i nemici dove li avevi lasciati, che
+   spesso vuol dire addosso — mentre il tuo pollice era su un bottone e non
+   sulla levetta. Quello e' un colpo che non hai potuto evitare.
+   Quindi non si riparte a velocita' piena: si riparte al 16% e si accelera
+   in un secondo e mezzo. Non e' invulnerabilita' — un nemico che ti sta
+   addosso ti fa male lo stesso — e' il tempo di rimettere il dito dove
+   serve e decidere da che parte andare. Costa 0,8 secondi di gioco su 1,6
+   di orologio: abbastanza da sentirsi, troppo poco per essere una pausa. */
+const RIPRESA = 1.6;
+function riprendiGioco() {
+  UI.close();
+  G.state = 'play';
+  G.ripresa = RIPRESA;
+}
 
 function shardIcon() { return svg('frammento'); }
 /* la corsa del giorno di OGGI è già stata giocata? Il record di ieri non
@@ -88,10 +105,15 @@ const UI = {
     } else elNext.className = '';
     if (G.ascLv > 0) { elAsc.className = 'clip on'; elAsc.textContent = 'ASCENSIONE ' + G.ascLv; }
     else elAsc.className = 'clip';
-    if (G.nodo) {
+    /* La targhetta si accende solo se il Nodo ti sta davvero potenziando.
+       Dentro l'aura di un elemento che non giochi non succede niente, e un
+       cartello che annuncia «NODO DI FUOCO» mentre non ricevi nulla è
+       esattamente il modo in cui si legge un potenziamento che non c'è.
+       Chi è lì dentro lo sa già dalla scritta sul cristallo. */
+    if (G.nodo && G.elAnello.has(G.nodo)) {
       elNodo.className = 'clip on';
       elNodo.style.setProperty('--c', EL[G.nodo].c);
-      elNodo.innerHTML = '<i></i>NODO DI ' + EL[G.nodo].n.toUpperCase();
+      elNodo.innerHTML = '<i></i>NODO DI ' + EL[G.nodo].n.toUpperCase() + ' · ATTIVO';
     } else elNodo.className = 'clip';
   },
 
@@ -636,6 +658,26 @@ const UI = {
     return parts.length ? parts.join(' · ') : '<span style="color:#6a6199">Nessun risveglio attivo</span>';
   },
 
+  /* ── prima volta ─────────────────────────────────────────
+     Una schermata sola, una volta sola per sempre. Non è un tutorial a
+     tappe: si apre quando la cosa sta succedendo davvero, con la cosa
+     ferma sullo sfondo, quindi quello che leggi ce l'hai davanti. */
+  briefing(id) {
+    const b = BRIEFING[id];
+    if (!b) { riprendiGioco(); return; }
+    this.open('brief',
+      '<div class="brief clip" style="--c:' + b.c + '">' +
+      '<span class="bi clip">' + svg(b.ico) + '</span>' +
+      '<div class="eyebrow" style="color:var(--c)">' + b.k + '</div>' +
+      '<h2 class="ttl">' + b.n + '</h2>' +
+      b.p.map(t => '<p>' + t + '</p>').join('') +
+      '<div class="bnota">Una volta sola</div>' +
+      '</div>' +
+      '<button class="btn primary clip" style="max-width:300px;margin:0 auto" data-a="briefdone">' +
+      '<span class="face">Ho capito</span></button>'
+    );
+  },
+
   /* ── scelta potenziamento ───────────────────────────────── */
   levelup(chest) {
     this.chestMode = !!chest;
@@ -755,7 +797,7 @@ const UI = {
   /* ── pausa ──────────────────────────────────────────────── */
   togglePause() {
     if (G.state === 'play') { G.state = 'pause'; this.pause(); }
-    else if (G.state === 'pause') { G.state = 'play'; this.close(); }
+    else if (G.state === 'pause') riprendiGioco();
   },
   pause() {
     this.open('pause',
@@ -811,7 +853,10 @@ const UI = {
       const manca = best.c - SAVE.shards;
       voci.push(manca > 0
         ? ['#ffc857', svg(best.ico), best.n, 'Ti mancano ' + manca + ' frammenti. ' + best.d]
-        : ['#ffc857', svg(best.ico), best.n, 'Puoi già comprarla: ' + best.c + ' frammenti. ' + best.d]);
+        /* «comprarla» andava a genere: le voci qui dentro sono potenziamenti
+           (maschili), reliquie (femminili) e nuclei. Una formula che non
+           concorda con niente non sbaglia mai. */
+        : ['#ffc857', svg(best.ico), best.n, 'Già alla tua portata: ' + best.c + ' frammenti. ' + best.d]);
     }
 
     /* il contratto più economico fra quelli in corso: è il più vicino */
@@ -1053,7 +1098,7 @@ function startRun(charId, seed, modoId, giorno) {
   resetRun(charId, seed || UI.seme || 0, modoId, giorno);
   UI.seme = 0;
   HUD.classList.add('on');
-  UI.close(); G.state = 'play';
+  UI.close(); G.state = 'play'; G.ripresa = 0;
   UI.hud();
   showMoveHint();
   SAVE.runs = (SAVE.runs | 0) + 1; storeSave();
@@ -1228,6 +1273,14 @@ SCR.addEventListener('click', ev => {
        niente. Ora ci vai quando vuoi cambiare qualcosa o spendere. */
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
+    case 'briefdone': {
+      const id = G.briefing; G.briefing = null;
+      if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
+      /* la carta che stava aspettando dietro al briefing */
+      if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
+      else riprendiGioco();
+      break;
+    }
     /* il formato si cambia dal titolo e dall'Osservatorio: la schermata si
        ridisegna perché la congiunzione dichiarata resta la stessa (il seme
        non cambia) ma il nome del formato sotto al bottone sì */
@@ -1263,10 +1316,10 @@ SCR.addEventListener('click', ev => {
     case 'quit': endRun(false); break;
     case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
     case 'mus': SAVE.mus = SAVE.mus ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
-    case 'endless': G.victory = true; G.state = 'play'; HUD.classList.add('on'); UI.close(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
+    case 'endless': G.victory = true; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
     case 'ringedit': UI.ringEdit(null); break;
     case 'ringedit2': UI.ringEdit(null); break;
-    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; } break;
+    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(); else riprendiGioco(); break;
     case 'char': {
       const c = CHARS.find(x => x.id === b.dataset.id);
       if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
@@ -1359,7 +1412,7 @@ SCR.addEventListener('click', ev => {
       UI.toast('SALTATO', '+' + cura + ' vita · +' + fram + ' frammenti', '#6ff2c4');
       AU.play('buy');
       G.pending--;
-      if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
+      if (G.pending > 0) UI.levelup(); else riprendiGioco();
       break;
     }
     case 'pick': {
@@ -1369,7 +1422,7 @@ SCR.addEventListener('click', ev => {
       if (needsPlace === 'diss') UI.ringEdit(null, true);
       else if (needsPlace) UI.ringEdit(c.id);
       else if (G.pending > 0) UI.levelup();
-      else { UI.close(); G.state = 'play'; }
+      else riprendiGioco();
       break;
     }
     case 'slot': {
@@ -1384,13 +1437,13 @@ SCR.addEventListener('click', ev => {
         recalcRing(true);
         UI.toast('DISSOLTA', RUNES[r.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
         AU.play('blast'); G.shake = Math.max(G.shake, 8);
-        if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
+        if (G.pending > 0) UI.levelup(); else riprendiGioco();
         return;
       }
       if (UI.placing) {
         if (G.ring[i]) { UI.toast('ALLOGGIAMENTO OCCUPATO', 'Scegline uno vuoto', '#ff3d6e'); return; }
         placeRune(UI.placing, i); UI.placing = null;
-        if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
+        if (G.pending > 0) UI.levelup(); else riprendiGioco();
         return;
       }
       if (UI.sel < 0) { if (!G.ring[i]) return; UI.sel = i; AU.play('ui'); }

@@ -49,6 +49,12 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 #hud.on{display:flex}
 #xpline{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(111,242,196,.10)}
 #xpfill{height:100%;width:0%;background:linear-gradient(90deg,#38d8a4,var(--xp));box-shadow:0 0 12px rgba(111,242,196,.75);transition:width .12s linear}
+/* La prima scheggia raccolta in assoluto: la barra si ingrossa e pulsa per
+   un secondo e mezzo. Serve a chiudere il nesso — hai toccato quel puntino
+   verde, si e' mosso QUESTO — che a parole richiederebbe una schermata. */
+#xpline.primo{height:6px;background:rgba(111,242,196,.22);animation:xpPrimo 1.6s ease-out}
+@keyframes xpPrimo{0%,100%{box-shadow:none}
+  20%,60%{box-shadow:0 0 26px rgba(111,242,196,.9)}}
 #topbar{display:flex;align-items:flex-start;gap:10px;padding:calc(10px + var(--sat)) 12px 0;pointer-events:none}
 .hudL{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
 .hudR{display:flex;align-items:center;gap:8px}
@@ -489,6 +495,27 @@ ol.tips b{color:#fff;font-weight:600}
 .seedout b{font:700 13px/1 ui-monospace,Consolas,monospace;color:var(--dim);letter-spacing:0;margin-left:6px}
 
 /* sfide */
+/* ── prima volta ─────────────────────────────────────────────────
+   La schermata che spiega una cosa mentre quella cosa sta succedendo
+   dietro, ferma. Larga come una carta, non come un manuale. */
+.brief{max-width:420px;margin:0 auto 14px;padding:16px 18px;text-align:left;--cut:12px;
+  border:1px solid color-mix(in srgb,var(--c) 44%,transparent);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 14%,rgba(16,12,40,.95)),rgba(10,8,26,.96));
+  box-shadow:0 0 46px -14px var(--c)}
+/* Il distintivo sta DENTRO la carta. A cavallo del bordo superiore era piu'
+   bello, ma la carta ha un clip-path e glielo tagliava di diciotto pixel
+   (misurato): un'icona mozzata si legge come un difetto, non come stile. */
+.brief .bi{width:44px;height:44px;margin:0 auto 10px;display:grid;place-items:center;--cut:9px;
+  border:1px solid color-mix(in srgb,var(--c) 52%,transparent);background:rgba(7,6,19,.6)}
+.brief .bi svg{width:24px;height:24px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.brief .eyebrow{text-align:center}
+.brief .ttl{margin:6px 0 12px;text-align:center;color:var(--c)}
+.brief p{margin:0 0 10px;font:400 12.5px/1.6 var(--ui);color:var(--dim)}
+.brief p b{color:#fff;font-weight:600}
+.brief p:last-of-type{margin-bottom:12px}
+.brief .bnota{padding-top:10px;border-top:1px solid var(--line);
+  font:600 9.5px/1.5 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);text-align:center}
+
 /* ── formato della partita ───────────────────────────────────────
    Due bersagli da pollice, non una tendina: è la scelta che decide se la
    prima sessione conterrà una conclusione, quindi si vede senza cercarla. */
@@ -521,8 +548,8 @@ ol.tips b{color:#fff;font-weight:600}
 /* corsa del giorno: un bottone nella riga secondaria, non una sezione */
 /* tre bottoni nella stessa riga: .btnrow è già flex con .btn{flex:1}, qui
    serve solo stringere il testo perché ci stia su un telefono stretto */
-.btnrow.tre{gap:7px}
-.btnrow.tre .btn .face{padding-left:5px;padding-right:5px;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.btnrow.tre{gap:6px}
+.btnrow.tre .btn .face{padding-left:4px;padding-right:4px;font-size:10px;letter-spacing:.02em;white-space:nowrap}
 .btn.giorno .face{gap:6px}
 .btn.giorno svg{width:15px;height:15px;fill:none;stroke:var(--gold);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 

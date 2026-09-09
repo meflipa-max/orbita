@@ -661,3 +661,46 @@ function semeDelGiorno(iso) {
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
   return (h || 1) >>> 0;
 }
+
+/* ── prime volte ────────────────────────────────────────────────
+   Un evento d'arena chiede di ANDARE da qualche parte, e finché non sai
+   che cos'è resta un pezzo di schermo che lampeggia: la breccia sembra
+   una decorazione, la marea sembra sfortuna, il Corriere sembra un nemico
+   che non muore. L'avviso in alto durava due secondi e passava mentre
+   stavi schivando, cioè esattamente quando non puoi leggere.
+   Quindi la prima volta — e una volta sola per sempre — il gioco si ferma
+   e lo spiega. Ognuno dice tre cose: cos'è, come si riconosce da lontano,
+   e cosa conviene fare.                                                   */
+const BRIEFING = {
+  breccia: {
+    n: 'Breccia', k: 'Evento d’arena', ico: 'orbita', c: '#b06bff',
+    p: ['Si è aperto un varco nel vuoto, in un punto preciso dell’arena. Raggiungilo prima che si richiuda e ti lascia uno <b>scrigno</b>: una carta in più, come un livello.',
+        'Ha un <b>faro</b> che si vede da lontano. Finché resta fuori campo, una <b>freccia sul bordo dello schermo</b> ti dice da che parte e quanto manca.',
+        'Ci sono nemici intorno, e uno è un elite. Hai <b>22 secondi</b>: non sono abbastanza per pensarci su, quindi decidi subito se ci vai.']
+  },
+  marea: {
+    n: 'Marea', k: 'Evento d’arena', ico: 'ampiezza', c: '#45d7ff',
+    p: ['Per una ventina di secondi i nemici smettono di arrivare da tutte le parti e arrivano <b>tutti da una direzione sola</b>, molto più fitti.',
+        'Sembra un muro, ed è il contrario: un muro da una parte vuol dire che <b>le altre tre sono sgombre</b>.',
+        'Indietreggiare è la mossa sbagliata — resti davanti all’onda per tutta la sua durata. <b>Spostati di fianco</b> e lasciala passare.']
+  },
+  caccia: {
+    n: 'Corriere', k: 'Evento d’arena', ico: 'celerita', c: '#6ff2c4',
+    p: ['Un nemico verde carico di bottino. Non ti attacca: <b>scappa</b>, ed è più veloce di quasi tutto il resto.',
+        'Lo trovi dalla <b>colonna di luce</b> e dal reticolo col conto alla rovescia. Sparisce dopo <b>26 secondi</b>, e se sparisce non lascia niente.',
+        'Non insegue in linea retta: se ti avvicini si allontana, se resti indietro torna a farsi vedere. <b>Tagliagli la strada</b> invece di rincorrerlo.']
+  },
+  nodo: {
+    n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',
+    p: ['Sei entrato nell’aura di un cristallo <b>sintonizzato su un elemento</b>. L’elemento è sorteggiato a ogni partita, e in alto a sinistra c’è scritto quale.',
+        'Finché resti qui dentro, le tue rune di quell’elemento fanno <b>+35% di danno</b>, e soprattutto la sua catena <b>conta una runa in più</b>: due rune adiacenti bastano ad accendere il Risveglio invece di tre.',
+        'Il cuore del cristallo resta solido, quindi non ci si sta sopra: <b>ci si orbita intorno</b>. Tenere la posizione rende molto, ma restare fermi in mezzo alla mischia si paga.']
+  }
+};
+/* Le cose che si spiegano una volta sola. Non tutte hanno una schermata:
+   `gemme` è la parola ESPERIENZA sotto alla prima scheggia (vedi
+   drawGemme in 04-render), e si spegne al primo tocco. Sta in questo
+   elenco perché sanitizeSave scarta i flag che non riconosce — e senza,
+   l'etichetta sarebbe tornata a ogni riapertura del gioco. */
+const PRIMEVOLTE = Object.keys(BRIEFING).concat(['gemme']);
+const visto = id => SAVE.visti.indexOf(id) >= 0;

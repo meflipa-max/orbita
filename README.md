@@ -223,6 +223,48 @@ sparisca. Servono a dare un motivo per andare da qualche parte, quindi devono **
 lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
 alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
 
+### Quello che nessuno ti aveva detto
+
+Tre cose il gioco le faceva senza spiegarle, e chi cominciava le capiva male.
+
+**Le schegge verdi.** Sono l'esperienza, ma niente lo diceva: un giocatore nuovo le scavalca,
+non sale di livello, e conclude che il gioco è impossibile. I doni a terra avevano già la
+regola giusta — *una parola sotto a quello più vicino* — le gemme no. Adesso, e **solo finché
+non ne hai raccolta una in vita tua**, la scheggia più vicina porta scritto `ESPERIENZA`; al
+primo tocco la barra in alto si ingrossa e pulsa, e la scritta non torna mai più. Misurato: la
+prima gemma cade a terra al secondo 2,5 e un giocatore fermo ne raccoglie una al 15,5 — tredici
+secondi in cui la parola è lì da leggere, poi il concetto è insegnato e ripeterlo sarebbe
+rumore addosso alla cosa più numerosa dello schermo.
+
+**I Nodi.** Un cristallo che si illumina quando ci passi dentro, per chi comincia, è un
+potenziamento raccolto. Il difetto era che si illuminavano **tutti allo stesso modo**, quindi
+«si accende» non voleva dire niente. Adesso un Nodo si accende solo se è sintonizzato su un
+elemento che stai davvero giocando: quello che brilla è quello che ti serve, gli altri restano
+cristalli scuri con un anello tratteggiato — terreno, non bottino. E siccome l'anello cambia
+durante la partita, un Nodo spento **si accende al minuto sei** quando peschi la runa giusta:
+l'arena reagisce alla tua build sotto i tuoi occhi, che è il modo migliore di spiegare la
+regola. Sotto al cristallo c'è scritto cosa fa, o perché è spento (`ti serve una runa di
+fuoco`), e la targhetta nell'HUD compare solo quando il bonus lo stai ricevendo davvero.
+
+**Gli eventi d'arena.** Una breccia sembra una decorazione, una marea sembra sfortuna, il
+Corriere sembra un nemico che non muore. L'avviso in alto durava due secondi e passava mentre
+stavi schivando, cioè esattamente quando non puoi leggere. La prima volta — **e una volta sola
+per sempre** — il gioco si ferma e lo spiega, con la cosa ferma sullo sfondo: cos'è, come si
+riconosce da lontano, e cosa conviene fare. Vale anche per il primo Nodo utile in cui entri.
+
+### Rientrare in gioco
+
+Si torna a giocare da una schermata di carte, dalla pausa, dall'anello, da un briefing. In
+tutti questi casi il mondo era fermo e ripartiva esattamente com'era — coi nemici dove li avevi
+lasciati, che spesso vuol dire addosso — mentre il tuo pollice era su un bottone e non sulla
+levetta. Quello è un colpo che non hai potuto evitare.
+
+Quindi non si riparte a velocità piena: si riparte al **16%** e si accelera in un secondo e
+mezzo, con una curva al quadrato — il tempo serve tutto all'inizio, quando devi capire dove
+sei. Non è invulnerabilità, un nemico addosso fa male lo stesso. Misurato: nei primi 0,4
+secondi d'orologio il mondo avanza di 0,07, e in 1,6 di 0,71. Circa un secondo di orologio
+regalato per rimettere il dito dove serve.
+
 ### Il direttore
 
 La difficoltà non segue il cronometro: segue **quanto sei forte davvero**. Il gioco misura a
@@ -375,13 +417,18 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ## Sviluppo
 
 ```bash
-npm run build     # genera orbita.html e dist/index.html
-npm run dev       # build + server statico su http://localhost:5173
+npm run build          # genera orbita.html e dist/index.html
+npm run dev            # build + server statico su http://localhost:5173
+npm run misura         # partite simulate: una corsa e un'incursione
+npm run misura -- asc  # la scala di difficoltà dei due formati
+npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
 ```
 
 `build.mjs` (Node, cross-platform) e `build.ps1` (Windows) producono output identico.
 
 ```
+tools/banco.mjs    banco headless: stub di DOM, canvas e audio — nessun disegno
+tools/misura.mjs   il bot che schiva, e i tre banchi di misura
 src/shell.html     markup + CSS (tema unico, "console" con angoli tagliati)
 src/01-data.js     rune, passivi, nemici, boss, personaggi, potenziamenti · tutti i numeri
 src/02-engine.js   stato, salvataggio, audio procedurale, input, griglia spaziale, danno
