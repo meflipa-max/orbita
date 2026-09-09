@@ -503,7 +503,7 @@ function drawZonesOver() {
    Quindi la breccia non aveva il suo faro viola e il Corriere non aveva
    niente addosso — nasceva a quattrocento pixel, cioe' dentro lo schermo,
    dove la bussola di bordo non compare, e in mezzo alla folla era una
-   sagoma verde uguale alle altre. Da qui "il Corriere quando spawna non si
+   sagoma turchese uguale alle altre. Da qui "il Corriere quando spawna non si
    capisce dove sta": letteralmente non era segnato in nessun modo. */
 function drawEvento() {
   const v = G.ev; if (!v) return;
@@ -700,7 +700,7 @@ function drawPickups() {
     /* Finche' non ne hai raccolta UNA in vita tua, la scheggia piu' vicina
        porta scritto cos'e'. I doni a terra hanno gia' questa regola, le
        gemme no — e chi comincia non ha modo di sapere che quei puntini
-       verdi sono l'esperienza: li scavalca, non sale di livello, e conclude
+       turchesi sono l'esperienza: li scavalca, non sale di livello, e conclude
        che il gioco e' impossibile. Una parola sola, su una gemma sola, e
        sparisce per sempre al primo tocco. */
     if (m === primaGemma) {

@@ -253,10 +253,10 @@ const PASSIDS = Object.keys(PASSIVES);
 
 /* ── nemici ─────────────────────────────────────────────────── */
 /* Gerarchia visiva. Prima ogni nemico aveva la sua tinta satura — sette
-   arcobaleni che urlavano tutti uguale — e due erano verde e oro, cioè
+   arcobaleni che urlavano tutti uguale — e due erano turchese e oro, cioè
    esattamente i colori delle gemme e dei frammenti: i nemici sembravano
    roba da raccogliere. Ora vale una regola sola:
-     · verde e oro sono RISERVATI a ciò che si raccoglie
+     · turchese e oro sono RISERVATI a ciò che si raccoglie
      · rosso è RISERVATO a ciò che fa male (colpi nemici)
      · i nemici comuni stanno in una famiglia fredda viola-ardesia
      · la LUMINOSITÀ misura la minaccia: più è chiaro e caldo, più pesa
@@ -684,13 +684,16 @@ const BRIEFING = {
   },
   caccia: {
     n: 'Corriere', k: 'Evento d’arena', ico: 'celerita', c: '#6ff2c4',
-    p: ['Un nemico verde carico di bottino. Non ti attacca: <b>scappa</b>, ed è un filo più veloce di te.',
+    p: ['Un nemico <b>turchese</b> carico di bottino — lo stesso colore delle schegge. Non ti attacca: <b>scappa</b>, ed è un filo più veloce di te.',
         'La freccia dice dov’è. Sparisce fra <b>26 secondi</b>, e in linea retta non lo prendi: <b>tagliagli la strada</b>.']
   },
   gemme: {
-    n: 'Schegge', k: 'Da raccogliere', ico: 'sapienza', c: '#6ff2c4',
-    p: ['I puntini verdi che lasciano i nemici sono <b>esperienza</b>. Passaci sopra per raccoglierli: riempiono la barra in cima allo schermo.',
-        'Ogni barra piena è un <b>livello</b>, cioè una carta da scegliere. È così che la tua build cresce — senza raccoglierli non cresce.']
+    n: 'Schegge', k: 'Da raccogliere', ico: 'sapienza', c: '#6ff2c4', scena: 'gemme',
+    /* niente nome di colore: c'è la scena sopra che lo fa vedere. «Verdi»
+       era anche sbagliato — la tinta è 159°, turchese — e «azzurre» avrebbe
+       accavallato l'elemento Gelo, che è l'unico azzurro del gioco. */
+    p: ['Le schegge che lasciano i nemici sono <b>esperienza</b>. Passaci sopra per raccoglierle: riempiono la barra in cima allo schermo.',
+        'Ogni barra piena è un <b>livello</b>, cioè una carta da scegliere. È così che la tua build cresce — senza raccoglierle non cresce.']
   },
   nodo: {
     n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',

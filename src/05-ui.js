@@ -732,6 +732,26 @@ const UI = {
      Una schermata sola, una volta sola per sempre. Non è un tutorial a
      tappe: si apre quando la cosa sta succedendo davvero, con la cosa
      ferma sullo sfondo, quindi quello che leggi ce l'hai davanti. */
+  /* La scena. Spiegare un colore a parole è già perso in partenza — «verdi»
+     era pure sbagliato: la tinta è 159°, cioè turchese, e «azzurre» sarebbe
+     stato peggio perché l'azzurro è l'elemento Gelo. Quindi la scheggia si
+     mostra invece di descriverla, e si mostra mentre viene raccolta: il
+     nucleo è il TUO, con la sagoma e il colore che hai scelto, così quello
+     che vedi qui è quello che vedrai fra due secondi in campo. */
+  scenaGemme() {
+    const sk = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
+    const c = (CHARS.find(x => x.id === SAVE.char) || CHARS[0]).c;
+    const sch = (x, y, d) => '<i class="dg-s" style="--x0:' + x + 'px;--y0:' + y + 'px;animation-delay:' + d + 's"></i>';
+    return '<div class="dgem" style="--c:' + c + '">' +
+      '<div class="dg-campo">' +
+      '<span class="dg-nucleo">' + this.skinSvg(sk) + '</span>' +
+      sch(262, -19, 0) + sch(286, 14, .8) + sch(238, 3, 1.6) +
+      '</div>' +
+      '<div class="dg-barra"><i></i></div>' +
+      '<div class="dg-eti">la barra sale a ogni scheggia</div>' +
+      '</div>';
+  },
+
   briefing(id) {
     const b = BRIEFING[id];
     if (!b) { riprendiGioco(); return; }
@@ -740,6 +760,7 @@ const UI = {
       '<span class="bi clip">' + svg(b.ico) + '</span>' +
       '<div class="eyebrow" style="color:var(--c)">' + b.k + '</div>' +
       '<h2 class="ttl">' + b.n + '</h2>' +
+      (b.scena === 'gemme' ? this.scenaGemme() : '') +
       b.p.map(t => '<p>' + t + '</p>').join('') +
       '<div class="bnota">Una volta sola</div>' +
       '</div>' +

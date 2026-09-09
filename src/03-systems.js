@@ -724,7 +724,7 @@ function updateGems(dt) {
            sotto alla gemma più vicina sparisce per sempre (vedi drawGemme
            in 04-render): il concetto è insegnato, e ripeterlo sarebbe
            rumore addosso alla cosa più numerosa dello schermo.
-           Il numero che vola è verde e dice ESPERIENZA a lettere, non
+           Il numero che vola è turchese e dice ESPERIENZA a lettere, non
            "+3": la prima volta serve il nome della cosa, non il suo
            valore, e la barra in alto si muove nello stesso istante. */
         /* `!G.demo` non è un dettaglio: dietro al titolo gira il gioco vero,

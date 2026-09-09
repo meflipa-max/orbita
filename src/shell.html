@@ -527,6 +527,48 @@ ol.tips b{color:#fff;font-weight:600}
 .brief p{margin:0 0 11px;font:400 13.5px/1.55 var(--ui);color:var(--dim)}
 .brief p b{color:#fff;font-weight:600}
 .brief p:last-of-type{margin-bottom:12px}
+/* ── la scheggia, mostrata invece che descritta ───────────────────
+   Un colore non si spiega a parole, e infatti «verdi» era pure sbagliato:
+   la tinta è 159°, turchese, e «azzurre» avrebbe accavallato l'elemento
+   Gelo. Qui la scheggia si vede, e si vede MENTRE viene raccolta — con la
+   barra che sale nello stesso istante, che è il nesso che serve. Il nucleo
+   è quello vero, con la sagoma e il colore scelti nell'Osservatorio. */
+.dgem{margin:0 0 13px}
+.dg-campo{position:relative;height:76px;overflow:hidden;--cut:8px;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  border:1px solid var(--line);
+  background:radial-gradient(70% 120% at 22% 50%,rgba(30,24,70,.75),rgba(8,6,22,.92))}
+.dg-nucleo{position:absolute;left:24px;top:50%;width:36px;height:36px;margin-top:-18px;
+  display:grid;place-items:center}
+.dg-nucleo svg{width:36px;height:36px;fill:rgba(10,8,26,.85);stroke:var(--c);stroke-width:1.5;
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--c) 55%,transparent))}
+.dg-nucleo svg circle:last-child{fill:#fff;stroke:none}
+/* le schegge entrano da destra e si spengono dentro al nucleo */
+.dg-s{position:absolute;top:50%;left:6px;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;
+  background:var(--xp);box-shadow:0 0 13px 2px rgba(111,242,196,.85);opacity:0;
+  animation:dgVola 2.4s cubic-bezier(.35,0,.7,1) infinite}
+@keyframes dgVola{
+  0%   {transform:translate(var(--x0),var(--y0)) scale(1);opacity:0}
+  10%  {opacity:1}
+  70%  {transform:translate(30px,0) scale(1);opacity:1}
+  84%  {transform:translate(30px,0) scale(.15);opacity:0}
+  100% {transform:translate(30px,0) scale(.15);opacity:0}
+}
+.dg-barra{height:6px;margin-top:7px;background:rgba(111,242,196,.13);overflow:hidden;
+  border:1px solid rgba(111,242,196,.22)}
+.dg-barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38d8a4,var(--xp));
+  box-shadow:0 0 10px rgba(111,242,196,.7);animation:dgBarra 2.4s steps(1,end) infinite}
+@keyframes dgBarra{
+  0%,27%{width:14%} 28%,54%{width:44%} 55%,81%{width:74%} 82%,100%{width:100%}
+}
+.dg-eti{margin-top:5px;font:600 8.5px/1 var(--ui);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);text-align:center}
+/* chi ha chiesto meno movimento vede la stessa scena, ferma */
+@media (prefers-reduced-motion:reduce){
+  .dg-s{animation:none;opacity:1;transform:translate(calc(var(--x0) * .5),var(--y0))}
+  .dg-barra i{animation:none;width:62%}
+}
+
 .brief .bnota{padding-top:10px;border-top:1px solid var(--line);
   font:600 9.5px/1.5 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);text-align:center}
 

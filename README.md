@@ -319,7 +319,7 @@ il nucleo **si sposta di lato**, all'82%, dove la colonna non arriva.
 
 Tre cose il gioco le faceva senza spiegarle, e chi cominciava le capiva male.
 
-**Le schegge verdi.** Sono l'esperienza, ma niente lo diceva: un giocatore nuovo le scavalca,
+**Le schegge.** Sono l'esperienza, ma niente lo diceva: un giocatore nuovo le scavalca,
 non sale di livello, e conclude che il gioco è impossibile. I doni a terra avevano già la
 regola giusta — *una parola sotto a quello più vicino* — le gemme no. Adesso, e **solo finché
 non ne hai raccolta una in vita tua**, la scheggia più vicina porta scritto `ESPERIENZA`; al
@@ -344,6 +344,11 @@ stavi schivando, cioè esattamente quando non puoi leggere. La prima volta — *
 per sempre** — il gioco si ferma e lo spiega, con la cosa ferma sullo sfondo. Due righe, non
 tre paragrafi: un pannello che ferma il gioco si legge solo se si legge in fretta. Vale anche
 per il primo Nodo utile in cui entri.
+
+La carta della lezione **fa vedere** una scheggia invece di descriverla: il tuo nucleo — con la
+sagoma e il colore che hai scelto — che ne raccoglie tre mentre la barra sale. Un colore a
+parole è perso in partenza, e «verdi» era pure sbagliato: la tinta è **159°**, cioè turchese, e
+«azzurre» sarebbe stato peggio, perché l'azzurro nel gioco è l'elemento Gelo.
 
 E la lezione delle schegge è **una carta con un bottone**, come gli eventi d'arena: il gioco si
 ferma alla prima scheggia caduta e riparte quando tocchi «Ho capito». Un avviso passivo o dura
