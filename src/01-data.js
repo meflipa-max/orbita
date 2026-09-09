@@ -541,8 +541,11 @@ const CONGIUNZIONI = [
     d: 'Niente cuori né bombe a terra, ma i frammenti rendono il 70% in più.', m: { noDrops: 1, shard: 1.7 } },
   { id: 'eco', n: 'Eco', c: '#ff7de3', w: 3,
     d: 'I Risvegli richiedono una runa in meno, i guardiani hanno il 40% di vita in più.', m: { chain: -1, bossHp: 1.4 } },
+  /* Ne chiede 76, ma la regola di distanza fra formazioni ne fa entrare 58
+     (misurato): «il doppio» sarebbe una promessa che l'arena non mantiene.
+     I Nodi invece raddoppiano davvero, da 10 a 19. */
   { id: 'cintura', n: 'Cintura', c: '#8b7ddb', w: 3,
-    d: 'Il doppio degli asteroidi, e il doppio dei Nodi elementali.', m: { rocce: 1.9, nodo: 1.9 } },
+    d: 'Asteroidi molto più fitti, e il doppio dei Nodi elementali.', m: { rocce: 1.9, nodo: 1.9 } },
   { id: 'tempesta', n: 'Tempesta', c: '#45d7ff', w: 3,
     d: 'Un evento d’arena ogni quaranta secondi invece che ogni novanta.', m: { ev: .45 } },
   { id: 'vetro', n: 'Vetro', c: '#ff3d6e', w: 3,

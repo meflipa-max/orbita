@@ -1014,6 +1014,10 @@ function resetRun(charId, seed, modoId, giorno) {
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.bossKills = 0; G.maxLv = 1; G.tier2 = 0; G.rerollUsati = 0; G.respiro = 0;
+  /* quanto e' gia' stato pagato per QUESTA corsa, e se ha gia' una riga
+     nello storico: servono a «Continua senza fine», che chiude la partita
+     una volta e poi la fa finire una seconda */
+  G.saldato = 0; G.registrata = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -1141,15 +1145,28 @@ function valutaContratti(s) {
 function registraStorico(win, g) {
   const r = {
     t: Math.floor(G.t), k: G.kills, l: G.level, c: G.char.id,
-    m: G.modo.id, a: G.ascLv | 0, w: win ? 1 : 0, s: g,
-    g: G.cong.id, b: G.bossKills | 0, d: Date.now()
+    m: G.modo.id, a: G.ascLv | 0, w: (win || G.victory) ? 1 : 0, s: g,
+    g: G.cong.id, b: G.bossKills | 0, d: Date.now(), sd: G.seed >>> 0
   };
+  /* Una corsa continuata senza fine finisce due volte: la riga e' la
+     stessa, aggiornata, non due partite diverse nell'elenco. */
+  if (G.registrata && SAVE.storico[0] && SAVE.storico[0].sd === r.sd) {
+    r.s = (SAVE.storico[0].s | 0) + g;
+    SAVE.storico[0] = r;
+    return;
+  }
   SAVE.storico.unshift(r);
+  G.registrata = 1;
   if (SAVE.storico.length > 20) SAVE.storico.length = 20;
 }
 
 function endRun(win) {
-  const g = payout();
+  /* `Continua senza fine` chiude la partita e poi la fa finire di nuovo:
+     senza questo la stessa corsa veniva pagata due volte per intero — e
+     con lei il premio di vittoria. Adesso si paga solo la differenza. */
+  const lordo = payout();
+  const g = Math.max(0, lordo - (G.saldato | 0));
+  G.saldato = lordo;
   SAVE.shards += g;
   const s = statoPartita(win);
   const sfideNuove = valutaSfide(s);

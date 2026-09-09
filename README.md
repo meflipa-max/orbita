@@ -59,19 +59,29 @@ irrobustiscono 1,65 volte più in fretta, tu sali di livello 1,85 volte più in 
 guardiani hanno una vita loro invece di quella del loro slot — perché a parità di minuti la
 tua build è più debole di quanto sarebbe nella Corsa.
 
-Misurato con un bot che schiva scegliendo fra ventiquattro direzioni, quattro semi per
-formato, giocatore invulnerabile per leggere la curva e non la bravura:
-
-| | livello al finale | uccisioni | fine |
-|---|---|---|---|
-| Corsa | 29–38 | 10.594–15.365 | 1087–1107 s |
-| Incursione | 20–29 | 4.011–6.278 | 420–443 s |
-
 Vincere un'Incursione sblocca l'ascensione come vincere una Corsa: è il punto — la prima
-conclusione deve stare nella prima sessione. Il premio ha però un fattore `paga` di 0,8,
-perché il bonus di vittoria è lo stesso in un terzo del tempo e senza quel fattore la Corsa
-diventava una perdita di tempo. La modalità senza fine resta della Corsa: allungare
-l'Incursione la cancellerebbe.
+conclusione deve stare nella prima sessione. La domanda era quindi una sola: **l'Incursione è
+una scorciatoia per scalare la scala di difficoltà?** Misurato col banco headless e un bot che
+ogni mezzo secondo schiva scegliendo fra ventiquattro direzioni, quattro semi per riga:
+
+| | asc 0 | asc 4 | asc 8 | asc 12 |
+|---|---|---|---|---|
+| Corsa | 4/4 | 3/4 | 0/4 | 0/4 |
+| Incursione | 4/4 | 2/4 | 1/4 | 0/4 |
+
+No: le due colonne si muovono insieme, quindi il formato si sceglie per il tempo che hai, non
+per scavalcare un'ascensione. E al finale il divario di potenza è quello previsto — livello
+20–29 nell'Incursione contro 29–38 nella Corsa, misurato a parte con giocatore invulnerabile
+per leggere la curva invece della bravura — ed è per questo che i tre guardiani dell'Incursione
+hanno un moltiplicatore di vita proprio (0,85 · 0,5 · 0,36) invece di quello del loro slot.
+
+Il premio ha un fattore `paga` di 0,8, perché il bonus di vittoria è lo stesso in un terzo del
+tempo e senza quel fattore la Corsa diventava una perdita di tempo. La modalità senza fine
+resta della Corsa: allungare l'Incursione la cancellerebbe.
+
+Il bot va preso per quello che è: schiva meglio di un essere umano e sceglie le carte peggio,
+quindi misura la **coerenza** della curva, non la difficoltà percepita. Le ascensioni alte che
+non vince restano un problema aperto per lui, non necessariamente per chi progetta l'anello.
 
 ### Congiunzioni
 
@@ -82,11 +92,18 @@ bottone che fa partire la corsa. Una regola che leggi prima è una scelta; una c
 terzo minuto è una sorpresa.
 
 Sciame (molti più nemici, molto più fragili), Carestia (niente cuori né bombe, frammenti +70%),
-Eco (Risvegli con una runa in meno, guardiani +40% vita), Cintura (doppio di asteroidi e di
-Nodi), Tempesta (un evento ogni quaranta secondi), Vetro (metà vita, +40% danno), Fuga (tutti
+Eco (Risvegli con una runa in meno, guardiani +40% vita), Cintura (asteroidi da 40 a 58 e Nodi
+da 10 a 19), Tempesta (un evento ogni quaranta secondi), Vetro (metà vita, +40% danno), Fuga (tutti
 più veloci del 18%, tu compreso). E **Quiete**, che pesa il doppio delle altre: una corsa su
 quattro deve restare quella di sempre, o «modificata» smette di voler dire qualcosa. Misurato
 su 40.000 semi: Quiete 22,2%, le altre fra 10,8% e 11,3%.
+
+La sola che poteva rompere la leggibilità era **Tempesta**, perché più eventi vuol dire più
+maree, e una marea porta nemici oltre il tetto normale. Misurato su dieci minuti col bot:
+il **picco non cambia** (242 contro i 262 della Quiete — il tetto della marea lo lega
+comunque), cambia quanto spesso ci si arriva: media da 130 a 154 nemici vivi, tempo sopra i
+160 dal 28,7% al 51,5%. Rende più frequente il caso peggiore che c'era già, non ne crea uno
+nuovo — e `G.chiarezza` si occupa già di far ritirare gli effetti quando il campo si affolla.
 
 Siccome esce dal seme, `Ripeti questa semenza` ripete anche la congiunzione.
 
