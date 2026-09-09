@@ -782,6 +782,26 @@ function updateParts(dt) {
    curva di ondate di una Corsa da venti. Non tocca il direttore, che
    misura la potenza e non il cronometro. */
 function tempoContenuto() { return G.t * (G.modo.onda || 1); }
+
+/* Quanti nemici possono stare in campo adesso. Sta in una funzione perché
+   la usano in due — le ondate normali e la marea — e perché il tetto non è
+   un numero, è una proprietà del momento e del dispositivo: su un telefono
+   parte da 115 invece che da 160 (vedi updateSpawns per il perché). */
+function tettoNemici() {
+  const cap = (W < 700 ? 115 : 160);
+  return Math.round(cap * clamp(.42 + tempoContenuto() / 900 + G.diff, .42, 1));
+}
+/* La valvola della marea. Non è «quanto deve essere intensa la marea» —
+   quella la fa il ritmo di comparsa, nove al secondo tutti da una parte —
+   è «oltre quanto il campo smette di leggersi». Quindi è una frazione del
+   tetto normale e non un numero fisso.
+   Misurato col tetto fisso a 260 che c'era prima: al minuto 2 la marea
+   portava il campo a 239 contro un tetto di 92, cioè 2,6 volte, proprio
+   quando hai due rune e la build più debole della partita; al minuto 10
+   arrivava a 171 contro 160, cioè 1,07 volte, quando invece potresti
+   reggerla. Un numero assoluto non scala con niente: era una valanga
+   presto e niente del tutto tardi, esattamente al contrario. */
+const MAREA_TETTO = 1.3;
 function currentPool() {
   const tc = tempoContenuto();
   let p = WAVES[0].pool;
@@ -995,7 +1015,7 @@ function updateEventi(dt) {
     v.acc += dt * 9;
     while (v.acc >= 1) {
       v.acc -= 1;
-      if (G.enemies.length < 260) {
+      if (G.enemies.length < tettoNemici() * MAREA_TETTO) {
         const a = v.a + rand(.5, -.5), d = Math.max(560, Math.hypot(G.vw, G.vh) * .55);
         spawnEnemy(pick(currentPool()),
           clamp(G.p.x + Math.cos(a) * d, -ARENA, ARENA),
@@ -1087,8 +1107,7 @@ function updateSpawns(dt) {
      numero, e duecentoquaranta sagome a schermo erano una delle ragioni per
      cui a meta' partita non si distingueva piu' la strada dai nemici. */
   const tc = tempoContenuto();
-  const cap = (W < 700 ? 115 : 160);
-  const maxE = Math.round(cap * clamp(.42 + tc / 900 + G.diff, .42, 1));
+  const maxE = tettoNemici();
   /* L'apertura era troppo tranquilla: a mezzo minuto c'erano undici nemici
      in campo e il primo livello arrivava dopo venti secondi di niente. In un
      bullet heaven il primo minuto deve gia' dire cos'e' il gioco. Adesso si

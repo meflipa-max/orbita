@@ -99,11 +99,16 @@ quattro deve restare quella di sempre, o «modificata» smette di voler dire qua
 su 40.000 semi: Quiete 22,2%, le altre fra 10,8% e 11,3%.
 
 La sola che poteva rompere la leggibilità era **Tempesta**, perché più eventi vuol dire più
-maree, e una marea porta nemici oltre il tetto normale. Misurato su dieci minuti col bot:
-il **picco non cambia** (242 contro i 262 della Quiete — il tetto della marea lo lega
-comunque), cambia quanto spesso ci si arriva: media da 130 a 154 nemici vivi, tempo sopra i
-160 dal 28,7% al 51,5%. Rende più frequente il caso peggiore che c'era già, non ne crea uno
-nuovo — e `G.chiarezza` si occupa già di far ritirare gli effetti quando il campo si affolla.
+maree. La prima misura diceva picchi di 260-280 nemici contro un tetto di 160, e per un po'
+quel numero è rimasto scritto qui — **era sbagliato**: il bot di quella misura non sceglieva
+le carte, quindi restava al livello 1 per dieci minuti, non uccideva più niente e i guardiani
+si accumulavano vivi evocando all'infinito (al picco, 128 dei 262 nemici erano evocati). Con un
+bot che sale di livello come farebbe chiunque, dieci minuti di gioco danno **picco 133, media
+66, e zero minuti con picchi sopra il tetto**. La densità sta sotto il soffitto: era il metodo
+a essere rotto, non il gioco.
+
+Vale la pena scriverlo perché è il modo tipico in cui una misura mente: il banco funzionava,
+il bot no, e il numero sembrava plausibile.
 
 Siccome esce dal seme, `Ripeti questa semenza` ripete anche la congiunzione.
 
@@ -219,7 +224,24 @@ diverse a ogni corsa.
 
 Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima
 che si chiuda, una marea di nemici da una sola direzione, un Corriere da abbattere prima che
-sparisca. Servono a dare un motivo per andare da qualche parte, quindi devono **vedersi da
+sparisca.
+
+Il tetto di nemici della marea era un numero fisso, 260, scritto prima che il tetto normale
+scendesse da 240 a 160 per leggibilità — quindi lo contraddiceva, e soprattutto **non scalava
+con niente**: né col dispositivo (su un telefono il tetto normale è 115, quindi 260 era 2,3
+volte contro le 1,6 di un desktop) né col momento della partita. Misurato col bot:
+
+| | tetto del momento | picco della marea | prima | ora |
+|---|---|---|---|---|
+| minuto 2 | 92 | 239 → 120 | **2,60×** | 1,30× |
+| minuto 6 | 134 | 260 → 220 | 1,94× | 1,64× |
+| minuto 10 | 160 | 171 → 213 | 1,07× | 1,33× |
+
+Era una valanga al minuto 2 — quando hai due rune e la build più debole della partita — e non
+faceva **niente** al minuto 10, quando invece potresti reggerla: esattamente al contrario.
+Adesso la valvola è **1,3 volte il tetto del momento**, quindi l'evento vuol dire la stessa
+cosa a ogni minuto e su ogni schermo. E resta una valvola, non la manopola: l'intensità della
+marea la fa il ritmo di comparsa — nove al secondo, tutti da una parte sola. Servono a dare un motivo per andare da qualche parte, quindi devono **vedersi da
 lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
 alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
 

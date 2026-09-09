@@ -307,7 +307,7 @@ function boot() {
   });
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
   addEventListener('pointerdown', () => AU.init(), { once: true });
   addEventListener('keydown', () => AU.init(), { once: true });
 }
