@@ -687,6 +687,11 @@ const BRIEFING = {
     p: ['Un nemico verde carico di bottino. Non ti attacca: <b>scappa</b>, ed è un filo più veloce di te.',
         'La freccia dice dov’è. Sparisce fra <b>26 secondi</b>, e in linea retta non lo prendi: <b>tagliagli la strada</b>.']
   },
+  gemme: {
+    n: 'Schegge', k: 'Da raccogliere', ico: 'sapienza', c: '#6ff2c4',
+    p: ['I puntini verdi che lasciano i nemici sono <b>esperienza</b>. Passaci sopra per raccoglierli: riempiono la barra in cima allo schermo.',
+        'Ogni barra piena è un <b>livello</b>, cioè una carta da scegliere. È così che la tua build cresce — senza raccoglierli non cresce.']
+  },
   nodo: {
     n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',
     p: ['Dentro quest’aura le tue rune del suo elemento fanno <b>+35% danno</b>, e ne bastano <b>due vicine</b> per accendere il Risveglio invece di tre.',

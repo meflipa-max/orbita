@@ -21,25 +21,6 @@ function showMoveHint() {
 }
 function hideMoveHint() { elHint.className = 'clip'; G.hint = 0; G.hintOff = 0; }
 
-/* La seconda lezione, nello stesso pannello della prima.
-   La parola ESPERIENZA sotto alla scheggia più vicina non bastava: chi si
-   muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccoglie
-   la sua prima gemma 3,5 secondi dopo che ne è caduta una (misurato), e in
-   quei tre secondi sta ancora guardando la levetta. Una lezione attaccata a
-   un oggetto che sparisce in tre secondi non è una lezione.
-   Questa arriva quando la prima è finita, dove il giocatore ha già imparato
-   a guardare, e se ne va da sola appena raccoglie qualcosa: la barra in alto
-   si muove nello stesso istante, e il nesso si chiude. */
-function showGemHint() {
-  elHint.innerHTML = '<span class="gemd"><i></i></span><b>Le schegge verdi sono esperienza</b><small>Raccoglile per salire di livello</small>';
-  elHint.className = 'clip on';
-  /* Venticinque secondi, non sette: questa lezione non finisce quando scade
-     un timer, finisce quando è imparata — cioè quando raccogli una scheggia
-     (vedi updateGems in 03-systems). Un tetto c'è lo stesso, perché un
-     pannello che non se ne va mai diventa parte dell'arredamento. */
-  G.hint = 25; G.hintOff = 0; G.lezione = 1;
-}
-
 /* Si torna a giocare da una schermata sola: una schermata di carte, la
    pausa, l'anello, un briefing. In tutti questi casi il mondo era fermo e
    riparte esattamente com'era — con i nemici dove li avevi lasciati, che
@@ -48,8 +29,7 @@ function showGemHint() {
    Quindi non si riparte a velocita' piena: si riparte al 16% e si accelera
    in un secondo e mezzo. Non e' invulnerabilita' — un nemico che ti sta
    addosso ti fa male lo stesso — e' il tempo di rimettere il dito dove
-   serve e decidere da che parte andare. Costa 0,8 secondi di gioco su 1,6
-   di orologio: abbastanza da sentirsi, troppo poco per essere una pausa. */
+   serve e decidere da che parte andare. */
 const RIPRESA = 1.6;
 function riprendiGioco() {
   UI.close();
@@ -730,6 +710,24 @@ const UI = {
     return parts.length ? parts.join(' · ') : '<span style="color:#6a6199">Nessun risveglio attivo</span>';
   },
 
+  /* Chiudere una spiegazione. È un metodo e non solo il corpo di un
+     `case` perché il collaudo deve poterlo chiamare: la versione
+     precedente non faceva ripartire il gioco — riprendiGioco() era stato
+     cancellato da una modifica — e la partita restava congelata per
+     sempre sulla carta. Un errore a tempo di esecuzione, che `node
+     --check` non vede e nessun test premeva quel bottone. */
+  chiudiBriefing() {
+    const id = G.briefing; G.briefing = null;
+    if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
+    /* «Ho capito» chiude la spiegazione, non la lezione: da qui fino alla
+       prima scheggia raccolta la più vicina resta scritta e la barra
+       aspetta di lampeggiare. Il nesso si chiude quando lo fai. */
+    if (id === 'gemme') G.lezioneGemme = 1;
+    /* la carta che stava aspettando dietro al briefing */
+    if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
+    else riprendiGioco();
+  },
+
   /* ── prima volta ─────────────────────────────────────────
      Una schermata sola, una volta sola per sempre. Non è un tutorial a
      tappe: si apre quando la cosa sta succedendo davvero, con la cosa
@@ -1134,7 +1132,7 @@ function resetRun(charId, seed, modoId, giorno) {
   /* quanto e' gia' stato pagato per QUESTA corsa, e se ha gia' una riga
      nello storico: servono a «Continua senza fine», che chiude la partita
      una volta e poi la fa finire una seconda */
-  G.saldato = 0; G.registrata = 0; G.lezione = 0;
+  G.saldato = 0; G.registrata = 0; G.lezioneGemme = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -1346,119 +1344,7 @@ SCR.addEventListener('click', ev => {
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
     case 'scheda': UI.hub(b.dataset.id); break;
-    case 'briefdone': {
-      const id = G.briefing; G.briefing = null;
-      if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
-      /* la carta che stava aspettando dietro al briefing */
-      if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
-      else riprendiGioco();
-      break;
-    }
-    /* il formato si cambia dal titolo e dall'Osservatorio: la schermata si
-       ridisegna perché la congiunzione dichiarata resta la stessa (il seme
-       non cambia) ma il nome del formato sotto al bottone sì */
-    case 'modo': {
-      SAVE.modo = b.dataset.id; storeSave();
-      if (UI.cur && UI.cur.slice(0, 3) === 'hub') UI.hub(); else UI.title();
-      break;
-    }
-    /* La corsa del giorno è un'Incursione: otto minuti, così è una cosa che
-       si fa davvero ogni giorno, e stessa data uguale stesso seme, quindi
-       stessa arena e stessa congiunzione per chiunque la giochi. */
-    case 'giorno': startRun(SAVE.char, semeDelGiorno(), 'incursione', true); break;
-    case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
-    case 'skin': {
-      SAVE.skin = b.dataset.id; storeSave();
-      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
-      for (const el of SCR.querySelectorAll('[data-a="skin"]')) el.classList.toggle('on', el.dataset.id === SAVE.skin);
-      /* se c'era una spesa in attesa il tocco l'ha disarmata: quella riga
-         va ridisegnata, o resta a dire «tocca ancora per confermare» */
-      if (armato) UI.hub();
-      break;
-    }
-    case 'title': UI.title(); break;
-    case 'guide': UI.guide(); break;
-    case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
-    case 'retry': startRun(SAVE.char); break;
-    case 'replay': startRun(SAVE.char, G.seed); break;
-    case 'resume': UI.togglePause(); break;
-    /* Abbandonare passa dalla stessa porta di una morte. Prima saltava la
-       valutazione: chi usciva al dodicesimo minuto perdeva il contratto
-       «sopravvivi dodici minuti» che aveva appena completato, il che è
-       esattamente il tipo di sorpresa che fa smettere. */
-    case 'quit': endRun(false); break;
-    case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
-    case 'mus': SAVE.mus = SAVE.mus ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
-    case 'endless': G.victory = true; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
-    case 'ringedit': UI.ringEdit(null); break;
-    case 'ringedit2': UI.ringEdit(null); break;
-    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(); else riprendiGioco(); break;
-    case 'char': {
-      const c = CHARS.find(x => x.id === b.dataset.id);
-      if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
-      else if (SAVE.shards < c.cost) UI.toast('TROPPO CARO', 'Ti mancano ' + (c.cost - SAVE.shards) + ' frammenti', '#ff3d6e');
-      else if (armato !== 'char:' + c.id) { UI.armato = 'char:' + c.id; UI.hub(); }
-      else {
-        SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave();
-        AU.play('buy'); UI.spesa = c.cost; UI.hub();
-        UI.toast(c.n + ' sbloccata', '-' + c.cost + ' frammenti · te ne restano ' + SAVE.shards, c.c);
-      }
-      break;
-    }
-    case 'asc': {
-      const i = +b.dataset.i;
-      if (i <= (SAVE.asc | 0)) { SAVE.ascSel = i; storeSave(); UI.hub(); }
-      break;
-    }
-    case 'copy': {
-      const ta = SCR.querySelector('#savecode'); if (!ta) return;
-      ta.select(); ta.setSelectionRange(0, 99999);
-      let done = false;
-      try { done = document.execCommand && document.execCommand('copy'); } catch (e) { }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(ta.value).then(
-          () => UI.toast('COPIATO', 'Codice negli appunti', '#6ff2c4'),
-          () => { if (!done) UI.toast('SELEZIONATO', 'Copia a mano con Ctrl+C', '#ffc857'); }
-        );
-      } else UI.toast(done ? 'COPIATO' : 'SELEZIONATO', done ? 'Codice negli appunti' : 'Copia a mano con Ctrl+C', done ? '#6ff2c4' : '#ffc857');
-      break;
-    }
-    case 'import': {
-      const inp = SCR.querySelector('#loadcode'); if (!inp) return;
-      if (!inp.value.trim()) { UI.toast('NESSUN CODICE', 'Incolla prima un codice', '#ff3d6e'); return; }
-      if (importSave(inp.value)) { AU.play('buy'); UI.hub(); UI.toast('RIPRISTINATO', SAVE.shards + ' frammenti', '#6ff2c4'); }
-      else UI.toast('CODICE NON VALIDO', 'Controlla di averlo copiato tutto', '#ff3d6e');
-      break;
-    }
-    /* due passaggi, come per gli acquisti: il primo tocco arma la domanda,
-       il secondo cancella davvero. Toccare altrove la disarma da solo. */
-    case 'wipe': {
-      if (armato !== 'wipe') { UI.armato = 'wipe'; UI.hub(); return; }
-      wipeSave();
-      /* dietro al menu gira il gioco vero: se il nucleo e la sagoma restano
-         quelli di prima, l'azzeramento sembra a meta' */
-      G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
-      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
-      AU.play('die');
-      UI.hub();
-      UI.toast('PROGRESSI AZZERATI', 'Si riparte da zero', '#ff3d6e');
-      break;
-    }
-    case 'wipeno': {
-      UI.hub();
-      break;
-    }
-    case 'meta': {
-      const m = META.find(x => x.id === b.dataset.id), lv = mlv(m.id);
-      if (lv >= m.max) return;
-      const cost = metaCost(m, lv);
-      if (SAVE.shards < cost) { UI.toast('TROPPO CARO', 'Ti mancano ' + (cost - SAVE.shards) + ' frammenti', '#ff3d6e'); return; }
-      if (armato !== 'meta:' + m.id) { UI.armato = 'meta:' + m.id; UI.hub(); return; }
-      SAVE.shards -= cost; SAVE.meta[m.id] = lv + 1; storeSave(); AU.play('buy');
-      UI.spesa = cost; UI.hub();
-      UI.toast(m.n + ' ' + (lv + 1) + ' di ' + m.max, '-' + cost + ' frammenti · te ne restano ' + SAVE.shards, '#ffc857');
-      break;
-    }
+    case 'briefdone': UI.chiudiBriefing(); break;
     case 'reliquia': {
       const r = RELIQUIE.find(x => x.id === b.dataset.id);
       if (!r || hasRel(r.id)) return;

@@ -122,12 +122,6 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   animation:joyd 2.6s ease-in-out infinite}
 @keyframes joyd{0%,100%{transform:translate(0,0)}25%{transform:translate(11px,-8px)}
   50%{transform:translate(-5px,12px)}75%{transform:translate(-12px,-3px)}}
-/* la scheggia disegnata nel pannello della seconda lezione: è la stessa
-   cosa che sta per terra, così l'occhio la riconosce senza leggere */
-#movehint .gemd{position:relative;width:46px;height:46px;display:grid;place-items:center}
-#movehint .gemd i{width:11px;height:11px;border-radius:50%;background:var(--xp);
-  box-shadow:0 0 16px 3px rgba(111,242,196,.75);animation:gemd 1.5s ease-in-out infinite}
-@keyframes gemd{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
 @media (pointer:coarse){ #movehint{top:38%} }
 #movehint .keys{display:flex;gap:4px}
 #movehint .keys i{width:25px;height:25px;display:grid;place-items:center;font:600 11px/1 var(--ui);font-style:normal;

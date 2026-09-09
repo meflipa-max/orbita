@@ -658,7 +658,7 @@ function drawPickups() {
   ctx.globalCompositeOperation = 'lighter';
   /* la gemma piu' vicina, e solo finche' non se n'e' mai raccolta una */
   let primaGemma = null;
-  if (!G.demo && !visto('gemme')) {
+  if (!G.demo && G.lezioneGemme === 1) {
     let pd = 1e18;
     for (const m of G.gems) {
       if (m.k !== 0) continue;
@@ -703,7 +703,7 @@ function drawPickups() {
        verdi sono l'esperienza: li scavalca, non sale di livello, e conclude
        che il gioco e' impossibile. Una parola sola, su una gemma sola, e
        sparisce per sempre al primo tocco. */
-    if (primaGemma && m === primaGemma) {
+    if (m === primaGemma) {
       ctx.font = '700 ' + sz(10).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';

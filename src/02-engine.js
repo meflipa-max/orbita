@@ -518,7 +518,9 @@ const G = {
   /* tracce per sblocchi e contratti */
   /* la ripresa al rallentatore dopo una schermata, e la prima volta da
      spiegare che aspetta di essere mostrata (vedi 06-main) */
-  ripresa: 0, briefing: null, elAnello: new Set(), lezione: 0,
+  ripresa: 0, briefing: null, elAnello: new Set(),
+  /* 0 = non spiegato, 1 = spiegato ma non ancora raccolto, 2 = imparato */
+  lezioneGemme: 0,
   bossKills: 0, maxLv: 1, tier2: 0, rerollUsati: 0, respiro: 0, giornaliera: false,
   runaNuova: null, contrattiFatti: [], sfideNuove: []
 };

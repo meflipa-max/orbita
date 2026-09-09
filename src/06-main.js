@@ -72,19 +72,22 @@ function step(dt) {
   updateSpawns(dt);
 
   /* Le istruzioni svaniscono al primo movimento, o da sole dopo qualche
-     secondo. La prima lezione è muoversi; la seconda — che le schegge
-     verdi sono l'esperienza — parte quando la prima se n'è andata, perché
-     due pannelli insieme non li legge nessuno. Il movimento non chiude la
-     seconda: quella la chiude solo raccogliere una gemma. */
+     secondo. Questa è l'unica lezione passiva, perché si impara facendo la
+     cosa che chiede: quella sulle schegge è una carta con un bottone. */
   if (G.hint > 0) {
     G.hint -= dt;
-    const chiudi = G.lezione === 1 ? G.hint <= 0 : (G.hint <= 0 || Math.hypot(i.x, i.y) > .25);
-    if (chiudi) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
+    if (G.hint <= 0 || Math.hypot(i.x, i.y) > .25) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
   } else if (G.hintOff > 0) {
     G.hintOff -= dt;
-    if (G.hintOff <= 0) { elHint.className = 'clip'; if (G.lezione === 1) G.lezione = 2; }
-  } else if (G.lezione === 0 && !G.demo && !visto('gemme') && G.gems.length) {
-    showGemHint();
+    if (G.hintOff <= 0) elHint.className = 'clip';
+  } else if (!G.demo && !visto('gemme') && G.gems.length) {
+    /* La lezione sulle schegge non è un pannello che resta lì: è una carta
+       che ferma il gioco e se ne va quando tocchi «Ho capito». Un avviso
+       passivo o dura poco e non lo leggi, o dura tanto e dà fastidio —
+       venticinque secondi di pannello addosso all'azione erano la seconda
+       cosa. Con il bottone la durata la decidi tu, ed è la stessa forma che
+       il gioco usa già per gli eventi d'arena e per i Nodi. */
+    G.briefing = 'gemme';
   }
 
   flushUccisioni(dt);
@@ -330,7 +333,7 @@ function boot() {
   });
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
   addEventListener('pointerdown', () => AU.init(), { once: true });
   addEventListener('keydown', () => AU.init(), { once: true });
 }

@@ -345,9 +345,13 @@ per sempre** — il gioco si ferma e lo spiega, con la cosa ferma sullo sfondo. 
 tre paragrafi: un pannello che ferma il gioco si legge solo se si legge in fretta. Vale anche
 per il primo Nodo utile in cui entri.
 
-E la lezione delle schegge non sta più solo sotto alla gemma: la parola `ESPERIENZA` resta, ma
-la spiegazione vera arriva **nello stesso pannello che insegna a muoversi**, subito dopo, e se
-ne va appena raccogli qualcosa. Perché l'etichetta da sola non bastava: misurato, chi si
+E la lezione delle schegge è **una carta con un bottone**, come gli eventi d'arena: il gioco si
+ferma alla prima scheggia caduta e riparte quando tocchi «Ho capito». Un avviso passivo o dura
+poco e non lo leggi, o dura tanto e dà fastidio — un pannello addosso all'azione per
+venticinque secondi era il secondo difetto. Con il bottone la durata la decidi tu.
+«Ho capito» però chiude la spiegazione, non la lezione: da lì fino alla prima scheggia
+raccolta la più vicina resta scritta `ESPERIENZA` e la barra aspetta di lampeggiare. Il nesso
+si chiude quando lo fai, non quando lo leggi. Perché l'etichetta da sola non bastava: misurato, chi si
 muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccoglie la sua prima gemma
 **3,5 secondi** dopo che ne è caduta una, e in quei tre secondi sta ancora guardando la
 levetta. Una lezione attaccata a un oggetto che sparisce in tre secondi non è una lezione.
@@ -538,6 +542,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
+npm run collaudo       # 26 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
@@ -547,6 +552,7 @@ npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
 
 ```
 tools/banco.mjs    banco headless: stub di DOM, canvas e audio — nessun disegno
+tools/collaudo.mjs controlli di non-regressione: ogni voce protegge un difetto vero
 tools/misura.mjs   il bot che schiva, e i tre banchi di misura
 src/shell.html     markup + CSS (tema unico, "console" con angoli tagliati)
 src/01-data.js     rune, passivi, nemici, boss, personaggi, potenziamenti · tutti i numeri

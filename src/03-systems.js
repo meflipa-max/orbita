@@ -733,11 +733,16 @@ function updateGems(dt) {
            Misurato: il flag risultava già preso al secondo 1,7 della prima
            partita di un salvataggio appena azzerato — ed è per questo che
            l'indicazione non si vedeva mai. */
-        if (m.k === 0 && !G.demo && !visto('gemme')) {
-          SAVE.visti.push('gemme'); storeSave();
-          /* la lezione è servita: il pannello se ne va nello stesso
-             istante in cui la barra in alto si muove */
-          if (G.lezione === 1) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
+        /* La prima scheggia raccolta DOPO aver letto cos'è: la barra in
+           cima si ingrossa e pulsa, e la parola sotto alla gemma più
+           vicina sparisce. È il momento in cui la lezione è davvero
+           finita — averla letta non basta. */
+        /* `!G.demo` resta: dietro al menu gira il gioco vero, gemme
+           comprese, e la vetrina non deve chiudere una lezione che sta
+           aspettando il giocatore. È il difetto che teneva invisibile
+           l'indicazione, in versione più piccola. */
+        if (m.k === 0 && !G.demo && G.lezioneGemme === 1) {
+          G.lezioneGemme = 2;
           addFloat(px, py - 18, 'ESPERIENZA', '#6ff2c4', true);
           if (elXpLine) {
             elXpLine.classList.add('primo');
