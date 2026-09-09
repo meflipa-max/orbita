@@ -350,19 +350,24 @@ sagoma e il colore che hai scelto — che ne raccoglie tre mentre la barra sale.
 parole è perso in partenza, e «verdi» era pure sbagliato: la tinta è **159°**, cioè turchese, e
 «azzurre» sarebbe stato peggio, perché l'azzurro nel gioco è l'elemento Gelo.
 
-La prima versione dell'animazione si leggeva **al contrario** — sembrava che il nucleo sputasse
-i puntini invece di attirarli — perché nascevano dentro al riquadro, andavano a velocità
-costante e non avevano scia: tre puntini in fila accanto a un nucleo si leggono come emessi.
-Le tre cose che la raddrizzano sono le stesse che rendono leggibile il gioco vero: **entrano da
-fuori** l'inquadratura, **accelerano** avvicinandosi come fa il magnete in partita, e si tirano
-dietro una **scia che punta da dove vengono**. All'arrivo il nucleo emette un anello e la barra
-scatta nello stesso fotogramma — e alla quarta scheggia la barra torna in fondo, che è quello
-che succede davvero quando sali di livello.
+Ci sono volute due versioni sbagliate. La prima si leggeva **al contrario** — sembrava che il
+nucleo sputasse i puntini invece di attirarli — perché nascevano dentro al riquadro, andavano a
+velocità costante e non avevano scia: tre puntini in fila accanto a un nucleo si leggono come
+emessi. La seconda aveva la direzione giusta ma **insegnava la cosa sbagliata**: il nucleo era
+fermo e le schegge gli volavano dentro, cioè «arrivano da sole», che è il contrario di quello
+che dice il testo lì sopra e di quello che si fa in partita. Il magnete esiste, ma tira solo
+l'ultimo pezzo: la distanza la copri tu.
 
-Verificato misurando invece che a occhio: fermando le animazioni e facendole avanzare a mano,
-in nessun passo una scheggia visibile si allontana dal nucleo, e gli scarti per fotogramma
-salgono da 3 a 82 pixel — l'accelerazione c'è. La barra scatta al 19%, 53% e 86% del ciclo,
-cioè esattamente quando una viene assorbita.
+Adesso le schegge stanno ferme dove sono cadute e **il nucleo attraversa il campo** a
+prendersele, con la scia dietro, e il risucchio scatta solo quando arriva addosso — che è
+esattamente il raggio di raccolta del gioco. A ogni presa il nucleo emette un anello e la barra
+scatta nello stesso fotogramma; alla quarta la barra riparte da capo, che è quello che succede
+salendo di livello.
+
+Verificato misurando e non a occhio, fermando le animazioni e facendole avanzare a mano: il
+nucleo avanza in **dodici passi su dodici e non torna mai indietro**, e ogni scheggia resta
+immobile finché lui non la raggiunge — l'unico spostamento è il risucchio di 13-26 pixel
+all'istante del contatto.
 
 E la lezione delle schegge è **una carta con un bottone**, come gli eventi d'arena: il gioco si
 ferma alla prima scheggia caduta e riparte quando tocchi «Ho capito». Un avviso passivo o dura

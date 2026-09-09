@@ -543,54 +543,95 @@ ol.tips b{color:#fff;font-weight:600}
 .dg-nucleo svg{width:36px;height:36px;fill:rgba(10,8,26,.85);stroke:var(--c);stroke-width:1.5;
   filter:drop-shadow(0 0 9px color-mix(in srgb,var(--c) 55%,transparent))}
 .dg-nucleo svg circle:last-child{fill:#fff;stroke:none}
-/* Le schegge entrano da FUORI e vengono risucchiate dentro al nucleo.
-   La prima versione le faceva partire dentro al riquadro, a velocità
-   costante e senza scia: tre puntini in fila accanto al nucleo, e l'occhio
-   li leggeva come emessi da lui invece che attirati. Tre cose lo
-   raddrizzano, e sono le stesse che rendono leggibile il gioco vero:
-     · nascono oltre il bordo destro, quindi ENTRANO;
-     · accelerano avvicinandosi, come fa il magnete in partita;
-     · si tirano dietro una scia, che punta da dove vengono.
-   E all'arrivo il nucleo emette un anello e la barra scatta: la causa e
-   l'effetto nello stesso istante. */
+/* È il NUCLEO che va a prenderle. La versione precedente teneva il nucleo
+   fermo e faceva volare le schegge dentro: si leggeva «arrivano da sole»,
+   che è il contrario di quello che dice il testo sopra («passaci sopra») e
+   di quello che si fa in partita. Il magnete esiste, ma tira solo l'ultimo
+   pezzo: la distanza la copri tu.
+   Quindi le schegge stanno ferme dove sono cadute, il nucleo attraversa il
+   campo e se le prende una alla volta — e solo quando è vicino scatta il
+   risucchio, che è esattamente il raggio di raccolta del gioco vero. */
+.dg-campo{position:relative;height:76px;overflow:hidden;--cut:8px;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  border:1px solid var(--line);
+  background:radial-gradient(70% 120% at 22% 50%,rgba(30,24,70,.75),rgba(8,6,22,.92))}
+.dg-nucleo{position:absolute;left:24px;top:50%;width:36px;height:36px;margin-top:-18px;
+  display:grid;place-items:center;animation:dgCorsa 3s cubic-bezier(.5,.02,.5,.98) infinite}
+.dg-nucleo svg{width:36px;height:36px;fill:rgba(10,8,26,.85);stroke:var(--c);stroke-width:1.5;
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--c) 55%,transparent))}
+.dg-nucleo svg circle:last-child{fill:#fff;stroke:none}
+/* la scia sta DIETRO al nucleo, cioè a sinistra: è lui che si muove */
+.dg-nucleo::after{content:"";position:absolute;right:100%;top:50%;height:3px;width:30px;margin-top:-1.5px;
+  background:linear-gradient(270deg,color-mix(in srgb,var(--c) 65%,transparent),transparent)}
+@keyframes dgCorsa{
+  0%   {transform:translateX(0);opacity:0}
+  5%   {transform:translateX(12px);opacity:1}
+  84%  {transform:translateX(250px);opacity:1}
+  90%  {transform:translateX(258px);opacity:0}
+  93%  {transform:translateX(0);opacity:0}
+  100% {transform:translateX(0);opacity:0}
+}
+/* le schegge non si muovono: aspettano dove sono cadute */
 .dg-s{position:absolute;top:50%;left:6px;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;
-  background:var(--xp);box-shadow:0 0 13px 2px rgba(111,242,196,.85);opacity:0;
-  animation:dgVola 1.8s cubic-bezier(.62,0,.92,.45) infinite}
-/* la scia sta a DESTRA del puntino, cioè dalla parte da cui è venuto */
-.dg-s::after{content:"";position:absolute;left:100%;top:50%;height:2.5px;width:34px;margin-top:-1.25px;
-  background:linear-gradient(90deg,rgba(111,242,196,.85),rgba(111,242,196,0))}
-/* l'anello che il nucleo sputa quando l'ha inghiottita */
+  background:var(--xp);box-shadow:0 0 13px 2px rgba(111,242,196,.85)}
+/* l'anello che il nucleo emette quando l'ha inghiottita */
 .dg-s::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
-  border-radius:50%;border:1.5px solid var(--xp);opacity:0;
-  animation:dgOnda 1.8s linear infinite;animation-delay:inherit}
-@keyframes dgVola{
-  0%   {transform:translate(var(--x0),var(--y0)) scale(.85);opacity:0}
-  8%   {opacity:1}
-  86%  {transform:translate(30px,0) scale(1);opacity:1}
-  93%  {transform:translate(30px,0) scale(.12);opacity:0}
-  100% {transform:translate(30px,0) scale(.12);opacity:0}
+  border-radius:50%;border:1.5px solid var(--xp);opacity:0}
+/* una serie per scheggia: sparisce quando il nucleo la raggiunge, e
+   tornano tutte insieme quando il giro ricomincia */
+.dg-s.u{animation:dgPresa1 3s linear infinite}
+.dg-s.d{animation:dgPresa2 3s linear infinite}
+.dg-s.t{animation:dgPresa3 3s linear infinite}
+.dg-s.u::before{animation:dgOnda1 3s linear infinite}
+.dg-s.d::before{animation:dgOnda2 3s linear infinite}
+.dg-s.t::before{animation:dgOnda3 3s linear infinite}
+@keyframes dgPresa1{
+  0%,23%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
+  27%   {transform:translate(calc(var(--x0) - 13px),var(--y0)) scale(1.25);opacity:1}
+  31%,91%{transform:translate(calc(var(--x0) - 26px),var(--y0)) scale(.1);opacity:0}
+  /* torna a casa da invisibile: scivolare indietro a vista, anche per
+     trenta millisecondi, e' un movimento nel verso sbagliato */
+  92%,93%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:0}
+  94%,100%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
 }
-@keyframes dgOnda{
-  0%,85%{transform:scale(1);opacity:0}
-  88%   {opacity:.9}
-  100%  {transform:scale(5);opacity:0}
+@keyframes dgPresa2{
+  0%,47%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
+  51%   {transform:translate(calc(var(--x0) - 13px),var(--y0)) scale(1.25);opacity:1}
+  55%,91%{transform:translate(calc(var(--x0) - 26px),var(--y0)) scale(.1);opacity:0}
+  /* torna a casa da invisibile: scivolare indietro a vista, anche per
+     trenta millisecondi, e' un movimento nel verso sbagliato */
+  92%,93%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:0}
+  94%,100%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
 }
+@keyframes dgPresa3{
+  0%,71%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
+  75%   {transform:translate(calc(var(--x0) - 13px),var(--y0)) scale(1.25);opacity:1}
+  79%,91%{transform:translate(calc(var(--x0) - 26px),var(--y0)) scale(.1);opacity:0}
+  /* torna a casa da invisibile: scivolare indietro a vista, anche per
+     trenta millisecondi, e' un movimento nel verso sbagliato */
+  92%,93%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:0}
+  94%,100%{transform:translate(var(--x0),var(--y0)) scale(1);opacity:1}
+}
+@keyframes dgOnda1{0%,26%{transform:scale(1);opacity:0} 29%{opacity:.9} 40%,100%{transform:scale(5);opacity:0}}
+@keyframes dgOnda2{0%,50%{transform:scale(1);opacity:0} 53%{opacity:.9} 64%,100%{transform:scale(5);opacity:0}}
+@keyframes dgOnda3{0%,74%{transform:scale(1);opacity:0} 77%{opacity:.9} 88%,100%{transform:scale(5);opacity:0}}
 .dg-barra{height:6px;margin-top:7px;background:rgba(111,242,196,.13);overflow:hidden;
   border:1px solid rgba(111,242,196,.22)}
-/* La barra scatta all'arrivo di ognuna, e alla quarta torna in fondo:
-   e' quello che succede davvero quando sali di livello. */
+/* la barra scatta a ogni raccolta, e al giro dopo riparte da capo: è
+   quello che succede davvero quando sali di livello */
 .dg-barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38d8a4,var(--xp));
-  box-shadow:0 0 10px rgba(111,242,196,.7);animation:dgBarra 1.8s steps(1,end) infinite}
+  box-shadow:0 0 10px rgba(111,242,196,.7);animation:dgBarra 3s steps(1,end) infinite}
 @keyframes dgBarra{
-  0%,19%{width:20%} 20%,53%{width:50%} 54%,86%{width:78%} 87%,100%{width:100%}
+  0%,26%{width:16%} 27%,50%{width:46%} 51%,74%{width:74%} 75%,100%{width:100%}
 }
 .dg-eti{margin-top:5px;font:600 8.5px/1 var(--ui);letter-spacing:.16em;
   text-transform:uppercase;color:var(--faint);text-align:center}
 /* chi ha chiesto meno movimento vede la stessa scena, ferma */
 @media (prefers-reduced-motion:reduce){
-  .dg-s,.dg-s::before{animation:none}
-  .dg-s{opacity:1;transform:translate(calc(var(--x0) * .42),var(--y0))}
-  .dg-barra i{animation:none;width:62%}
+  .dg-nucleo,.dg-nucleo::after,.dg-s,.dg-s::before{animation:none}
+  .dg-nucleo{transform:translateX(96px);opacity:1}
+  .dg-s{opacity:1;transform:translate(var(--x0),var(--y0))}
+  .dg-barra i{animation:none;width:46%}
 }
 
 .brief .bnota{padding-top:10px;border-top:1px solid var(--line);

@@ -741,16 +741,15 @@ const UI = {
   scenaGemme() {
     const sk = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
     const c = (CHARS.find(x => x.id === SAVE.char) || CHARS[0]).c;
-    const sch = (x, y, d) => '<i class="dg-s" style="--x0:' + x + 'px;--y0:' + y + 'px;animation-delay:' + d + 's"></i>';
+    /* ferme dove sono cadute, lungo la strada del nucleo */
+    const sch = (cl, x, y) => '<i class="dg-s ' + cl + '" style="--x0:' + x + 'px;--y0:' + y + 'px"></i>';
     return '<div class="dgem" style="--c:' + c + '">' +
       '<div class="dg-campo">' +
       '<span class="dg-nucleo">' + this.skinSvg(sk) + '</span>' +
-      /* oltre il bordo destro: una cosa che ENTRA nell'inquadratura si
-         legge come in arrivo, una che compare dentro no */
-      sch(318, -20, 0) + sch(352, 15, .6) + sch(334, 2, 1.2) +
+      sch('u', 108, -19) + sch('d', 180, 14) + sch('t', 251, -3) +
       '</div>' +
       '<div class="dg-barra"><i></i></div>' +
-      '<div class="dg-eti">la barra sale a ogni scheggia</div>' +
+      '<div class="dg-eti">vai a prenderle</div>' +
       '</div>';
   },
 
