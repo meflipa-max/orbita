@@ -168,9 +168,16 @@ const UI = {
   congHTML(seed) {
     const c = congiunzioneDi(seed);
     const quiete = c.id === 'quiete';
+    /* La riga diceva «Vetro» e cosa fa, ma non che cosa FOSSE: un nome
+       proprio mai visto, senza una categoria sopra, non si può indovinare.
+       Ogni altra carta del gioco ha la sua etichetta — «EVENTO D'ARENA»,
+       «IL TERRENO CONTA», «RUNA SBLOCCATA» — e questa no. E la parola da
+       sola non basterebbe: quello che serve sapere è che cambia a ogni
+       corsa, altrimenti sembra una statistica del tuo nucleo. */
     return '<div class="cong clip' + (quiete ? ' calma' : '') + '" style="--c:' + c.c + '">' +
       '<span class="ci clip">' + svg('congiunzione') + '</span>' +
-      '<span class="ct"><b>' + c.n + '</b>' + c.d + '</span></div>';
+      '<span class="ct"><span class="ck">Congiunzione · cambia a ogni corsa</span>' +
+      '<b>' + c.n + '</b>' + c.d + '</span></div>';
   },
 
   /* Che partita sto per giocare. Formato, nucleo, apertura, ascensione e

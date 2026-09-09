@@ -110,6 +110,12 @@ a essere rotto, non il gioco.
 Vale la pena scriverlo perché è il modo tipico in cui una misura mente: il banco funzionava,
 il bot no, e il numero sembrava plausibile.
 
+La riga sul titolo diceva il nome («Vetro») e cosa fa, ma non **che cosa fosse**: un nome
+proprio mai visto, senza una categoria sopra, non si può indovinare — ogni altra carta del
+gioco ha la sua etichetta (`EVENTO D'ARENA`, `IL TERRENO CONTA`, `RUNA SBLOCCATA`) e questa no.
+E la sola parola «congiunzione» non sarebbe bastata: quello che serve sapere è che **cambia a
+ogni corsa**, altrimenti sembra una statistica del proprio nucleo.
+
 Siccome esce dal seme, `Ripeti questa semenza` ripete anche la congiunzione.
 
 ### I guardiani ruotano
