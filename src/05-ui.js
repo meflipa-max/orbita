@@ -745,7 +745,9 @@ const UI = {
     return '<div class="dgem" style="--c:' + c + '">' +
       '<div class="dg-campo">' +
       '<span class="dg-nucleo">' + this.skinSvg(sk) + '</span>' +
-      sch(262, -19, 0) + sch(286, 14, .8) + sch(238, 3, 1.6) +
+      /* oltre il bordo destro: una cosa che ENTRA nell'inquadratura si
+         legge come in arrivo, una che compare dentro no */
+      sch(318, -20, 0) + sch(352, 15, .6) + sch(334, 2, 1.2) +
       '</div>' +
       '<div class="dg-barra"><i></i></div>' +
       '<div class="dg-eti">la barra sale a ogni scheggia</div>' +

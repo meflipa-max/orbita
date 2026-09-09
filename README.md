@@ -350,6 +350,20 @@ sagoma e il colore che hai scelto — che ne raccoglie tre mentre la barra sale.
 parole è perso in partenza, e «verdi» era pure sbagliato: la tinta è **159°**, cioè turchese, e
 «azzurre» sarebbe stato peggio, perché l'azzurro nel gioco è l'elemento Gelo.
 
+La prima versione dell'animazione si leggeva **al contrario** — sembrava che il nucleo sputasse
+i puntini invece di attirarli — perché nascevano dentro al riquadro, andavano a velocità
+costante e non avevano scia: tre puntini in fila accanto a un nucleo si leggono come emessi.
+Le tre cose che la raddrizzano sono le stesse che rendono leggibile il gioco vero: **entrano da
+fuori** l'inquadratura, **accelerano** avvicinandosi come fa il magnete in partita, e si tirano
+dietro una **scia che punta da dove vengono**. All'arrivo il nucleo emette un anello e la barra
+scatta nello stesso fotogramma — e alla quarta scheggia la barra torna in fondo, che è quello
+che succede davvero quando sali di livello.
+
+Verificato misurando invece che a occhio: fermando le animazioni e facendole avanzare a mano,
+in nessun passo una scheggia visibile si allontana dal nucleo, e gli scarti per fotogramma
+salgono da 3 a 82 pixel — l'accelerazione c'è. La barra scatta al 19%, 53% e 86% del ciclo,
+cioè esattamente quando una viene assorbita.
+
 E la lezione delle schegge è **una carta con un bottone**, come gli eventi d'arena: il gioco si
 ferma alla prima scheggia caduta e riparte quando tocchi «Ho capito». Un avviso passivo o dura
 poco e non lo leggi, o dura tanto e dà fastidio — un pannello addosso all'azione per

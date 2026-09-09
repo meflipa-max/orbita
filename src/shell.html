@@ -543,29 +543,53 @@ ol.tips b{color:#fff;font-weight:600}
 .dg-nucleo svg{width:36px;height:36px;fill:rgba(10,8,26,.85);stroke:var(--c);stroke-width:1.5;
   filter:drop-shadow(0 0 9px color-mix(in srgb,var(--c) 55%,transparent))}
 .dg-nucleo svg circle:last-child{fill:#fff;stroke:none}
-/* le schegge entrano da destra e si spengono dentro al nucleo */
+/* Le schegge entrano da FUORI e vengono risucchiate dentro al nucleo.
+   La prima versione le faceva partire dentro al riquadro, a velocità
+   costante e senza scia: tre puntini in fila accanto al nucleo, e l'occhio
+   li leggeva come emessi da lui invece che attirati. Tre cose lo
+   raddrizzano, e sono le stesse che rendono leggibile il gioco vero:
+     · nascono oltre il bordo destro, quindi ENTRANO;
+     · accelerano avvicinandosi, come fa il magnete in partita;
+     · si tirano dietro una scia, che punta da dove vengono.
+   E all'arrivo il nucleo emette un anello e la barra scatta: la causa e
+   l'effetto nello stesso istante. */
 .dg-s{position:absolute;top:50%;left:6px;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;
   background:var(--xp);box-shadow:0 0 13px 2px rgba(111,242,196,.85);opacity:0;
-  animation:dgVola 2.4s cubic-bezier(.35,0,.7,1) infinite}
+  animation:dgVola 1.8s cubic-bezier(.62,0,.92,.45) infinite}
+/* la scia sta a DESTRA del puntino, cioè dalla parte da cui è venuto */
+.dg-s::after{content:"";position:absolute;left:100%;top:50%;height:2.5px;width:34px;margin-top:-1.25px;
+  background:linear-gradient(90deg,rgba(111,242,196,.85),rgba(111,242,196,0))}
+/* l'anello che il nucleo sputa quando l'ha inghiottita */
+.dg-s::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:50%;border:1.5px solid var(--xp);opacity:0;
+  animation:dgOnda 1.8s linear infinite;animation-delay:inherit}
 @keyframes dgVola{
-  0%   {transform:translate(var(--x0),var(--y0)) scale(1);opacity:0}
-  10%  {opacity:1}
-  70%  {transform:translate(30px,0) scale(1);opacity:1}
-  84%  {transform:translate(30px,0) scale(.15);opacity:0}
-  100% {transform:translate(30px,0) scale(.15);opacity:0}
+  0%   {transform:translate(var(--x0),var(--y0)) scale(.85);opacity:0}
+  8%   {opacity:1}
+  86%  {transform:translate(30px,0) scale(1);opacity:1}
+  93%  {transform:translate(30px,0) scale(.12);opacity:0}
+  100% {transform:translate(30px,0) scale(.12);opacity:0}
+}
+@keyframes dgOnda{
+  0%,85%{transform:scale(1);opacity:0}
+  88%   {opacity:.9}
+  100%  {transform:scale(5);opacity:0}
 }
 .dg-barra{height:6px;margin-top:7px;background:rgba(111,242,196,.13);overflow:hidden;
   border:1px solid rgba(111,242,196,.22)}
+/* La barra scatta all'arrivo di ognuna, e alla quarta torna in fondo:
+   e' quello che succede davvero quando sali di livello. */
 .dg-barra i{display:block;height:100%;width:0;background:linear-gradient(90deg,#38d8a4,var(--xp));
-  box-shadow:0 0 10px rgba(111,242,196,.7);animation:dgBarra 2.4s steps(1,end) infinite}
+  box-shadow:0 0 10px rgba(111,242,196,.7);animation:dgBarra 1.8s steps(1,end) infinite}
 @keyframes dgBarra{
-  0%,27%{width:14%} 28%,54%{width:44%} 55%,81%{width:74%} 82%,100%{width:100%}
+  0%,19%{width:20%} 20%,53%{width:50%} 54%,86%{width:78%} 87%,100%{width:100%}
 }
 .dg-eti{margin-top:5px;font:600 8.5px/1 var(--ui);letter-spacing:.16em;
   text-transform:uppercase;color:var(--faint);text-align:center}
 /* chi ha chiesto meno movimento vede la stessa scena, ferma */
 @media (prefers-reduced-motion:reduce){
-  .dg-s{animation:none;opacity:1;transform:translate(calc(var(--x0) * .5),var(--y0))}
+  .dg-s,.dg-s::before{animation:none}
+  .dg-s{opacity:1;transform:translate(calc(var(--x0) * .42),var(--y0))}
   .dg-barra i{animation:none;width:62%}
 }
 
