@@ -191,6 +191,60 @@ function wipeSave() {
   storeSave();
 }
 
+/* ── la corsa in sospeso ──────────────────────────────────────
+   Su un telefono una partita da venti minuti non finisce quando decidi
+   tu: finisce quando arriva una telefonata, quando cambi scheda, quando
+   Android sfratta la pagina per fare posto. Perdere quindici minuti di
+   corsa per un messaggio e' il modo piu' rapido di far chiudere un gioco.
+   Quindi la corsa si annota, e alla riapertura si riprende.
+   Si annota il PROGRESSO, non il mondo: seme, modo, orologio, anello,
+   passivi, vita, contatori. L'arena si rigenera identica dallo stesso
+   seme (genRocks pesca dal flusso col seme), i nemici no — quelli
+   ricompaiono al riavvio, e per non regalare un'arena sgombra a chi
+   esce e rientra ne rimettiamo subito una quota (vedi riprendiCorsa).
+   Sta in una chiave sua e non dentro SAVE: e' roba che dura un giorno,
+   non deve gonfiare il codice di backup dei progressi.               */
+const RUNKEY = 'orbita.run.v1';
+function salvaCorsa() {
+  if (G.state !== 'play' && G.state !== 'pause' && G.state !== 'level') return;
+  if (G.demo || G.victory) return;
+  try {
+    const r = {
+      v: 1, seed: G.seed >>> 0, modo: G.modo.id, char: G.char.id, asc: G.ascLv | 0,
+      giorno: G.giornaliera ? 1 : 0, quando: Date.now(),
+      t: G.t, level: G.level, xp: G.xp, xpNeed: G.xpNeed, kills: G.kills, shards: G.shards,
+      dmg: G.dmgDone, diff: G.diff, ten: G.tenacia, bossIdx: G.bossIdx,
+      hp: P.hp, rer: G.rerolls, riv: G.revives,
+      ring: G.ring.map(x => (x ? { id: x.id, lv: x.lv, slot: x.slot } : null)),
+      pas: G.passives,
+      /* i contatori che pagano sfide e contratti: senza, riprendere
+         cancellerebbe mezz'ora di obiettivi gia' guadagnati */
+      bk: G.bossKills | 0, ml: G.maxLv | 0, t2: G.tier2 ? 1 : 0, t3: G.tier3 ? 1 : 0,
+      evo: G.evoCount | 0, reo: G.reorders | 0, aM: G.awakeMax | 0, aA: G.awakeAt | 0,
+      low: G.lowHp ? 1 : 0, pieno: G.pieno ? 1 : 0, ru: G.rerollUsati | 0,
+      resp: G.respiro ? 1 : 0, lez: G.lezioneGemme | 0, sal: G.saldato | 0
+    };
+    storeSet(RUNKEY, JSON.stringify(r));
+  } catch (e) { }
+}
+function leggiCorsa() {
+  try {
+    const raw = storeGet(RUNKEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw);
+    if (!r || r.v !== 1 || !Array.isArray(r.ring)) return null;
+    if (!MODI.some(m => m.id === r.modo)) return null;
+    if (SAVE.chars.indexOf(r.char) < 0) return null;
+    /* una corsa di dieci secondi non vale la pena di riprenderla, e una
+       di ieri l'altro non se la ricorda piu' nessuno */
+    if (!(r.t > 25) || Date.now() - (r.quando || 0) > 3 * 24 * 3600e3) return null;
+    return r;
+  } catch (e) { return null; }
+}
+function scordaCorsa() {
+  try { delete MEM[RUNKEY]; if (STORE_OK) localStorage.removeItem(RUNKEY); } catch (e) { }
+}
+
 const mlv = id => SAVE.meta[id] | 0;
 
 /* Tre contratti sempre in corso. Si ripescano qui e non a fine partita,

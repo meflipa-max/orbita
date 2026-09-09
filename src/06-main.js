@@ -328,12 +328,18 @@ function boot() {
   UI.title();
   requestAnimationFrame(frame);
 
+  /* La pagina che sparisce: su Android succede a ogni notifica, e spesso
+     non torna — il browser sfratta la scheda e ricarica da capo. Qui si
+     mette in pausa E si annota la corsa, così riaprendo la si riprende. */
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && G.state === 'play') UI.togglePause();
+    if (document.hidden) { salvaCorsa(); if (G.state === 'play') UI.togglePause(); }
   });
+  addEventListener('pagehide', salvaCorsa);
+  /* e comunque ogni pochi secondi, perché una chiusura brusca non avvisa */
+  setInterval(salvaCorsa, 4000);
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
   addEventListener('pointerdown', () => AU.init(), { once: true });
   addEventListener('keydown', () => AU.init(), { once: true });
 }

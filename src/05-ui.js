@@ -189,6 +189,9 @@ const UI = {
        fra te e il bottone — e chi torna è esattamente la persona che
        vogliamo far tornare. */
     const nuovo = !(SAVE.runs | 0);
+    /* una corsa lasciata a metà — dal pulsante «esci», o perché il telefono
+       ha sfrattato la pagina — torna qui come azione principale */
+    const sospesa = leggiCorsa();
     const chips = ELKEYS.map((e, i) =>
       '<span class="el clip" style="--c:' + EL[e].c + ';animation-delay:' + (.7 + i * .09).toFixed(2) + 's"><b></b>' + EL[e].n + '</span>'
     ).join('');
@@ -204,8 +207,14 @@ const UI = {
          bottone che la fa partire: su un telefono l'azione sta in fondo,
          dove arriva il pollice, non in mezzo allo schermo. */
       '<div class="cta">' +
+      (sospesa
+        ? '<button class="btn primary clip grande" data-a="riprendi"><span class="face">Riprendi · ' + fmtTime(sospesa.t) + '</span></button>' +
+          '<div class="sospesa">' + modoDi(sospesa.modo).n + ' · livello ' + sospesa.level + ' · ' + sospesa.kills + ' eliminazioni' +
+          '<button data-a="scorda">ricomincia</button></div>'
+        : '') +
       this.runcardHTML(this.prossimoSeme()) +
-      '<button class="btn primary clip grande" data-a="go"><span class="face">Gioca</span></button>' +
+      '<button class="btn ' + (sospesa ? 'clip' : 'primary clip grande') + '" data-a="go"><span class="face">' +
+      (sospesa ? 'Nuova partita' : 'Gioca') + '</span></button>' +
       '<div class="btnrow tre">' +
       '<button class="btn ghost clip giorno" data-a="giorno"><span class="face">' +
       svg('giorno') + (giornoFatto() ? fmtTime(SAVE.giorno.t) : 'Del giorno') + '</span></button>' +
@@ -906,7 +915,8 @@ const UI = {
       '<button class="btn ghost clip" data-a="sfx"><span class="face">Suoni ' + (SAVE.sfx ? 'ON' : 'OFF') + '</span></button>' +
       '<button class="btn ghost clip" data-a="mus"><span class="face">Musica ' + (SAVE.mus ? 'ON' : 'OFF') + '</span></button>' +
       '</div>' +
-      '<button class="btn ghost clip" data-a="quit"><span class="face">Abbandona</span></button>' +
+      '<button class="btn clip" data-a="sospendi"><span class="face">Esci e riprendi dopo</span></button>' +
+      '<button class="btn ghost clip" data-a="quit"><span class="face">Abbandona la corsa</span></button>' +
       '</div>'
     );
   },
@@ -1183,6 +1193,42 @@ function resetRun(charId, seed, modoId, giorno) {
   if (hasRel('semenza')) G.pending = 1;
   UI.renderAwake();
 }
+/* Rimettere in piedi una corsa annotata. Si ricostruisce da resetRun con
+   lo STESSO seme, così l'arena, gli asteroidi e i Nodi tornano identici;
+   poi si riscrive sopra il progresso. I nemici non erano stati annotati —
+   sarebbero centinaia — quindi ne rimettiamo subito una quota pari al
+   tetto del momento: senza, uscire e rientrare sarebbe un pulsante per
+   ripulire lo schermo, e diventerebbe una tattica invece di un rimedio. */
+function riprendiCorsa(r) {
+  AU.init();
+  SAVE.ascSel = Math.min(r.asc | 0, SAVE.asc | 0);
+  resetRun(r.char, r.seed, r.modo, !!r.giorno);
+  G.t = r.t; G.level = r.level; G.xp = r.xp; G.xpNeed = r.xpNeed;
+  G.kills = r.kills; G.shards = r.shards; G.dmgDone = r.dmg || 0;
+  G.diff = r.diff || 0; G.tenacia = r.ten || 1; G.bossIdx = r.bossIdx | 0;
+  G.rerolls = r.rer | 0; G.revives = r.riv | 0;
+  G.bossKills = r.bk | 0; G.maxLv = r.ml || 1; G.tier2 = r.t2; G.tier3 = r.t3;
+  G.evoCount = r.evo | 0; G.reorders = r.reo | 0; G.awakeMax = r.aM | 0; G.awakeAt = r.aA | 0;
+  G.lowHp = r.low; G.pieno = r.pieno; G.rerollUsati = r.ru | 0; G.respiro = r.resp;
+  G.lezioneGemme = r.lez | 0; G.saldato = r.sal | 0;
+  G.passives = Object.assign({}, r.pas || {});
+  G.ring = new Array(G.slots).fill(null);
+  for (const x of r.ring) {
+    if (!x || !RUNES[x.id] || x.slot >= G.slots) continue;
+    G.ring[x.slot] = { id: x.id, el: RUNES[x.id].el, lv: x.lv, cd: rand(.4), res: 0, slot: x.slot, st: {} };
+  }
+  recalc(); P.hp = Math.max(1, Math.min(r.hp, P.maxHp));
+  recalcRing(false);
+  UI.renderAwake();
+  /* la pressione che c'era: il campo non riparte sgombro */
+  const quota = Math.round(tettoNemici() * .55);
+  for (let i = 0; i < quota; i++) spawnRing(pick(currentPool()));
+  HUD.classList.add('on');
+  UI.close(); G.state = 'play'; G.ripresa = RIPRESA;
+  UI.hud();
+  hideMoveHint();
+}
+
 function startRun(charId, seed, modoId, giorno) {
   AU.init();
   /* il seme che il menu ha già mostrato: la congiunzione scritta sotto al
@@ -1194,6 +1240,7 @@ function startRun(charId, seed, modoId, giorno) {
   UI.hud();
   showMoveHint();
   SAVE.runs = (SAVE.runs | 0) + 1; storeSave();
+  scordaCorsa();
   /* la Semenza consegna una carta prima del primo nemico */
   if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
 }
@@ -1332,6 +1379,7 @@ function endRun(win) {
     }
   }
   storeSave();
+  scordaCorsa();
   G.state = 'over';
   HUD.classList.remove('on');
   AU.play(win ? 'level' : 'die');
@@ -1365,8 +1413,122 @@ SCR.addEventListener('click', ev => {
        niente. Ora ci vai quando vuoi cambiare qualcosa o spendere. */
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
+    case 'riprendi': { const r = leggiCorsa(); if (r) riprendiCorsa(r); else UI.title(); break; }
+    case 'scorda': scordaCorsa(); UI.title(); break;
+    /* Due modi di smettere, e la differenza va scritta: questo tiene la
+       corsa per dopo, «Abbandona» la chiude e la paga. Prima c'era solo il
+       secondo, quindi «esco un attimo» voleva dire ricominciare da capo. */
+    case 'sospendi': {
+      salvaCorsa();
+      G.state = 'menu'; HUD.classList.remove('on');
+      UI.title();
+      UI.toast('CORSA IN SOSPESO', 'La riprendi dal menu quando vuoi', '#6ff2c4');
+      break;
+    }
     case 'scheda': UI.hub(b.dataset.id); break;
     case 'briefdone': UI.chiudiBriefing(); break;
+    case 'modo': {
+      SAVE.modo = b.dataset.id; storeSave();
+      if (UI.cur && UI.cur.slice(0, 3) === 'hub') UI.hub(); else UI.title();
+      break;
+    }
+    /* La corsa del giorno è un'Incursione: otto minuti, così è una cosa che
+       si fa davvero ogni giorno, e stessa data uguale stesso seme, quindi
+       stessa arena e stessa congiunzione per chiunque la giochi. */
+    case 'giorno': startRun(SAVE.char, semeDelGiorno(), 'incursione', true); break;
+    case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
+    case 'skin': {
+      SAVE.skin = b.dataset.id; storeSave();
+      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
+      for (const el of SCR.querySelectorAll('[data-a="skin"]')) el.classList.toggle('on', el.dataset.id === SAVE.skin);
+      /* se c'era una spesa in attesa il tocco l'ha disarmata: quella riga
+         va ridisegnata, o resta a dire «tocca ancora per confermare» */
+      if (armato) UI.hub();
+      break;
+    }
+    case 'title': UI.title(); break;
+    case 'guide': UI.guide(); break;
+    case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
+    case 'retry': startRun(SAVE.char); break;
+    case 'replay': startRun(SAVE.char, G.seed); break;
+    case 'resume': UI.togglePause(); break;
+    /* Abbandonare passa dalla stessa porta di una morte. Prima saltava la
+       valutazione: chi usciva al dodicesimo minuto perdeva il contratto
+       «sopravvivi dodici minuti» che aveva appena completato, il che è
+       esattamente il tipo di sorpresa che fa smettere. */
+    case 'quit': scordaCorsa(); endRun(false); break;
+    case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
+    case 'mus': SAVE.mus = SAVE.mus ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
+    case 'endless': G.victory = true; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
+    case 'ringedit': UI.ringEdit(null); break;
+    case 'ringedit2': UI.ringEdit(null); break;
+    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(); else riprendiGioco(); break;
+    case 'char': {
+      const c = CHARS.find(x => x.id === b.dataset.id);
+      if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
+      else if (SAVE.shards < c.cost) UI.toast('TROPPO CARO', 'Ti mancano ' + (c.cost - SAVE.shards) + ' frammenti', '#ff3d6e');
+      else if (armato !== 'char:' + c.id) { UI.armato = 'char:' + c.id; UI.hub(); }
+      else {
+        SAVE.shards -= c.cost; SAVE.chars.push(c.id); SAVE.char = c.id; storeSave();
+        AU.play('buy'); UI.spesa = c.cost; UI.hub();
+        UI.toast(c.n + ' sbloccata', '-' + c.cost + ' frammenti · te ne restano ' + SAVE.shards, c.c);
+      }
+      break;
+    }
+    case 'asc': {
+      const i = +b.dataset.i;
+      if (i <= (SAVE.asc | 0)) { SAVE.ascSel = i; storeSave(); UI.hub(); }
+      break;
+    }
+    case 'copy': {
+      const ta = SCR.querySelector('#savecode'); if (!ta) return;
+      ta.select(); ta.setSelectionRange(0, 99999);
+      let done = false;
+      try { done = document.execCommand && document.execCommand('copy'); } catch (e) { }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(
+          () => UI.toast('COPIATO', 'Codice negli appunti', '#6ff2c4'),
+          () => { if (!done) UI.toast('SELEZIONATO', 'Copia a mano con Ctrl+C', '#ffc857'); }
+        );
+      } else UI.toast(done ? 'COPIATO' : 'SELEZIONATO', done ? 'Codice negli appunti' : 'Copia a mano con Ctrl+C', done ? '#6ff2c4' : '#ffc857');
+      break;
+    }
+    case 'import': {
+      const inp = SCR.querySelector('#loadcode'); if (!inp) return;
+      if (!inp.value.trim()) { UI.toast('NESSUN CODICE', 'Incolla prima un codice', '#ff3d6e'); return; }
+      if (importSave(inp.value)) { AU.play('buy'); UI.hub(); UI.toast('RIPRISTINATO', SAVE.shards + ' frammenti', '#6ff2c4'); }
+      else UI.toast('CODICE NON VALIDO', 'Controlla di averlo copiato tutto', '#ff3d6e');
+      break;
+    }
+    /* due passaggi, come per gli acquisti: il primo tocco arma la domanda,
+       il secondo cancella davvero. Toccare altrove la disarma da solo. */
+    case 'wipe': {
+      if (armato !== 'wipe') { UI.armato = 'wipe'; UI.hub(); return; }
+      wipeSave();
+      /* dietro al menu gira il gioco vero: se il nucleo e la sagoma restano
+         quelli di prima, l'azzeramento sembra a meta' */
+      G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+      G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
+      AU.play('die');
+      UI.hub();
+      UI.toast('PROGRESSI AZZERATI', 'Si riparte da zero', '#ff3d6e');
+      break;
+    }
+    case 'wipeno': {
+      UI.hub();
+      break;
+    }
+    case 'meta': {
+      const m = META.find(x => x.id === b.dataset.id), lv = mlv(m.id);
+      if (lv >= m.max) return;
+      const cost = metaCost(m, lv);
+      if (SAVE.shards < cost) { UI.toast('TROPPO CARO', 'Ti mancano ' + (cost - SAVE.shards) + ' frammenti', '#ff3d6e'); return; }
+      if (armato !== 'meta:' + m.id) { UI.armato = 'meta:' + m.id; UI.hub(); return; }
+      SAVE.shards -= cost; SAVE.meta[m.id] = lv + 1; storeSave(); AU.play('buy');
+      UI.spesa = cost; UI.hub();
+      UI.toast(m.n + ' ' + (lv + 1) + ' di ' + m.max, '-' + cost + ' frammenti · te ne restano ' + SAVE.shards, '#ffc857');
+      break;
+    }
     case 'reliquia': {
       const r = RELIQUIE.find(x => x.id === b.dataset.id);
       if (!r || hasRel(r.id)) return;

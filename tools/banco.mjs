@@ -81,9 +81,13 @@ class FakeParam { constructor() { this.value = 1; } setValueAtTime() {} linearRa
   exponentialRampToValueAtTime() {} cancelScheduledValues() {} setTargetAtTime() {} }
 class FakeNode {
   constructor() {
-    this.gain = new FakeParam(); this.frequency = new FakeParam(); this.Q = new FakeParam();
-    this.detune = new FakeParam(); this.playbackRate = new FakeParam();
+    /* tutti i parametri che il gioco tocca: gain, filtri, compressore.
+       Ne mancava uno solo — knee — e bastava a far esplodere AU.init(). */
+    for (const k of ['gain', 'frequency', 'Q', 'detune', 'playbackRate',
+                     'threshold', 'knee', 'ratio', 'attack', 'release', 'pan', 'delayTime'])
+      this[k] = new FakeParam();
     this.type = 'sine'; this.buffer = null; this.loop = false;
+    this.curve = null; this.oversample = 'none'; this.reduction = 0;
   }
   connect() { return new FakeNode(); } disconnect() {} start() {} stop() {}
 }

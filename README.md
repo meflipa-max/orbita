@@ -278,6 +278,24 @@ marea la fa il ritmo di comparsa — nove al secondo, tutti da una parte sola. S
 lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
 alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
 
+### La corsa non si perde
+
+Su un telefono una partita da venti minuti non finisce quando decidi tu: finisce quando arriva
+una notifica, quando cambi scheda, quando Android sfratta la pagina per fare posto. Perdere
+quindici minuti di corsa per un messaggio è il modo più rapido di far chiudere un gioco.
+
+Quindi la corsa si **annota** — ogni quattro secondi, e in più quando la pagina sparisce — e
+alla riapertura il titolo offre `Riprendi · 12:34` al posto di `Gioca`. Nella pausa c'è
+**«Esci e riprendi dopo»** accanto ad «Abbandona la corsa»: due modi di smettere, e la
+differenza è scritta.
+
+Si annota il **progresso**, non il mondo: seme, formato, orologio, anello, passivi, vita, e
+tutti i contatori che pagano sfide e contratti. L'arena si rigenera identica dallo stesso seme,
+perché `genRocks` pesca dal flusso col seme; i nemici no, e per non regalare un'arena sgombra a
+chi esce e rientra ne ricompare subito una quota pari al 55% del tetto del momento — altrimenti
+uscire diventava un pulsante per ripulire lo schermo. Sta in una chiave sua (`orbita.run.v1`) e
+non dentro il salvataggio: dura un giorno, non deve gonfiare il codice di backup.
+
 ### Il menu
 
 L'Osservatorio era **una colonna sola alta 5259 pixel** su un telefono: sette schermate,
@@ -575,7 +593,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 26 controlli sul gioco vero, headless
+npm run collaudo       # 34 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna

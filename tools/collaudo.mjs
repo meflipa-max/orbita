@@ -6,6 +6,9 @@
    quale, così chi lo trova rotto sa cosa stava proteggendo.
    ═══════════════════════════════════════════════════════════════ */
 import { O, IN } from './banco.mjs';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const G = O.G, P = O.P, S = O.save;
 let ko = 0, tot = 0;
@@ -13,6 +16,45 @@ const ok = (c, m) => { tot++; if (!c) { ko++; console.log('  ✗ ' + m); } else 
 const sez = t => console.log('\n— ' + t + ' —');
 const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
 const gioca = (s, f) => { for (let i = 0; i < 60 * s; i++) { if (f) f(i); O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; } };
+
+sez('ogni bottone ha il suo gestore');
+/* Estraendo UI.chiudiBriefing() da uno `switch` ho tagliato via
+   ventiquattro `case` insieme al blocco che stavo togliendo: modo,
+   apertura, nucleo, ascensione, acquisti, pausa, abbandona, riprendi...
+   Il gioco si compilava, le schermate si disegnavano, e i test passavano
+   tutti — perché nessuno di loro toccava un bottone. Sono andati in
+   produzione tre commit così. Questo controllo legge il sorgente e basta:
+   costa niente e quella classe di errore non passa più. */
+{
+  const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', '05-ui.js'), 'utf8');
+  const casi = new Set([...ui.matchAll(/^\s*case '([a-z0-9]+)':/gm)].map(m => m[1]));
+  const bottoni = new Set([...ui.matchAll(/data-a="([a-z0-9]+)"/g)].map(m => m[1]));
+  const orfani = [...bottoni].filter(x => !casi.has(x));
+  const morti = [...casi].filter(x => !bottoni.has(x));
+  ok(orfani.length === 0, bottoni.size + ' bottoni, nessuno senza gestore' + (orfani.length ? ': ' + orfani.join(' ') : ''));
+  ok(morti.length === 0, casi.size + ' gestori, nessuno senza bottone' + (morti.length ? ': ' + morti.join(' ') : ''));
+}
+
+sez('la corsa in sospeso');
+/* Su un telefono una partita da venti minuti finisce quando arriva una
+   notifica, non quando decidi tu: perderla e' il modo piu' rapido di far
+   chiudere il gioco. */
+S().visti = ['gemme','breccia','marea','caccia','nodo'];
+O.reset('vega', 4242, 'incursione', false); G.state = 'play';
+gioca(90);
+const primaT = G.t, primaLv = G.level, primaK = G.kills;
+O.salvaCorsa();
+const nota = O.leggiCorsa();
+ok(!!nota, 'una corsa in corso viene annotata');
+ok(nota && Math.abs(nota.t - primaT) < 1 && nota.level === primaLv, 'con orologio e livello giusti');
+O.reset('vega', 1, 'corsa', false);            /* come se il gioco fosse stato riaperto */
+O.riprendiCorsa(nota);
+ok(Math.abs(G.t - primaT) < 1 && G.level === primaLv && G.kills === primaK,
+   'riprendendo tornano orologio (' + Math.round(G.t) + 's), livello (' + G.level + ') e uccisioni');
+ok(G.modo.id === 'incursione' && (G.seed >>> 0) === 4242, 'e anche formato e semenza');
+ok(G.enemies.length > 10, 'il campo non riparte sgombro: ' + G.enemies.length + ' nemici');
+O.endRun(false);
+ok(!O.leggiCorsa(), 'finita la partita non resta niente da riprendere');
 
 sez('salvataggio');
 ok(O.importSave(b64({ shards: 500, meta: { nucleo: 2 }, chars: ['vega'], wins: 1 })), 'si apre un salvataggio della versione precedente');
