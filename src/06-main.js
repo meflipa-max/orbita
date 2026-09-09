@@ -71,13 +71,20 @@ function step(dt) {
   updateEventi(dt);
   updateSpawns(dt);
 
-  /* le istruzioni svaniscono al primo movimento, o da sole dopo qualche secondo */
+  /* Le istruzioni svaniscono al primo movimento, o da sole dopo qualche
+     secondo. La prima lezione è muoversi; la seconda — che le schegge
+     verdi sono l'esperienza — parte quando la prima se n'è andata, perché
+     due pannelli insieme non li legge nessuno. Il movimento non chiude la
+     seconda: quella la chiude solo raccogliere una gemma. */
   if (G.hint > 0) {
     G.hint -= dt;
-    if (G.hint <= 0 || Math.hypot(i.x, i.y) > .25) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
+    const chiudi = G.lezione === 1 ? G.hint <= 0 : (G.hint <= 0 || Math.hypot(i.x, i.y) > .25);
+    if (chiudi) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
   } else if (G.hintOff > 0) {
     G.hintOff -= dt;
-    if (G.hintOff <= 0) elHint.className = 'clip';
+    if (G.hintOff <= 0) { elHint.className = 'clip'; if (G.lezione === 1) G.lezione = 2; }
+  } else if (G.lezione === 0 && !G.demo && !visto('gemme') && G.gems.length) {
+    showGemHint();
   }
 
   flushUccisioni(dt);

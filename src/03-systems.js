@@ -607,11 +607,25 @@ function updateEnemies(dt) {
         }
         if (d < 300) sp *= -.55;
       }
-      if (e.type === 'spettro') {
+      if (e.type === 'spettro' && !e.corriere) {
         e.ph += dt * 3;
         sp *= 1 + Math.sin(e.ph) * .55;
       }
-      e.vx = dx / d * sp; e.vy = dy / d * sp;
+      /* Il Corriere non insegue: SCAPPA. Era uno spettro normale — quindi ti
+         veniva addosso a 237 px/s — con sopra una correzione di fuga da 205,
+         e la correzione perdeva: misurato, arrivava a quattro pixel dal
+         nucleo e ci restava per tutti i ventisei secondi. Da lì due difetti
+         insieme: la caccia non era una caccia, e la freccia a bordo schermo
+         non compariva mai, perché compare solo quando il bersaglio è fuori
+         campo e lui non usciva mai dallo schermo.
+         Adesso il verso è invertito e la velocità è sua, un filo sopra la
+         tua andatura base (196): inseguirlo in linea retta non basta,
+         tagliargli la strada sì — che è esattamente quello che il gioco
+         dice di fare. E niente tremolio: il suo compito è essere
+         raggiungibile con una traiettoria, non imprevedibile. */
+      const verso = e.corriere ? -1 : 1;
+      if (e.corriere) sp = e.spd * (1 - e.slow);
+      e.vx = dx / d * sp * verso; e.vy = dy / d * sp * verso;
       e.x += e.vx * dt; e.y += e.vy * dt;
     }
 
@@ -715,6 +729,9 @@ function updateGems(dt) {
            valore, e la barra in alto si muove nello stesso istante. */
         if (m.k === 0 && !visto('gemme')) {
           SAVE.visti.push('gemme'); storeSave();
+          /* la lezione è servita: il pannello se ne va nello stesso
+             istante in cui la barra in alto si muove */
+          if (G.lezione === 1) { G.hint = 0; G.hintOff = .5; elHint.classList.add('out'); }
           addFloat(px, py - 18, 'ESPERIENZA', '#6ff2c4', true);
           if (elXpLine) {
             elXpLine.classList.add('primo');
@@ -970,8 +987,13 @@ function apriEvento() {
     const e = spawnEnemy('spettro',
       clamp(G.p.x + Math.cos(a) * d, -ARENA + 60, ARENA - 60),
       clamp(G.p.y + Math.sin(a) * d, -ARENA + 60, ARENA - 60),
-      { hpMul: 7, spdMul: 1.5, xpMul: 8 });
+      { hpMul: 7, xpMul: 8 });
     e.c = '#6ff2c4'; e.corriere = 1;
+    /* 212 contro i tuoi 196 di partenza: in linea retta non lo prendi, ma
+       basta un po' di Celerità o una traiettoria tagliata. È fissa e non
+       segue la crescita di velocità dei nemici comuni, o a fine partita
+       diventerebbe irraggiungibile per chiunque. */
+    e.spd = 212;
     G.ev = { k, t: 0, dur: 26, e };
     /* un'onda dal punto di comparsa: dice "e' successo li'" prima ancora
        che tu legga il messaggio */
@@ -1030,12 +1052,17 @@ function updateEventi(dt) {
       UI.toast('CORRIERE ABBATTUTO', 'Bottino recuperato', '#6ff2c4');
       AU.play('buy'); G.ev = null; return;
     }
-    /* Fugge, ma al guinzaglio: se lo lasci scappare libero si incastra in un
-       angolo a 1800px e la caccia diventa impossibile. Sotto i 420 scappa,
-       oltre gli 820 torna a farsi vedere: resta sempre raggiungibile. */
+    /* Fugge da solo (vedi updateEnemies): qui resta solo il guinzaglio
+       esterno, perché lasciato libero si incastrerebbe in un angolo
+       dell'arena a milleottocento pixel e la caccia sarebbe impossibile.
+       Il richiamo (250) è più forte della sua fuga (212), quindi oltre i 700
+       pixel il distacco si inverte e la distanza si stabilizza lì: fuori
+       campo su un telefono — dove la freccia serve — e al limite della
+       vista su un desktop, dove invece lo vedi e la freccia non serve.
+       Con un richiamo più debole della fuga la caccia era impossibile:
+       misurato, a 170 arrivava a 1744 pixel e non tornava più. */
     const dx = e.x - G.p.x, dy = e.y - G.p.y, d = Math.hypot(dx, dy) || 1;
-    if (d < 420) { e.x += dx / d * 205 * dt; e.y += dy / d * 205 * dt; }
-    else if (d > 820) { e.x -= dx / d * 150 * dt; e.y -= dy / d * 150 * dt; }
+    if (d > 700) { e.x -= dx / d * 250 * dt; e.y -= dy / d * 250 * dt; }
     e.x = clamp(e.x, -ARENA + e.r, ARENA - e.r); e.y = clamp(e.y, -ARENA + e.r, ARENA - e.r);
     if (cchance(dt * 26)) addPart(e.x, e.y, crand(40, -40), crand(40, -40), .5, 3, '#6ff2c4');
   }
@@ -1120,9 +1147,18 @@ function updateSpawns(dt) {
   const rate = Math.min(13, (1.8 + tc / 28 + G.diff * 2.4) * G.asc.rate * G.cg.rate) / Math.pow(G.tenacia, .65);
   G.spawnAcc += dt * rate;
   const pool = currentPool();
+  /* Durante una marea le comparse normali si fermano. L'evento non è «più
+     nemici», è «i nemici arrivano tutti da una parte»: lasciando acceso
+     anche il flusso circolare, un terzo di quelli che comparivano veniva
+     comunque da dietro (misurato: 66% dalla direzione dichiarata invece
+     del 100%) e i due flussi insieme riempivano il tetto in pochi secondi,
+     strozzando proprio la marea — 38 nemici invece di 162 in diciotto
+     secondi. Adesso la marea È il flusso, e a nove al secondo invece di
+     tre si sente come una marea invece che come un minuto qualunque. */
+  const marea = !!(G.ev && G.ev.k === 'marea');
   while (G.spawnAcc >= 1) {
     G.spawnAcc -= 1;
-    if (G.enemies.length < maxE) spawnRing(pick(pool));
+    if (!marea && G.enemies.length < maxE) spawnRing(pick(pool));
   }
   G.eliteT -= dt;
   if (G.eliteT <= 0) {

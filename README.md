@@ -226,7 +226,29 @@ Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiu
 che si chiuda, una marea di nemici da una sola direzione, un Corriere da abbattere prima che
 sparisca.
 
-Il tetto di nemici della marea era un numero fisso, 260, scritto prima che il tetto normale
+Due difetti nella marea e nel Corriere, trovati misurando.
+
+**Il Corriere non scappava: ti veniva addosso.** Era uno spettro normale — che insegue a 237
+px/s — con sopra una correzione di fuga da 205, e la correzione perdeva. Misurato: arrivava a
+**quattro pixel** dal nucleo e ci restava per tutti i ventisei secondi. Da lì due cose insieme:
+la caccia non era una caccia, e la freccia a bordo schermo non compariva **mai**, perché
+compare solo quando il bersaglio è fuori campo e lui non usciva mai dallo schermo. Adesso il
+verso è invertito, la velocità è sua (212 contro i tuoi 196) e il richiamo esterno è più forte
+della fuga, quindi la distanza si stabilizza intorno ai 700 pixel: fuori campo su un telefono,
+dove la freccia serve; al limite della vista su un desktop, dove non serve. Misurato dopo:
+freccia visibile il **100%** del tempo su telefono contro l'8% di prima, e un giocatore che lo
+insegue lo abbatte al secondo 23,9 dei 26.
+
+**La marea era strozzata dalle comparse normali.** L'evento non è «più nemici», è «i nemici
+arrivano tutti da una parte»: lasciando acceso anche il flusso circolare, un terzo di quelli
+che comparivano veniva comunque da dietro, e i due flussi insieme riempivano il tetto in pochi
+secondi soffocando proprio la marea — **38 nemici invece di 162** in diciotto secondi. Adesso
+durante una marea le comparse normali si fermano: la marea *è* il flusso, misurato a **9,0 al
+secondo e 100% dalla direzione dichiarata**. E ha un indicatore: una fascia sul bordo dello
+schermo dal lato da cui arrivano, che si stringe mentre il tempo scorre, col conto alla
+rovescia. Non ha una freccia perché non ha un posto dove andare: ha un lato.
+
+Il tetto di nemici della marea era anche un numero fisso, 260, scritto prima che il tetto normale
 scendesse da 240 a 160 per leggibilità — quindi lo contraddiceva, e soprattutto **non scalava
 con niente**: né col dispositivo (su un telefono il tetto normale è 115, quindi 260 era 2,3
 volte contro le 1,6 di un desktop) né col momento della partita. Misurato col bot:
@@ -244,6 +266,34 @@ cosa a ogni minuto e su ogni schermo. E resta una valvola, non la manopola: l'in
 marea la fa il ritmo di comparsa — nove al secondo, tutti da una parte sola. Servono a dare un motivo per andare da qualche parte, quindi devono **vedersi da
 lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
 alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
+
+### Il menu
+
+L'Osservatorio era **una colonna sola alta 5259 pixel** su un telefono: sette schermate,
+diciassette sezioni, sessantuno bottoni. E faceva cinque lavori diversi mescolati insieme —
+preparare la corsa, spendere, seguire gli obiettivi, guardare lo storico, gestire il
+salvataggio. Il bottone *Inizia* stava a millecento pixel dall'alto, cioè dopo una schermata e
+mezza di scorrimento; Reliquie, Sfide e Storico stavano a 2773, 4207 e 5155, dove non arriva
+nessuno.
+
+Quattro schede — **Partita, Frammenti, Obiettivi, Archivio** — e le due cose che servono sempre
+restano ferme: quanti frammenti hai in cima, e la barra che fa partire la corsa in fondo,
+sopra l'area sicura del telefono.
+
+| | prima | ora (390×750) |
+|---|---|---|
+| Osservatorio | 5259px in colonna unica | 1020 / 2661 / 1568 / 750 per scheda |
+| *Inizia* | y≈1100, da cercare | sempre a vista, barra fissa |
+| Titolo | *Gioca* a metà schermo | *Gioca* a 587–647, zona del pollice |
+
+Sul titolo, formato, nucleo, apertura, ascensione e congiunzione erano cinque oggetti sparsi:
+sono una cosa sola — «che partita sto per giocare» — quindi sono **un blocco solo**, e sotto c'è
+il bottone. Il testo di presentazione compare solo a chi non ha mai giocato: alla decima
+partita erano duecento pixel di cose che sai già, in cima allo schermo, fra te e il bottone.
+
+Una regola che il menu non rispettava: dietro gira il gioco vero, quindi **ogni pannello che
+porta testo ha una base opaca sotto la tinta**. Misurato, la carta della corsa era al 72% e la
+cella del formato scelto al **17%** — il nucleo e le gemme passavano attraverso le scritte.
 
 ### Quello che nessuno ti aveva detto
 
@@ -271,8 +321,16 @@ fuoco`), e la targhetta nell'HUD compare solo quando il bonus lo stai ricevendo 
 **Gli eventi d'arena.** Una breccia sembra una decorazione, una marea sembra sfortuna, il
 Corriere sembra un nemico che non muore. L'avviso in alto durava due secondi e passava mentre
 stavi schivando, cioè esattamente quando non puoi leggere. La prima volta — **e una volta sola
-per sempre** — il gioco si ferma e lo spiega, con la cosa ferma sullo sfondo: cos'è, come si
-riconosce da lontano, e cosa conviene fare. Vale anche per il primo Nodo utile in cui entri.
+per sempre** — il gioco si ferma e lo spiega, con la cosa ferma sullo sfondo. Due righe, non
+tre paragrafi: un pannello che ferma il gioco si legge solo se si legge in fretta. Vale anche
+per il primo Nodo utile in cui entri.
+
+E la lezione delle schegge non sta più solo sotto alla gemma: la parola `ESPERIENZA` resta, ma
+la spiegazione vera arriva **nello stesso pannello che insegna a muoversi**, subito dopo, e se
+ne va appena raccogli qualcosa. Perché l'etichetta da sola non bastava: misurato, chi si
+muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccoglie la sua prima gemma
+**3,5 secondi** dopo che ne è caduta una, e in quei tre secondi sta ancora guardando la
+levetta. Una lezione attaccata a un oggetto che sparisce in tre secondi non è una lezione.
 
 ### Rientrare in gioco
 

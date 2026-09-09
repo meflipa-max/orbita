@@ -951,7 +951,54 @@ function drawScreenUI() {
       const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
       bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 15, d + '  ·  ' + s + 's', s <= 8);
     }
+    /* La marea non ha un posto dove andare, quindi non ha una freccia: ha
+       un LATO. Un arco sul bordo dello schermo dice da dove arrivano, e il
+       conto alla rovescia dice per quanto ancora — le due sole cose che
+       servono a decidere da che parte scansarsi. Senza, dopo il messaggio
+       iniziale l'evento diventava invisibile: nemici più fitti e basta. */
+    if (G.ev.k === 'marea') maree(G.ev);
   }
+}
+
+function maree(v) {
+  const s = Math.max(0, Math.ceil(v.dur - v.t));
+  const col = '#45d7ff';
+  const rad = Math.min(W, H) * .46;
+  const cx = W / 2, cy = H / 2;
+  /* l'arco si stringe mentre il tempo scorre: la lunghezza È il timer */
+  const resta = clamp(1 - v.t / v.dur, 0, 1);
+  const mezzo = .62 * (.45 + resta * .55);
+  const puls = .55 + Math.sin(G.t * 4) * .16;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  /* la fascia larga e tenue: da qui arrivano */
+  ctx.strokeStyle = rgba(col, .12 * puls + .06);
+  ctx.lineWidth = 46;
+  ctx.beginPath(); ctx.arc(cx, cy, rad, v.a - mezzo, v.a + mezzo); ctx.stroke();
+  /* il filo netto: quanto manca */
+  ctx.strokeStyle = rgba(col, .85);
+  ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.arc(cx, cy, rad + 16, v.a - mezzo, v.a + mezzo); ctx.stroke();
+  /* tre tacche che entrano, per dire "da fuori verso di te" */
+  ctx.strokeStyle = rgba(col, .5); ctx.lineWidth = 2.4;
+  ctx.setLineDash([13, 16]); ctx.lineDashOffset = G.t * 46;
+  for (let k = -1; k <= 1; k++) {
+    const a = v.a + k * mezzo * .58;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * (rad + 8), cy + Math.sin(a) * (rad + 8));
+    ctx.lineTo(cx + Math.cos(a) * (rad - 74), cy + Math.sin(a) * (rad - 74));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  const tx = cx + Math.cos(v.a) * (rad - 36), ty = cy + Math.sin(v.a) * (rad - 36);
+  ctx.font = '700 13px "Chakra Petch",system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,2,12,.92)';
+  const et = 'MAREA · ' + s + 's';
+  ctx.strokeText(et, tx, ty); ctx.fillStyle = col; ctx.fillText(et, tx, ty);
+  ctx.restore();
 }
 
 function render() {

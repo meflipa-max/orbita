@@ -118,6 +118,12 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   animation:joyd 2.6s ease-in-out infinite}
 @keyframes joyd{0%,100%{transform:translate(0,0)}25%{transform:translate(11px,-8px)}
   50%{transform:translate(-5px,12px)}75%{transform:translate(-12px,-3px)}}
+/* la scheggia disegnata nel pannello della seconda lezione: è la stessa
+   cosa che sta per terra, così l'occhio la riconosce senza leggere */
+#movehint .gemd{position:relative;width:46px;height:46px;display:grid;place-items:center}
+#movehint .gemd i{width:11px;height:11px;border-radius:50%;background:var(--xp);
+  box-shadow:0 0 16px 3px rgba(111,242,196,.75);animation:gemd 1.5s ease-in-out infinite}
+@keyframes gemd{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
 #movehint .keys{display:flex;gap:4px}
 #movehint .keys i{width:25px;height:25px;display:grid;place-items:center;font:600 11px/1 var(--ui);font-style:normal;
   color:var(--dim);border:1px solid var(--line);background:rgba(255,255,255,.05);--cut:5px}
@@ -510,11 +516,110 @@ ol.tips b{color:#fff;font-weight:600}
 .brief .bi svg{width:24px;height:24px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .brief .eyebrow{text-align:center}
 .brief .ttl{margin:6px 0 12px;text-align:center;color:var(--c)}
-.brief p{margin:0 0 10px;font:400 12.5px/1.6 var(--ui);color:var(--dim)}
+/* Due righe, non tre paragrafi: un pannello che ferma il gioco si legge
+   solo se si legge in fretta. Testo più grande e meno testo. */
+.brief p{margin:0 0 11px;font:400 13.5px/1.55 var(--ui);color:var(--dim)}
 .brief p b{color:#fff;font-weight:600}
 .brief p:last-of-type{margin-bottom:12px}
 .brief .bnota{padding-top:10px;border-top:1px solid var(--line);
   font:600 9.5px/1.5 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);text-align:center}
+
+/* ══ Osservatorio a schede ════════════════════════════════════════
+   Era una colonna sola alta 5259 pixel su un telefono — sette schermate,
+   diciassette sezioni, sessantuno bottoni — e faceva cinque lavori
+   diversi: preparare la corsa, spendere, seguire gli obiettivi, guardare
+   lo storico, gestire il salvataggio. Il bottone Inizia stava a
+   millecento pixel dall'alto, cioè dopo una schermata e mezza.
+   Adesso sono quattro schede, e le due cose che servono sempre —
+   quanti frammenti hai, e far partire la corsa — restano incollate in
+   cima e in fondo mentre il resto scorre.                              */
+.screen[data-s^="hub"].on{justify-content:flex-start;gap:12px;padding-bottom:0}
+
+.hubtop{position:sticky;top:calc(-20px - var(--sat));z-index:4;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:calc(-20px - var(--sat)) 0 0;padding:calc(14px + var(--sat)) 2px 10px;
+  background:var(--void)}
+.hubtop .ttl{margin:0;text-align:left;font-size:clamp(20px,5.5vw,26px)}
+.hubtop .reward{font-size:17px}
+
+.tabs{position:sticky;top:calc(30px + var(--sat));z-index:3;display:grid;
+  grid-template-columns:repeat(4,1fr);gap:5px;padding:0 0 10px;background:var(--void)}
+.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:20px;
+  background:linear-gradient(180deg,var(--void),rgba(6,4,18,0));pointer-events:none}
+.tab{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:7px;
+  min-height:46px;transition:transform .12s}
+.tab .face{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  height:100%;padding:7px 3px;border:1px solid var(--line);
+  background:linear-gradient(165deg,rgba(26,21,60,.55),rgba(11,9,28,.88)),var(--deep);
+  font:700 10.5px/1.1 var(--ui);letter-spacing:.04em;color:var(--dim);white-space:nowrap}
+.tab:hover .face{border-color:var(--line-hot);color:#fff}
+.tab.on .face{border-color:var(--star);color:#fff;
+  background:linear-gradient(165deg,rgba(191,246,255,.18),rgba(11,9,28,.92)),var(--deep);
+  box-shadow:0 0 20px -8px rgba(191,246,255,.8)}
+/* la pallina dice "qui c'è qualcosa che puoi permetterti / che manca" */
+.tab .pin{position:absolute;margin:-16px 0 0 44px;width:6px;height:6px;background:var(--gold);
+  border-radius:50%;box-shadow:0 0 8px var(--gold)}
+
+/* La barra che fa partire la corsa. Incollata in fondo, sopra all'area
+   sicura del telefono: dovunque tu sia arrivato a scorrere, «Inizia» è
+   sotto il pollice invece che a millecento pixel di distanza. */
+/* La barra è OPACA, con una sfumatura corta appoggiata sopra: il gradiente
+   unico faceva traspirare il contenuto che le scorreva sotto — l'ascensione
+   si leggeva attraverso «Inizia», che è il modo in cui si vede un difetto. */
+.hubaz{position:sticky;bottom:0;z-index:3;margin-top:auto;
+  padding:10px 0 calc(12px + var(--sab));background:var(--void)}
+.hubaz::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:22px;
+  background:linear-gradient(0deg,var(--void),rgba(6,4,18,0));pointer-events:none}
+.hubaz .riep{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;
+  font:600 10px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+  margin:0 0 8px}
+.hubaz .riep b{color:var(--c,#ece8ff);font-weight:700}
+.hubaz .btnrow{gap:8px}
+
+/* ══ la carta della corsa ═════════════════════════════════════════
+   Formato, nucleo, apertura, ascensione e congiunzione erano cinque
+   oggetti separati sparsi per la schermata del titolo. Sono una cosa
+   sola — «che partita sto per giocare» — quindi sono un blocco solo. */
+/* Dietro al menu gira il gioco vero, quindi ogni pannello che porta testo
+   deve avere una base OPACA sotto la tinta: misurato, questa carta era al
+   72% in cima e la cella del formato scelto al 17%, cioè il nucleo e le
+   gemme passavano attraverso le scritte. La tinta resta, ma sopra a
+   var(--deep) invece che sopra alla partita. */
+.runcard{display:flex;flex-direction:column;gap:0;--cut:11px;
+  border:1px solid var(--line);
+  background:linear-gradient(168deg,rgba(30,24,70,.9),rgba(14,11,36,.96)),var(--deep)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.segb{border:0;padding:0;background:var(--deep);font:inherit;cursor:pointer;min-height:52px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:background .14s,color .14s}
+.segb b{font:700 13.5px/1 var(--disp);color:var(--dim)}
+.segb em{font:500 9.5px/1 var(--ui);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.segb:hover{background:#151030}
+.segb.on{background:linear-gradient(165deg,rgba(111,242,196,.19),rgba(11,9,28,.9)),var(--deep)}
+.segb.on b{color:var(--xp)}
+.segb.on em{color:rgba(111,242,196,.75)}
+
+.runrow{width:100%;border:0;border-top:1px solid var(--line);background:none;cursor:pointer;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 12px;min-height:48px;
+  font:inherit;text-align:left}
+.runrow:hover{background:rgba(158,138,255,.06)}
+.runrow .pt{display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--ui);color:var(--c)}
+.runrow .pt::before{content:"";width:6px;height:6px;background:var(--c);border-radius:50%;flex:0 0 auto}
+.runrow .cam{margin-left:auto;font:600 9.5px/1 var(--ui);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);white-space:nowrap}
+.runrow .cam::after{content:" ›";font-size:13px}
+.runcard .cong{border:0;border-top:1px solid var(--line);--cut:0;clip-path:none;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,rgba(14,11,36,.94)),rgba(10,8,26,.96)),var(--deep)}
+
+/* il bottone che fa partire tutto: più alto degli altri, perché è quello */
+.btn.grande .face{min-height:60px;font-size:16px;letter-spacing:.24em}
+
+/* ══ titolo: l'azione sta dove arriva il pollice ══════════════════ */
+@media (max-width:560px){
+  .hero{min-height:100%;padding-top:clamp(6px,2.5vh,26px);gap:12px}
+  .hero .cta{margin-top:auto}
+  .hero .hint{margin-bottom:2px}
+}
 
 /* ── formato della partita ───────────────────────────────────────
    Due bersagli da pollice, non una tendina: è la scelta che decide se la
@@ -537,8 +642,8 @@ ol.tips b{color:#fff;font-weight:600}
    scopri al terzo minuto è una sorpresa. */
 .cong{display:flex;align-items:center;gap:9px;padding:9px 11px;text-align:left;--cut:8px;
   border:1px solid color-mix(in srgb,var(--c) 40%,transparent);
-  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,rgba(15,12,36,.9)),rgba(11,9,28,.92))}
-.cong.calma{border-color:var(--line);background:linear-gradient(150deg,rgba(20,16,46,.7),rgba(11,9,28,.9))}
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,rgba(15,12,36,.9)),rgba(11,9,28,.92)),var(--deep)}
+.cong.calma{border-color:var(--line);background:linear-gradient(150deg,rgba(20,16,46,.7),rgba(11,9,28,.9)),var(--deep)}
 .cong .ci{flex:0 0 auto;width:30px;height:30px;display:grid;place-items:center;--cut:6px;
   border:1px solid color-mix(in srgb,var(--c) 42%,transparent)}
 .cong .ci svg{width:17px;height:17px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}

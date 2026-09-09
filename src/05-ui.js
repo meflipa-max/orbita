@@ -21,6 +21,21 @@ function showMoveHint() {
 }
 function hideMoveHint() { elHint.className = 'clip'; G.hint = 0; G.hintOff = 0; }
 
+/* La seconda lezione, nello stesso pannello della prima.
+   La parola ESPERIENZA sotto alla scheggia più vicina non bastava: chi si
+   muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccoglie
+   la sua prima gemma 3,5 secondi dopo che ne è caduta una (misurato), e in
+   quei tre secondi sta ancora guardando la levetta. Una lezione attaccata a
+   un oggetto che sparisce in tre secondi non è una lezione.
+   Questa arriva quando la prima è finita, dove il giocatore ha già imparato
+   a guardare, e se ne va da sola appena raccoglie qualcosa: la barra in alto
+   si muove nello stesso istante, e il nesso si chiude. */
+function showGemHint() {
+  elHint.innerHTML = '<span class="gemd"><i></i></span><b>Le schegge verdi sono esperienza</b><small>Raccoglile per salire di livello</small>';
+  elHint.className = 'clip on';
+  G.hint = 7; G.hintOff = 0; G.lezione = 1;
+}
+
 /* Si torna a giocare da una schermata sola: una schermata di carte, la
    pausa, l'anello, un briefing. In tutti questi casi il mondo era fermo e
    riparte esattamente com'era — con i nemici dove li avevi lasciati, che
@@ -67,7 +82,7 @@ const UI = {
     const stessa = !!(vecchia && this.cur === name);
     const scorr = stessa ? vecchia.scrollTop : 0;
     this.cur = name;
-    if (name === 'title' || name === 'hub' || name === 'guide') {
+    if (name === 'title' || name.slice(0, 3) === 'hub' || name === 'guide') {
       if (G.state !== 'menu') enterMenu();
       G.state = 'menu'; HUD.classList.remove('on');
     }
@@ -154,18 +169,35 @@ const UI = {
       '<span class="ct"><b>' + c.n + '</b>' + c.d + '</span></div>';
   },
 
-  title() {
-    const best = SAVE.best ? fmtTime(SAVE.best) : '—';
+  /* Che partita sto per giocare. Formato, nucleo, apertura, ascensione e
+     congiunzione erano cinque oggetti separati sparsi per la schermata:
+     sono una cosa sola, quindi sono un blocco solo. La riga di mezzo
+     porta all'Osservatorio, che è dove si cambiano davvero. */
+  runcardHTML(seed) {
     const nu = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
     const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
     const apEl = EL[ap.el] || { n: 'Iride', c: '#ff7de3' };
-    const ascSel = Math.min(SAVE.ascSel | 0, SAVE.asc | 0);
-    const cfg = '<button class="cfg clip" data-a="hub"><span class="face">' +
+    const asc = Math.min(SAVE.ascSel | 0, SAVE.asc | 0);
+    return '<div class="runcard clip">' +
+      '<div class="seg">' + MODI.map(m =>
+        '<button class="segb' + (SAVE.modo === m.id ? ' on' : '') + '" data-a="modo" data-id="' + m.id + '">' +
+        '<b>' + m.n + '</b><em>' + m.d.split(' · ')[0] + '</em></button>').join('') + '</div>' +
+      '<button class="runrow" data-a="hub">' +
       '<span class="pt" style="--c:' + nu.c + '">' + nu.n + '</span>' +
-      '<span class="pt" style="--c:' + apEl.c + '">' + apEl.n + ' · ' + RUNES[ap.id].n + '</span>' +
-      '<span class="pt" style="--c:#6ff2c4">' + modoDi(SAVE.modo).n + '</span>' +
-      (ascSel ? '<span class="pt" style="--c:#ffc857">Ascensione ' + ascSel + '</span>' : '') +
-      '<span class="cam">cambia</span></span></button>';
+      '<span class="pt" style="--c:' + apEl.c + '">' + apEl.n + '</span>' +
+      (asc ? '<span class="pt" style="--c:#ffc857">Ascensione ' + asc + '</span>' : '') +
+      '<span class="cam">cambia</span></button>' +
+      this.congHTML(seed) +
+      '</div>';
+  },
+
+  title() {
+    const best = SAVE.best ? fmtTime(SAVE.best) : '—';
+    /* Il testo di presentazione è per chi non ha mai giocato. Alla decima
+       partita è duecento pixel di cose che sai già, in cima allo schermo,
+       fra te e il bottone — e chi torna è esattamente la persona che
+       vogliamo far tornare. */
+    const nuovo = !(SAVE.runs | 0);
     const chips = ELKEYS.map((e, i) =>
       '<span class="el clip" style="--c:' + EL[e].c + ';animation-delay:' + (.7 + i * .09).toFixed(2) + 's"><b></b>' + EL[e].n + '</span>'
     ).join('');
@@ -173,19 +205,16 @@ const UI = {
       '<div class="hero">' +
       '<div class="eyebrow">Sopravvivenza · Roguelite</div>' +
       '<h1 class="logo">ORBITA</h1>' +
-      '<p class="sub">Le tue rune ti girano intorno. Quelle vicine dello stesso elemento <em>risuonano</em>: tre di fila accendono un Risveglio che cambia le regole della partita.</p>' +
-      '<div class="legend elrow">' + chips + '</div>' +
+      (nuovo
+        ? '<p class="sub">Le tue rune ti girano intorno. Quelle vicine dello stesso elemento <em>risuonano</em>: tre di fila accendono un Risveglio che cambia le regole della partita.</p>' +
+          '<div class="legend elrow">' + chips + '</div>'
+        : '') +
+      /* Tutto quello che decide la partita in un blocco, e sotto il
+         bottone che la fa partire: su un telefono l'azione sta in fondo,
+         dove arriva il pollice, non in mezzo allo schermo. */
       '<div class="cta">' +
-      this.modoHTML() +
-      this.congHTML(this.prossimoSeme()) +
-      '<button class="btn primary clip" data-a="go"><span class="face">Gioca</span></button>' +
-      /* Cosa stai per giocare, scritto sotto al bottone che lo fa partire:
-         e' anche l'unico modo di scoprire che si puo' cambiare, ora che
-         Gioca non passa piu' dall'Osservatorio */
-      cfg +
-      /* la corsa del giorno sta nella riga dei bottoni secondari e non su una
-         riga sua: la schermata del titolo ha già guadagnato due elementi
-         (formato e congiunzione), e Gioca deve restare sopra la piega */
+      this.runcardHTML(this.prossimoSeme()) +
+      '<button class="btn primary clip grande" data-a="go"><span class="face">Gioca</span></button>' +
       '<div class="btnrow tre">' +
       '<button class="btn ghost clip giorno" data-a="giorno"><span class="face">' +
       svg('giorno') + (giornoFatto() ? fmtTime(SAVE.giorno.t) : 'Del giorno') + '</span></button>' +
@@ -285,127 +314,159 @@ const UI = {
      nucleo, ascensione, semenza — e si gioca. Sotto la riga c'e' il
      negozio. E un elenco con una voce sola non e' una scelta: il nucleo
      compare come carte solo quando ne possiedi piu' d'uno. */
-  hub() {
-    const posseduti = CHARS.filter(c => SAVE.chars.indexOf(c.id) >= 0);
-    const bloccati = CHARS.filter(c => SAVE.chars.indexOf(c.id) < 0);
-    const carta = c => {
-      const own = SAVE.chars.indexOf(c.id) >= 0, on = SAVE.char === c.id;
-      const arm = this.armato === 'char:' + c.id, manca = c.cost - SAVE.shards;
-      /* Lo stesso tocco prima selezionava (gratis) oppure comprava (caro)
-         senza dirlo: ora il piede della carta dichiara sempre cosa succede. */
-      const piede = own
-        ? '<span class="lk avuto">' + (on ? 'In uso' : 'Tocca per usarlo') + '</span>'
-        : arm
-          ? '<span class="lk">Spendi ' + shardIcon() + c.cost + '</span>' +
-            '<span class="sub arm">Tocca ancora per confermare · te ne restano ' + (SAVE.shards - c.cost) + '</span>'
-          : '<span class="lk">' + shardIcon() + c.cost + '</span>' +
-            /* col portafoglio vuoto "te ne mancano 400" e' solo rumore rosso */
-            (manca > 0 && SAVE.shards > 0 ? '<span class="sub caro">te ne mancano ' + manca + '</span>' : '');
-      return '<button class="ch clip' + (on ? ' on' : '') + (own ? '' : ' locked') + (arm ? ' arm' : '') +
-        '" data-a="char" data-id="' + c.id + '"><span class="face">' +
-        '<span class="av" style="--c:' + c.c + '"></span>' +
-        '<span class="nm">' + c.n + '</span>' +
-        '<span class="ds">' + c.d + '</span>' +
-        (c.ruleD ? '<span class="rule" style="--c:' + c.c + '">' + c.ruleD + '</span>' : '') +
-        piede +
-        '</span></button>';
-    };
-    const ups = META.map(m => {
-      const lv = mlv(m.id), max = lv >= m.max, cost = metaCost(m, lv);
-      const poor = !max && SAVE.shards < cost;
-      const arm = this.armato === 'meta:' + m.id;
-      const riga = arm
-        ? '<span class="ds conf">Tocca ancora: spendi ' + cost + ', te ne restano ' + (SAVE.shards - cost) + '</span>'
-        : poor
-          ? '<span class="ds">' + m.d + ' <span class="caro">· te ne mancano ' + (cost - SAVE.shards) + '</span></span>'
-          : '<span class="ds">' + m.d + '</span>';
-      return '<button class="up clip' + (max ? ' max' : '') + (poor ? ' poor' : '') + (arm ? ' arm' : '') +
-        '" data-a="meta" data-id="' + m.id + '"><span class="face">' +
-        '<span class="ico clip">' + svg(m.ico) + '</span>' +
-        '<span><span class="nm">' + m.n + ' <span style="color:#6a6199">' + lv + '/' + m.max + '</span></span>' + riga + '</span>' +
-        '<span class="cost' + (max ? ' done' : '') + '">' + (max ? 'MAX' : shardIcon() + cost) + '</span>' +
-        '</span></button>';
-    }).join('');
+  /* ══ Osservatorio ═══════════════════════════════════════════
+     Era una colonna sola alta 5259 pixel su un telefono: sette schermate,
+     diciassette sezioni, sessantuno bottoni, e cinque lavori diversi
+     mescolati insieme — preparare la corsa, spendere, seguire gli
+     obiettivi, guardare lo storico, gestire il salvataggio. Il bottone
+     Inizia stava a millecento pixel dall'alto.
+     Quattro schede, e le due cose che servono sempre — quanti frammenti
+     hai e far partire la corsa — restano ferme in cima e in fondo.     */
+  scheda: 'partita',
 
-    /* apertura: la scelta che tutti possono fare, quindi viene per prima */
-    const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
-    const apCol = e => (EL[e] || { c: '#ff7de3' }).c;
-    const apNome = e => (EL[e] || { n: 'Iride' }).n;
-    const aprow = APERTURE.map(a =>
-      '<button class="ap clip' + (SAVE.apertura === a.el ? ' on' : '') + '" style="--c:' + apCol(a.el) + '"' +
-      ' data-a="apertura" data-id="' + a.el + '"><span class="face">' +
-      '<span class="ico clip">' + svg(a.id) + '</span>' +
-      '<span class="nm">' + apNome(a.el) + '</span><span class="ds">' + RUNES[a.id].n + '</span>' +
-      '</span></button>').join('');
-    const el = EL[ap.el];
-    const apNota = ap.nota
-      ? ap.nota
-      : RUNES[ap.id].d + ' Tre di fila accendono <b>' + el.aw + '</b>: ' + el.awd[0].toLowerCase() + '.';
+  cartaNucleo(c) {
+    const own = SAVE.chars.indexOf(c.id) >= 0, on = SAVE.char === c.id;
+    const arm = this.armato === 'char:' + c.id, manca = c.cost - SAVE.shards;
+    /* Lo stesso tocco prima selezionava (gratis) oppure comprava (caro)
+       senza dirlo: il piede della carta dichiara sempre cosa succede. */
+    const piede = own
+      ? '<span class="lk avuto">' + (on ? 'In uso' : 'Tocca per usarlo') + '</span>'
+      : arm
+        ? '<span class="lk">Spendi ' + shardIcon() + c.cost + '</span>' +
+          '<span class="sub arm">Tocca ancora per confermare · te ne restano ' + (SAVE.shards - c.cost) + '</span>'
+        : '<span class="lk">' + shardIcon() + c.cost + '</span>' +
+          (manca > 0 && SAVE.shards > 0 ? '<span class="sub caro">te ne mancano ' + manca + '</span>' : '');
+    return '<button class="ch clip' + (on ? ' on' : '') + (own ? '' : ' locked') + (arm ? ' arm' : '') +
+      '" data-a="char" data-id="' + c.id + '"><span class="face">' +
+      '<span class="av" style="--c:' + c.c + '"></span>' +
+      '<span class="nm">' + c.n + '</span>' +
+      '<span class="ds">' + c.d + '</span>' +
+      (c.ruleD ? '<span class="rule" style="--c:' + c.c + '">' + c.ruleD + '</span>' : '') +
+      piede + '</span></button>';
+  },
 
-    const nucleo = posseduti.length > 1
-      ? '<div class="eyebrow" style="text-align:left;margin-top:10px">Nucleo · la regola</div>' +
-        '<div class="chars">' + posseduti.map(carta).join('') + '</div>'
-      : '<div class="eyebrow" style="text-align:left;margin-top:10px">Nucleo · la regola</div>' +
-        '<div class="unico"><span class="av" style="--c:' + posseduti[0].c + '"></span>' +
-        '<span><b>' + posseduti[0].n + '</b> — ' + posseduti[0].d +
-        '</span></div>';
+  /* c'è qualcosa che posso già permettermi in questa scheda? */
+  pallino(scheda) {
+    if (scheda === 'frammenti') {
+      for (const m of META) { const lv = mlv(m.id); if (lv < m.max && SAVE.shards >= metaCost(m, lv)) return 1; }
+      for (const r of RELIQUIE) if (!hasRel(r.id) && SAVE.shards >= r.c) return 1;
+      for (const c of CHARS) if (SAVE.chars.indexOf(c.id) < 0 && SAVE.shards >= c.cost) return 1;
+    }
+    return 0;
+  },
 
-    this.open('hub',
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
-      '<h2 class="ttl" style="text-align:left">Osservatorio</h2>' +
+  hub(scheda) {
+    if (scheda) this.scheda = scheda;
+    const sc = this.scheda;
+    const SCHEDE = [['partita', 'Partita'], ['frammenti', 'Frammenti'], ['obiettivi', 'Obiettivi'], ['archivio', 'Archivio']];
+
+    const testa =
+      '<div class="hubtop">' +
+      '<h2 class="ttl">Osservatorio</h2>' +
       '<div class="reward' + (this.spesa ? ' spesa' : '') + '">' + shardIcon() + SAVE.shards +
       (this.spesa ? '<span class="delta">-' + this.spesa + '</span>' : '') + '</div></div>' +
+      '<div class="tabs">' + SCHEDE.map(([id, n]) =>
+        '<button class="tab clip' + (sc === id ? ' on' : '') + '" data-a="scheda" data-id="' + id + '">' +
+        '<span class="face">' + n + (this.pallino(id) ? '<i class="pin"></i>' : '') + '</span></button>').join('') +
+      '</div>';
 
-      '<div class="eyebrow" style="text-align:left">Formato · quanto dura</div>' +
-      this.modoHTML() +
-      '<div class="apnota" style="--c:#6ff2c4"><b>' + modoDi(SAVE.modo).n + '</b> · ' + modoDi(SAVE.modo).sub + '</div>' +
-
-      '<div class="eyebrow" style="text-align:left">Apertura · da dove parti</div>' +
-      '<div class="aprow">' + aprow + '</div>' +
-      '<div class="apnota" style="--c:' + apCol(ap.el) + '"><b>' + RUNES[ap.id].n + '</b> · ' + apNota + '</div>' +
-
-      nucleo +
-      this.ascHTML() +
-      this.aspettoHTML() +
-      /* la semenza serve a chi rigioca una partita precisa: chiusa di
-         default, cosi' Inizia sta a portata di pollice */
-      '<details class="seedbox"><summary>Semenza</summary>' +
-      '<div class="seedrow"><label for="seedin">Numero</label>' +
-      '<input id="seedin" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="vuoto = casuale">' +
-      '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte.</span></div></details>' +
-      /* la congiunzione anche qui: dovunque si possa far partire una corsa,
-         si deve poter leggere che corsa è */
-      this.congHTML(this.prossimoSeme()) +
-      '<div class="btnrow" style="max-width:420px;margin:10px auto 0">' +
-      '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
-      '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
+    /* la barra in fondo: dovunque tu sia arrivato a scorrere, la corsa
+       parte da qui — e dice sempre quale corsa */
+    const nu = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
+    const apr = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
+    const aprEl = EL[apr.el] || { n: 'Iride', c: '#ff7de3' };
+    const asc = Math.min(SAVE.ascSel | 0, SAVE.asc | 0);
+    const coda =
+      '<div class="hubaz">' +
+      '<div class="riep">' +
+      '<b style="--c:#6ff2c4">' + modoDi(SAVE.modo).n + '</b>·' +
+      '<b style="--c:' + nu.c + '">' + nu.n + '</b>·' +
+      '<b style="--c:' + aprEl.c + '">' + aprEl.n + '</b>' +
+      (asc ? '·<b style="--c:#ffc857">Asc ' + asc + '</b>' : '') +
+      '·<b style="--c:' + congiunzioneDi(this.prossimoSeme()).c + '">' + congiunzioneDi(this.prossimoSeme()).n + '</b>' +
       '</div>' +
+      '<div class="btnrow">' +
+      '<button class="btn ghost clip" data-a="title"><span class="face">Menu</span></button>' +
+      '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
+      '</div></div>';
 
-      '<div class="hubsep"><span>Obiettivi</span></div>' +
-      this.contrattiHTML() +
-      this.runeHTML() +
+    let corpo = '';
+    if (sc === 'partita') {
+      const apCol = e => (EL[e] || { c: '#ff7de3' }).c;
+      const apNome = e => (EL[e] || { n: 'Iride' }).n;
+      const aprow = APERTURE.map(a =>
+        '<button class="ap clip' + (SAVE.apertura === a.el ? ' on' : '') + '" style="--c:' + apCol(a.el) + '"' +
+        ' data-a="apertura" data-id="' + a.el + '"><span class="face">' +
+        '<span class="ico clip">' + svg(a.id) + '</span>' +
+        '<span class="nm">' + apNome(a.el) + '</span><span class="ds">' + RUNES[a.id].n + '</span>' +
+        '</span></button>').join('');
+      const el = EL[apr.el];
+      const apNota = apr.nota ? apr.nota
+        : RUNES[apr.id].d + ' Tre di fila accendono <b>' + el.aw + '</b>: ' + el.awd[0].toLowerCase() + '.';
+      const posseduti = CHARS.filter(c => SAVE.chars.indexOf(c.id) >= 0);
+      corpo =
+        '<div class="eyebrow" style="text-align:left">Formato · quanto dura</div>' +
+        this.modoHTML() +
+        '<div class="apnota" style="--c:#6ff2c4"><b>' + modoDi(SAVE.modo).n + '</b> · ' + modoDi(SAVE.modo).sub + '</div>' +
+        '<div class="eyebrow" style="text-align:left">Apertura · da dove parti</div>' +
+        '<div class="aprow">' + aprow + '</div>' +
+        '<div class="apnota" style="--c:' + apCol(apr.el) + '"><b>' + RUNES[apr.id].n + '</b> · ' + apNota + '</div>' +
+        '<div class="eyebrow" style="text-align:left">Nucleo · la regola</div>' +
+        (posseduti.length > 1
+          ? '<div class="chars">' + posseduti.map(c => this.cartaNucleo(c)).join('') + '</div>'
+          : '<div class="unico"><span class="av" style="--c:' + posseduti[0].c + '"></span>' +
+            '<span><b>' + posseduti[0].n + '</b> — ' + posseduti[0].d + '</span></div>') +
+        this.ascHTML() +
+        this.aspettoHTML() +
+        '<details class="seedbox"><summary>Semenza</summary>' +
+        '<div class="seedrow"><label for="seedin">Numero</label>' +
+        '<input id="seedin" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="vuoto = casuale">' +
+        '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte, stessa congiunzione.</span></div></details>';
+    } else if (sc === 'frammenti') {
+      const ups = META.map(m => {
+        const lv = mlv(m.id), max = lv >= m.max, cost = metaCost(m, lv);
+        const poor = !max && SAVE.shards < cost;
+        const arm = this.armato === 'meta:' + m.id;
+        const riga = arm
+          ? '<span class="ds conf">Tocca ancora: spendi ' + cost + ', te ne restano ' + (SAVE.shards - cost) + '</span>'
+          : poor
+            ? '<span class="ds">' + m.d + ' <span class="caro">· te ne mancano ' + (cost - SAVE.shards) + '</span></span>'
+            : '<span class="ds">' + m.d + '</span>';
+        return '<button class="up clip' + (max ? ' max' : '') + (poor ? ' poor' : '') + (arm ? ' arm' : '') +
+          '" data-a="meta" data-id="' + m.id + '"><span class="face">' +
+          '<span class="ico clip">' + svg(m.ico) + '</span>' +
+          '<span><span class="nm">' + m.n + ' <span style="color:#6a6199">' + lv + '/' + m.max + '</span></span>' + riga + '</span>' +
+          '<span class="cost' + (max ? ' done' : '') + '">' + (max ? 'MAX' : shardIcon() + cost) + '</span>' +
+          '</span></button>';
+      }).join('');
+      const bloccati = CHARS.filter(c => SAVE.chars.indexOf(c.id) < 0);
+      corpo =
+        '<div class="eyebrow" style="text-align:left">Potenziamenti permanenti</div>' +
+        '<div class="grid2">' + ups + '</div>' +
+        this.reliquieHTML() +
+        (bloccati.length
+          ? '<div class="eyebrow" style="text-align:left;margin-top:4px">Nuclei da sbloccare</div>' +
+            '<div class="chars">' + bloccati.map(c => this.cartaNucleo(c)).join('') + '</div>'
+          : '');
+    } else if (sc === 'obiettivi') {
+      corpo = this.contrattiHTML() + this.runeHTML() + this.sfideHTML();
+    } else {
+      corpo =
+        (this.storicoHTML() || '<div class="hint" style="text-align:left">Nessuna partita ancora. Lo storico tiene le ultime venti.</div>') +
+        (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
+        '<details class="backup"' + (this.backupOpen ? ' open' : '') + '><summary>Backup dei progressi</summary>' +
+        '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei, rune e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
+        '<textarea id="savecode" readonly rows="3" spellcheck="false">' + exportSave() + '</textarea>' +
+        '<div class="btnrow" style="margin-top:8px">' +
+        '<button class="btn ghost clip" data-a="copy"><span class="face">Copia codice</span></button></div>' +
+        '<input id="loadcode" placeholder="Incolla qui un codice da ripristinare" spellcheck="false" autocomplete="off">' +
+        '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
+        this.wipeHTML() + '</details>';
+    }
 
-      '<div class="hubsep"><span>Frammenti</span></div>' +
-      '<div class="eyebrow" style="text-align:left">Potenziamenti permanenti</div>' +
-      '<div class="grid2">' + ups + '</div>' +
-      this.reliquieHTML() +
-      (bloccati.length
-        ? '<div class="eyebrow" style="text-align:left;margin-top:4px">Nuclei da sbloccare</div>' +
-          '<div class="chars">' + bloccati.map(carta).join('') + '</div>'
-        : '') +
-      this.sfideHTML() +
-      this.storicoHTML() +
-      (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
-      '<details class="backup"' + (this.backupOpen ? ' open' : '') + '><summary>Backup dei progressi</summary>' +
-      '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
-      '<textarea id="savecode" readonly rows="3" spellcheck="false">' + exportSave() + '</textarea>' +
-      '<div class="btnrow" style="margin-top:8px">' +
-      '<button class="btn ghost clip" data-a="copy"><span class="face">Copia codice</span></button></div>' +
-      '<input id="loadcode" placeholder="Incolla qui un codice da ripristinare" spellcheck="false" autocomplete="off">' +
-      '<div class="btnrow"><button class="btn ghost clip" data-a="import"><span class="face">Ripristina</span></button></div>' +
-      this.wipeHTML() +
-      '</details>'
-    );
+    /* il nome porta la scheda: cambiando scheda si riparte dall'alto,
+       ridisegnando la stessa (un acquisto) lo scorrimento resta dov'era */
+    this.open('hub:' + sc, testa + corpo + coda);
     this.spesa = 0;
   },
 
@@ -1062,7 +1123,7 @@ function resetRun(charId, seed, modoId, giorno) {
   /* quanto e' gia' stato pagato per QUESTA corsa, e se ha gia' una riga
      nello storico: servono a «Continua senza fine», che chiude la partita
      una volta e poi la fa finire una seconda */
-  G.saldato = 0; G.registrata = 0;
+  G.saldato = 0; G.registrata = 0; G.lezione = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -1273,6 +1334,7 @@ SCR.addEventListener('click', ev => {
        niente. Ora ci vai quando vuoi cambiare qualcosa o spendere. */
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
+    case 'scheda': UI.hub(b.dataset.id); break;
     case 'briefdone': {
       const id = G.briefing; G.briefing = null;
       if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
@@ -1286,7 +1348,7 @@ SCR.addEventListener('click', ev => {
        non cambia) ma il nome del formato sotto al bottone sì */
     case 'modo': {
       SAVE.modo = b.dataset.id; storeSave();
-      if (UI.cur === 'hub') UI.hub(); else UI.title();
+      if (UI.cur && UI.cur.slice(0, 3) === 'hub') UI.hub(); else UI.title();
       break;
     }
     /* La corsa del giorno è un'Incursione: otto minuti, così è una cosa che
