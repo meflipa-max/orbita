@@ -634,11 +634,17 @@ function recalcRing(announce) {
      accende solo se e' sintonizzato su un elemento che stai giocando
      (vedi drawRocce in 04-render). L'Iride vale come tutti, perche' in
      campo si comporta come i suoi vicini. */
+  /* L'Iride NON conta qui, anche se conta per le catene. Il Nodo dà due
+     cose: +35% di danno alle rune del suo elemento, e una runa in più alla
+     catena di quell'elemento. Il +35% guarda `d.el` (vedi runeStats), e
+     per l'Iride quello vale 'iride', mai un elemento vero: quindi un
+     anello con la sola Iride vedeva TUTTI i Nodi accesi e non prendeva
+     niente da nessuno — e anche la catena resta a zero, perché maxRun
+     vuole almeno una runa dell'elemento vero. «Acceso» dev'essere vero. */
   G.elAnello.clear();
   for (let i = 0; i < n; i++) {
-    const r = R[i]; if (!r) continue;
-    if (r.el === 'iride') { for (const k of ELKEYS) G.elAnello.add(k); }
-    else G.elAnello.add(r.el);
+    const r = R[i];
+    if (r && r.el !== 'iride') G.elAnello.add(r.el);
   }
   /* traccia per le sfide: quanti Risvegli insieme, e se uno ha toccato il terzo grado */
   let acc = 0;

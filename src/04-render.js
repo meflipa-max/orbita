@@ -230,9 +230,19 @@ function drawRocce() {
     if (k === nodoVicino) {
       const dentro = G.nodoK === k;
       const titolo = 'NODO DI ' + EL[k.nodo].n.toUpperCase();
-      const sotto = !utile ? 'ti serve una runa di ' + EL[k.nodo].n.toLowerCase()
-        : dentro ? '+35% danno · catena +1'
-        : 'entra per potenziare il ' + EL[k.nodo].n.toLowerCase();
+      const nome = EL[k.nodo].n.toLowerCase();
+      /* Quante rune di questo elemento hai davvero. Serve a non promettere
+         la metà del bonus che non sta ancora funzionando: con una runa
+         sola il +35% si applica eccome — è il 35% di tutto il tuo danno —
+         ma «catena +1» non fa niente, perché una catena di uno più uno fa
+         due e il Risveglio ne vuole tre. Scriverlo lo stesso è una bugia
+         piccola, e questo è il cartello che deve insegnare la regola. */
+      let mie = 0;
+      for (let q = 0; q < G.slots; q++) if (G.ring[q] && G.ring[q].el === k.nodo) mie++;
+      const sotto = !utile ? 'ti serve una runa di ' + nome
+        : !dentro ? 'entra per potenziare il ' + nome
+        : mie >= 2 ? '+35% danno · catena +1'
+        : '+35% danno alle tue rune di ' + nome;
       ctx.globalCompositeOperation = 'source-over';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.lineWidth = sz(3.5); ctx.strokeStyle = 'rgba(4,2,12,.9)';

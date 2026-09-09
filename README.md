@@ -338,6 +338,15 @@ l'arena reagisce alla tua build sotto i tuoi occhi, che è il modo migliore di s
 regola. Sotto al cristallo c'è scritto cosa fa, o perché è spento (`ti serve una runa di
 fuoco`), e la targhetta nell'HUD compare solo quando il bonus lo stai ricevendo davvero.
 
+Due cose che «acceso» prometteva senza mantenere. La prima: **l'Iride accendeva tutti i Nodi e
+non prendeva niente da nessuno.** Il Nodo dà +35% di danno alle rune del suo elemento — e il
++35% guarda `d.el`, che per l'Iride vale `iride` e mai un elemento vero — più una runa alla
+catena, che con la sola Iride resta comunque a zero perché `maxRun` vuole almeno una runa
+dell'elemento. Adesso l'Iride non conta per accendere un Nodo, anche se continua a contare
+nelle catene. La seconda: il cartello scriveva `+35% danno · catena +1` sempre, ma **con una
+runa sola la catena non fa niente** — uno più uno fa due, e il Risveglio ne vuole tre. Con una
+runa il cartello dice solo il +35%, che invece è verissimo: è il 35% di tutto il tuo danno.
+
 **Gli eventi d'arena.** Una breccia sembra una decorazione, una marea sembra sfortuna, il
 Corriere sembra un nemico che non muore. L'avviso in alto durava due secondi e passava mentre
 stavi schivando, cioè esattamente quando non puoi leggere. La prima volta — **e una volta sola
