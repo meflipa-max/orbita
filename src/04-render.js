@@ -658,7 +658,7 @@ function drawPickups() {
   ctx.globalCompositeOperation = 'lighter';
   /* la gemma piu' vicina, e solo finche' non se n'e' mai raccolta una */
   let primaGemma = null;
-  if (!visto('gemme')) {
+  if (!G.demo && !visto('gemme')) {
     let pd = 1e18;
     for (const m of G.gems) {
       if (m.k !== 0) continue;

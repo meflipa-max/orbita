@@ -727,7 +727,13 @@ function updateGems(dt) {
            Il numero che vola è verde e dice ESPERIENZA a lettere, non
            "+3": la prima volta serve il nome della cosa, non il suo
            valore, e la barra in alto si muove nello stesso istante. */
-        if (m.k === 0 && !visto('gemme')) {
+        /* `!G.demo` non è un dettaglio: dietro al titolo gira il gioco vero,
+           quindi il nucleo della vetrina raccoglieva una scheggia da solo e
+           segnava la lezione come imparata prima che tu toccassi Gioca.
+           Misurato: il flag risultava già preso al secondo 1,7 della prima
+           partita di un salvataggio appena azzerato — ed è per questo che
+           l'indicazione non si vedeva mai. */
+        if (m.k === 0 && !G.demo && !visto('gemme')) {
           SAVE.visti.push('gemme'); storeSave();
           /* la lezione è servita: il pannello se ne va nello stesso
              istante in cui la barra in alto si muove */

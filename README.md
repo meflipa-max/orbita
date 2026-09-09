@@ -248,6 +248,11 @@ secondo e 100% dalla direzione dichiarata**. E ha un indicatore: una fascia sul 
 schermo dal lato da cui arrivano, che si stringe mentre il tempo scorre, col conto alla
 rovescia. Non ha una freccia perché non ha un posto dove andare: ha un lato.
 
+Il consiglio che le dava il briefing era anche sbagliato — «spostati di fianco e lasciala
+passare» — perché una marea di nemici che ti inseguono non passa: ti segue. Quello che è vero è
+che il lato **opposto** alla fascia resta sgombro, ed è di là che si va, allungandoli in fila
+invece di attraversarli.
+
 Il tetto di nemici della marea era anche un numero fisso, 260, scritto prima che il tetto normale
 scendesse da 240 a 160 per leggibilità — quindi lo contraddiceva, e soprattutto **non scalava
 con niente**: né col dispositivo (su un telefono il tetto normale è 115, quindi 260 era 2,3
@@ -295,6 +300,15 @@ Una regola che il menu non rispettava: dietro gira il gioco vero, quindi **ogni 
 porta testo ha una base opaca sotto la tinta**. Misurato, la carta della corsa era al 72% e la
 cella del formato scelto al **17%** — il nucleo e le gemme passavano attraverso le scritte.
 
+E la vetrina è tornata a vedersi. Due cose erano tarate sul titolo vecchio, quello col testo in
+alto e lo spazio libero in basso: la telecamera spingeva il nucleo **verso il basso**, cioè da
+quando l'azione sta in fondo lo mandava dietro ai bottoni; e la sfumatura dello schermo era
+quasi nera in cima (.86–.95) e limpida al 58–74%, cioè apriva il suo unico buco proprio dietro
+ai pannelli. Adesso il buco sta dove gira il gioco. E lo spazio libero non è nello stesso posto
+sui due schermi: su un telefono la colonna dei pannelli è larga quanto lo schermo e comincia al
+55%, quindi il nucleo **sale** al 37%; su un desktop è alta ma larga 760 pixel su 1280, quindi
+il nucleo **si sposta di lato**, all'82%, dove la colonna non arriva.
+
 ### Quello che nessuno ti aveva detto
 
 Tre cose il gioco le faceva senza spiegarle, e chi cominciava le capiva male.
@@ -331,6 +345,15 @@ ne va appena raccogli qualcosa. Perché l'etichetta da sola non bastava: misurat
 muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccoglie la sua prima gemma
 **3,5 secondi** dopo che ne è caduta una, e in quei tre secondi sta ancora guardando la
 levetta. Una lezione attaccata a un oggetto che sparisce in tre secondi non è una lezione.
+
+Ci sono voluti tre tentativi, e i due difetti che la tenevano invisibile valgono più della
+soluzione. Il primo: **la vetrina del menu raccoglieva una scheggia da sola**. Dietro al titolo
+gira il gioco vero, gemme comprese, e il nucleo della vetrina segnava la lezione come imparata
+prima che tu toccassi Gioca — misurato, il flag risultava già preso al secondo **1,7** della
+prima partita di un salvataggio appena azzerato. Il secondo: il pannello stava al **63%**
+dell'altezza, che su un telefono è esattamente dove sta la mano che regge la levetta. Su
+puntatore grossolano ora sale al 38%. E non scade più dopo sette secondi: finisce quando la
+lezione è imparata, cioè quando raccogli una scheggia.
 
 ### Rientrare in gioco
 

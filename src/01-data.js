@@ -680,7 +680,7 @@ const BRIEFING = {
   marea: {
     n: 'Marea', k: 'Evento d’arena', ico: 'ampiezza', c: '#45d7ff',
     p: ['Per venti secondi i nemici arrivano <b>tutti da una parte sola</b>. La fascia azzurra dice quale, e il conto alla rovescia quanto manca.',
-        'Indietreggiare è la mossa sbagliata: <b>spostati di fianco</b> e lasciala passare.']
+        'Ti inseguono, quindi non «passa»: ma il lato <b>opposto</b> alla fascia resta sgombro. Vai di là e falli allungare in fila, invece di attraversarli.']
   },
   caccia: {
     n: 'Corriere', k: 'Evento d’arena', ico: 'celerita', c: '#6ff2c4',

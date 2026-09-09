@@ -33,7 +33,11 @@ function hideMoveHint() { elHint.className = 'clip'; G.hint = 0; G.hintOff = 0; 
 function showGemHint() {
   elHint.innerHTML = '<span class="gemd"><i></i></span><b>Le schegge verdi sono esperienza</b><small>Raccoglile per salire di livello</small>';
   elHint.className = 'clip on';
-  G.hint = 7; G.hintOff = 0; G.lezione = 1;
+  /* Venticinque secondi, non sette: questa lezione non finisce quando scade
+     un timer, finisce quando è imparata — cioè quando raccogli una scheggia
+     (vedi updateGems in 03-systems). Un tetto c'è lo stesso, perché un
+     pannello che non se ne va mai diventa parte dell'arredamento. */
+  G.hint = 25; G.hintOff = 0; G.lezione = 1;
 }
 
 /* Si torna a giocare da una schermata sola: una schermata di carte, la

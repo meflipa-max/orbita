@@ -103,6 +103,10 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* istruzioni d'avvio: spariscono al primo movimento */
+/* Al 63% dell'altezza, su un telefono, questo pannello finisce esattamente
+   dove sta la mano che regge la levetta: il giocatore non lo vede perché ce
+   l'ha sotto il pollice. Su puntatore grossolano sale al 38%, sopra la zona
+   di presa; col mouse resta dov'era, che li' non copre niente. */
 #movehint{position:absolute;left:50%;top:63%;transform:translateX(-50%);display:none;
   flex-direction:column;align-items:center;gap:9px;text-align:center;padding:15px 22px;--cut:9px;
   background:rgba(8,6,22,.74);border:1px solid var(--line);backdrop-filter:blur(6px);
@@ -124,6 +128,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 #movehint .gemd i{width:11px;height:11px;border-radius:50%;background:var(--xp);
   box-shadow:0 0 16px 3px rgba(111,242,196,.75);animation:gemd 1.5s ease-in-out infinite}
 @keyframes gemd{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
+@media (pointer:coarse){ #movehint{top:38%} }
 #movehint .keys{display:flex;gap:4px}
 #movehint .keys i{width:25px;height:25px;display:grid;place-items:center;font:600 11px/1 var(--ui);font-style:normal;
   color:var(--dim);border:1px solid var(--line);background:rgba(255,255,255,.05);--cut:5px}
@@ -167,9 +172,16 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 .screen>*{width:100%;max-width:760px}
 
 /* ---------- titolo: il gioco gira dietro, il velo tiene leggibile il testo ---------- */
+/* La finestra sul gioco. Questa sfumatura era tarata sul vecchio titolo —
+   testo in alto, vetrina in basso — quindi era quasi nera in cima (.86–.95)
+   e limpida al 58–74%: da quando l'azione sta in fondo, il buco limpido
+   cadeva esattamente dietro ai pannelli e il nero cadeva sul nucleo.
+   Adesso è il contrario: limpida dove gira il gioco (30–50%), densa dove
+   c'è da leggere — sotto ai pannelli e dietro al logo. */
 .screen[data-s="title"]{
-  background:linear-gradient(180deg,rgba(5,3,16,.95) 0%,rgba(5,3,16,.86) 30%,
-    rgba(5,3,16,.34) 58%,rgba(5,3,16,.10) 74%,rgba(5,3,16,.62) 100%);
+  background:linear-gradient(180deg,rgba(5,3,16,.9) 0%,rgba(5,3,16,.62) 18%,
+    rgba(5,3,16,.14) 34%,rgba(5,3,16,.14) 50%,rgba(5,3,16,.55) 62%,
+    rgba(5,3,16,.86) 74%,rgba(5,3,16,.92) 100%);
   backdrop-filter:blur(1.5px)}
 .screen[data-s="title"].on{justify-content:flex-start}
 .hero{display:flex;flex-direction:column;align-items:center;gap:15px;width:100%;max-width:760px;

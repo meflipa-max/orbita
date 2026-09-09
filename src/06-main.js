@@ -267,10 +267,26 @@ function menuStep(dt) {
   p.vx = (nx - p.x) / Math.max(dt, 1e-4); p.vy = (ny - p.y) / Math.max(dt, 1e-4);
   p.x = nx; p.y = ny;
 
-  /* il nucleo sta nella metà bassa: il titolo occupa quella alta */
+  /* Il nucleo sta dove NON ci sono i pannelli. Prima la regola era «il
+     titolo occupa la metà alta, il nucleo sta in quella bassa», e infatti
+     la telecamera lo spingeva in basso; da quando l'azione sta in fondo —
+     la carta della corsa, Gioca, i tre bottoni — quello è il posto peggiore
+     dello schermo, e il nucleo passava metà del tempo dietro ai bottoni.
+     Adesso sale, e sale di più su un telefono, dove i pannelli si prendono
+     quasi metà schermo. L'offset è in unità di MONDO (G.vh), non di
+     schermo: con lo zoom del telefono un offset in pixel valeva un terzo. */
   const ck = Math.min(1, dt * 3);
-  G.cam.x += (p.x - G.cam.x) * ck;
-  G.cam.y += (p.y - H * .15 - G.cam.y) * ck;
+  /* Lo spazio libero non sta nello stesso posto sui due schermi.
+     Su un telefono la colonna dei pannelli è larga quanto lo schermo e
+     comincia al 55%: il buco è SOPRA, quindi il nucleo sale al 37%.
+     Su un desktop la colonna è alta ma larga solo 760 pixel su 1280: il
+     buco è di LATO, quindi il nucleo si sposta a destra invece che in su,
+     e resta all'altezza in cui la sfumatura è più limpida. */
+  const stretto = W < 700;
+  const alza = (stretto ? .11 : 0) * G.vh;
+  const sposta = (stretto ? 0 : .30) * G.vw;
+  G.cam.x += (p.x - sposta - G.cam.x) * ck;
+  G.cam.y += (p.y + alza - G.cam.y) * ck;
 
   /* flusso generoso: con otto rune e due Risvegli i nemici durano un istante,
      e una vetrina mezza vuota non mostra niente */
