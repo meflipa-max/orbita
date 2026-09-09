@@ -55,7 +55,19 @@ if (window.visualViewport) {
    sicurezza i progressi sparirebbero in silenzio, che per un gioco
    costruito sulla progressione è il peggior modo di fallire.            */
 const SAVEKEY = 'orbita.save.v1';
-const DEFAULT_SAVE = { shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', skin: 'nucleo', best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [] };
+const DEFAULT_SAVE = {
+  shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', skin: 'nucleo',
+  best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [],
+  /* quali rune sono entrate nel mazzo: vedi SBLOCCHI in 01-data */
+  runes: RUNE_BASE.slice(),
+  /* le reliquie comprate, i tre contratti in corso, il modo scelto */
+  reliquie: [], contratti: [], modo: 'corsa',
+  /* le ultime venti partite: è lo storico che si legge nell'Osservatorio ed
+     è anche l'unica telemetria possibile in un gioco che non tocca la rete */
+  storico: [],
+  /* la corsa del giorno: quale data, e il miglior risultato di oggi */
+  giorno: { d: '', t: 0, k: 0, w: 0 }
+};
 let SAVE = Object.assign({}, DEFAULT_SAVE);
 let STORE_OK = false;            /* la memoria del browser è utilizzabile? */
 const MEM = {};                  /* ripiego: dura quanto la scheda aperta */
@@ -95,6 +107,20 @@ function sanitizeSave(o) {
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
   if (!APERTURE.some(a => a.el === s.apertura)) s.apertura = 'fuoco';
   if (!SKINS.some(k => k.id === s.skin)) s.skin = 'nucleo';
+  /* le rune sbloccate: le otto di partenza non si possono perdere, così un
+     salvataggio vecchio (che non ha il campo) non resta senza mazzo */
+  if (!Array.isArray(s.runes)) s.runes = [];
+  s.runes = s.runes.filter(id => RUNEIDS.indexOf(id) >= 0);
+  for (const id of RUNE_BASE) if (s.runes.indexOf(id) < 0) s.runes.push(id);
+  if (!Array.isArray(s.reliquie)) s.reliquie = [];
+  s.reliquie = s.reliquie.filter(id => RELIQUIE.some(r => r.id === id));
+  if (!Array.isArray(s.contratti)) s.contratti = [];
+  s.contratti = s.contratti.filter(id => CONTRATTI.some(c => c.id === id));
+  if (!MODI.some(m => m.id === s.modo)) s.modo = 'corsa';
+  if (!Array.isArray(s.storico)) s.storico = [];
+  s.storico = s.storico.filter(r => r && typeof r === 'object').slice(0, 20);
+  if (!s.giorno || typeof s.giorno !== 'object' || Array.isArray(s.giorno)) s.giorno = { d: '', t: 0, k: 0, w: 0 };
+  else s.giorno = Object.assign({ d: '', t: 0, k: 0, w: 0 }, s.giorno);
   s.asc = Math.min(s.asc | 0, ASC.length - 1);
   s.ascSel = Math.min(Math.max(s.ascSel | 0, 0), s.asc);
   for (const k of ['shards', 'best', 'bestKills', 'wins', 'runs', 'asc', 'ascSel']) {
@@ -141,6 +167,23 @@ function wipeSave() {
 }
 
 const mlv = id => SAVE.meta[id] | 0;
+
+/* Tre contratti sempre in corso. Si ripescano qui e non a fine partita,
+   così un salvataggio vecchio ne trova tre alla prima apertura e non
+   esiste lo stato «nessun obiettivo». Il sorteggio usa Math.random e non
+   il flusso col seme: è roba di menu, non deve entrare nella simulazione. */
+function pescaContratti() {
+  if (!Array.isArray(SAVE.contratti)) SAVE.contratti = [];
+  let cambiato = false;
+  let giri = 0;
+  while (SAVE.contratti.length < 3 && giri++ < 60) {
+    const liberi = CONTRATTI.filter(c => SAVE.contratti.indexOf(c.id) < 0);
+    if (!liberi.length) break;
+    SAVE.contratti.push(liberi[(Math.random() * liberi.length) | 0].id);
+    cambiato = true;
+  }
+  return cambiato;
+}
 
 /* ── audio procedurale ──────────────────────────────────────── */
 const AU = {
@@ -438,7 +481,18 @@ const G = {
   /* vedi calcolaZoom: quanto mondo entra nello schermo di questo dispositivo */
   zoom: 1, vw: 1280, vh: 800,
   /* il colpo di grazia: vedi flushUccisioni in 06-main */
-  raffN: 0, raffX: 0, raffY: 0, raffR: 0, raffC: '#ffffff', combo: 0, comboT: 0, raffFin: 0, raffCd: 0
+  raffN: 0, raffX: 0, raffY: 0, raffR: 0, raffC: '#ffffff', combo: 0, comboT: 0, raffFin: 0, raffCd: 0,
+  /* che partita è questa: il modo dice quanto dura e con quanti guardiani,
+     la congiunzione è la regola sorteggiata dal seme (vedi 01-data). `cong`
+     è la carta, `cg` sono i suoi modificatori già fusi coi valori neutri,
+     così chi li legge non deve sapere se una congiunzione c'è o no. */
+  modo: MODI[0], cong: CONGIUNZIONI[0], cg: congMods(null),
+  /* l'ordine dei guardiani di QUESTA partita: numeri dallo slot, identità e
+     pattern rimescolati. Vedi rosterGuardiani(). */
+  roster: BOSSES,
+  /* tracce per sblocchi e contratti */
+  bossKills: 0, maxLv: 1, tier2: 0, rerollUsati: 0, respiro: 0, giornaliera: false,
+  runaNuova: null, contrattiFatti: [], sfideNuove: []
 };
 const P = {}; /* statistiche derivate */
 
@@ -468,18 +522,26 @@ function recalc() {
   const oldMax = P.maxHp || base;
   P.maxHp = Math.round(base);
   if (P.hp === undefined) P.hp = P.maxHp; else if (P.maxHp > oldMax) P.hp += (P.maxHp - oldMax);
-  P.spd = 196 * (1 + .04 * mlv('passo')) * (m.spd || 1) * (1 + .09 * lv('celerita'));
-  P.dmgMul = (1 + .05 * mlv('furia')) * (m.dmg || 1) * (1 + .12 * lv('impeto'));
+  P.spd = 196 * (1 + .04 * mlv('passo')) * (m.spd || 1) * (1 + .09 * lv('celerita')) * G.cg.pspd;
+  /* Coro di stelle: i Risvegli pagano due volte — la loro regola, e un
+     bonus secco per averli accesi. È la reliquia che premia chi progetta
+     l'anello per averne due invece di uno solo grosso. */
+  let coro = 1;
+  if (hasRel('coro')) { let n = 0; for (const k of ELKEYS) if (G.awaken[k]) n++; coro = 1 + .07 * n; }
+  P.dmgMul = (1 + .05 * mlv('furia')) * (1 + .015 * mlv('dominio')) * (m.dmg || 1) * (1 + .12 * lv('impeto')) * G.cg.dmg * coro;
   P.cdMul = Math.max(.32, 1 - .10 * lv('frenesia'));
   P.areaMul = (m.area || 1) * (1 + .14 * lv('ampiezza'));
   P.pickR = 78 * (1 + .22 * mlv('calamita')) * (1 + .38 * lv('magnete'));
-  P.xpMul = (1 + .08 * mlv('avidita')) * (m.xp || 1) * (1 + .20 * lv('sapienza'));
+  /* nell'Incursione si sale di livello quasi il doppio più in fretta: la
+     corsa dura otto minuti invece di venti, e senza questo la build non
+     farebbe in tempo a esistere prima dell'ultimo guardiano */
+  P.xpMul = (1 + .08 * mlv('avidita')) * (m.xp || 1) * (1 + .20 * lv('sapienza')) * (G.modo.xp || 1);
   P.crit = .05 + .03 * mlv('occhio') + (m.crit || 0) + .08 * lv('precisione') + [0, .12, .22, .35][G.awaken.luce];
   P.critD = 2 + (m.critD || 0);
   P.dr = Math.max(.35, 1 - .10 * lv('corazza'));
   P.regen = .3 * mlv('linfa') + .7 * lv('linfa');
   P.projMul = 1 + .22 * lv('vortice');
-  P.shardMul = 1 + .12 * mlv('fortuna');
+  P.shardMul = (1 + .12 * mlv('fortuna')) * G.cg.shard;
   P.hp = Math.min(P.hp, P.maxHp);
 }
 
@@ -525,7 +587,10 @@ function recalcRing(announce) {
     /* dentro un Nodo, la catena del suo elemento conta una runa in più:
        due rune adiacenti bastano ad accendere il Risveglio finché resti lì */
     const run = maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1) + (G.nodo === e ? 1 : 0);
-    const c0 = G.asc.chain;
+    /* Eco toglie una runa al requisito, ma mai sotto due: a uno ogni runa
+       isolata accenderebbe il suo Risveglio e la risonanza smetterebbe di
+       essere una decisione. */
+    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
     const tier = run >= c0 + 4 ? 3 : run >= c0 + 2 ? 2 : run >= c0 ? 1 : 0;
     const prev = G.awaken[e];
     G.awaken[e] = tier;
@@ -537,8 +602,11 @@ function recalcRing(announce) {
   }
   /* traccia per le sfide: quanti Risvegli insieme, e se uno ha toccato il terzo grado */
   let acc = 0;
-  for (const k of ELKEYS) { if (G.awaken[k]) acc++; if (G.awaken[k] >= 3) G.tier3 = 1; }
+  for (const k of ELKEYS) { if (G.awaken[k]) acc++; if (G.awaken[k] >= 2) G.tier2 = 1; if (G.awaken[k] >= 3) G.tier3 = 1; }
   if (acc > G.awakeMax) G.awakeMax = acc;
+  /* il livello più alto toccato da una runa in questa partita: serve a uno
+     degli sblocchi, e va letto qui perché una runa dissolta sparisce */
+  for (let i = 0; i < n; i++) if (R[i] && R[i].lv > G.maxLv) G.maxLv = R[i].lv;
   recalc();
   UI.renderAwake();
 }
@@ -604,7 +672,10 @@ function spawnEnemy(type, x, y, opts) {
   const d = MOBS[type], o = opts || {};
   /* nella vetrina del menu il tempo scorre ma la difficoltà resta ferma:
      altrimenti dopo dieci minuti sul titolo comparirebbero mostri corazzati */
-  const mins = G.demo ? 1.1 : G.t / 60;
+  /* `tempra` comprime il calendario dei contenuti nell'Incursione: a otto
+     minuti reali i nemici sono duri quanto al tredicesimo di una Corsa,
+     perché anche tu ci arrivi con la build del tredicesimo. */
+  const mins = G.demo ? 1.1 : G.t * G.modo.tempra / 60;
   /* proporzionato alla crescita del giocatore, ora più lenta */
   /* compensa i nemici ridotti a schermo: meno bersagli, ognuno più duro,
      così la pressione resta quella ma il campo si legge */
@@ -624,7 +695,7 @@ function spawnEnemy(type, x, y, opts) {
        diventava una tassa, e un passivo obbligatorio e' una carta in meno di
        varieta' a ogni partita. Il tetto tiene il piu' veloce sotto la tua
        andatura base; la difficolta' la fa il direttore, non la corsa. */
-    hp: d.hp * hpScale * G.asc.hp, maxHp: d.hp * hpScale * G.asc.hp, spd: d.spd * (o.spdMul || 1) * Math.min(1.22, 1 + mins * .012) * G.asc.spd,
+    hp: d.hp * hpScale * G.asc.hp * G.cg.hp, maxHp: d.hp * hpScale * G.asc.hp * G.cg.hp, spd: d.spd * (o.spdMul || 1) * Math.min(1.22, 1 + mins * .012) * G.asc.spd * G.cg.spd,
     /* Un nemico temprato picchia anche piu' forte, non solo piu' a lungo:
        senza questo una build che si cura 9 vite al secondo pareggiava il
        contatto e restava in stallo per sempre a vita piena. */
@@ -659,12 +730,14 @@ function spawnBoss(def) {
      settantamila punti vita (misurata) che restava in campo quaranta secondi
      senza fare un solo danno. Con il tetto lo scontro resta un evento invece
      che un muro il cui unico effetto e' durare. */
-  const vita = def.hp * (1 + G.diff * .55) * G.asc.hp * (1 + (Math.min(G.tenacia, 10) - 1) * .5);
+  /* `def.hpMul` lo mette il modo: nell'Incursione un guardiano non può
+     avere la vita del suo slot, perché ci arrivi con meno livelli addosso. */
+  const vita = def.hp * (def.hpMul || 1) * (1 + G.diff * .55) * G.asc.hp * G.cg.bossHp * (1 + (Math.min(G.tenacia, 10) - 1) * .5);
   const e = {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
-    hp: vita, maxHp: vita, spd: def.spd * G.asc.spd,
+    hp: vita, maxHp: vita, spd: def.spd * G.asc.spd * G.cg.spd,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
   };
@@ -851,8 +924,8 @@ function killEnemy(e, opt) {
   const n = e.boss ? 26 : e.elite ? 9 : 1;
   for (let i = 0; i < n; i++) addGem(e.x + rand(30, -30), e.y + rand(30, -30), Math.max(1, Math.round(e.xp / n)));
   if (e.elite || e.boss) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
-  else if (!G.asc.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
-  else if (!G.asc.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
+  else if (!G.asc.noDrops && !G.cg.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
+  else if (!G.asc.noDrops && !G.cg.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
   if (chance(.05) || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);
 
   if (e.type === 'scissore' && !e.small && !e.elite && G.enemies.length < 330) {
@@ -868,7 +941,11 @@ function killEnemy(e, opt) {
     /* un guardiano vale uno scrigno grosso, non due schermate di carte
        di fila: la seconda arrivava mentre stavi ancora leggendo la prima */
     else { G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); addGem(e.x, e.y, 220, 1); }
-    if (e.boss.id === 'eclissi') winRun();
+    G.bossKills++;
+    /* Prima si controllava `id === 'eclissi'`. Adesso l'ordine dei guardiani
+       si rimescola e l'Incursione ne salta due, quindi «è l'ultimo» è una
+       proprietà della partita, non un nome. */
+    if (e.boss.fine) winRun();
   }
 }
 
@@ -876,6 +953,18 @@ function hurtPlayer(amount) {
   if (G.p.inv > 0 || G.state !== 'play') return;
   const d = amount * P.dr;
   P.hp -= d; G.p.inv = .62; G.p.hurt = .3;
+  /* Respiro: una volta per partita, il colpo che ti porta sotto un quarto
+     di vita ti dà tre secondi per uscire invece di ammazzarti nel mucchio.
+     Sta qui e non in updatePlayer perché deve scattare sul colpo, non al
+     fotogramma dopo: nel mezzo ce ne stanno altri due. */
+  if (!G.respiro && hasRel('respiro') && P.hp > 0 && P.hp < P.maxHp * .25) {
+    G.respiro = 1;
+    P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .3);
+    G.p.inv = 3;
+    G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 420, t: 0, dur: .8, c: '#6ff2c4' });
+    UI.toast('RESPIRO', 'Tre secondi per uscire', '#6ff2c4');
+    AU.play('awake');
+  }
   if (G.char.rule === 'contraccolpo')
     G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 14, r1: 210 * P.areaMul, t: 0, dur: .45, dmg: 45 * P.dmgMul, hit: new Set(), c: EL.fuoco.c, kb: 320 });
   G.shake = Math.max(G.shake, 8); G.flashT = .16; G.flashC = HPC;

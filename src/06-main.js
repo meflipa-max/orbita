@@ -208,6 +208,10 @@ function enterMenu() {
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
   G.boss = null; G.bosses.length = 0; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9;              /* nessun evento nella vetrina del menu */
+  /* la vetrina non eredita la congiunzione dell'ultima partita: dopo uno
+     Sciame il menu spawnava al ritmo dello Sciame, che non è quello che il
+     titolo deve mostrare */
+  G.modo = MODI[0]; G.cong = CONGIUNZIONI[0]; G.cg = congMods(null); G.giornaliera = false;
   G.rocks.length = 0; G.nodo = null; G.nodoK = null;   /* né ostacoli dietro al titolo */
   G.tenacia = 1; G.raggio = RAGGIO_MIRA; G.chiarezza = 1;
   G.char = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
@@ -261,6 +265,9 @@ function menuStep(dt) {
 
 function boot() {
   loadSave();
+  /* tre contratti sempre in corso, anche alla primissima apertura e anche
+     per un salvataggio vecchio che non ne ha nessuno */
+  if (pescaContratti()) storeSave();
   resize();
   buildStars();
   G.q = 1;
@@ -274,7 +281,7 @@ function boot() {
   });
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, save: () => SAVE, start: startRun, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
   addEventListener('pointerdown', () => AU.init(), { once: true });
   addEventListener('keydown', () => AU.init(), { once: true });
 }

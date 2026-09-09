@@ -11,8 +11,9 @@ una schermata inventario separata, le rune che vedi orbitare *sono* l'interfacci
 - Riordinare l'anello è quindi il vero puzzle strategico, e si può fare in qualsiasi momento
   dalla pausa.
 
-Partita da 20 minuti, cinque guardiani, poi modalità senza fine. I **frammenti** restano fra
-una partita e l'altra e si spendono nell'Osservatorio in potenziamenti permanenti e nuovi nuclei.
+Due formati: la **Corsa** da 20 minuti con cinque guardiani, poi modalità senza fine, e
+l'**Incursione** da 8 minuti con tre. I **frammenti** restano fra una partita e l'altra e si
+spendono nell'Osservatorio in potenziamenti permanenti, nuclei e reliquie.
 
 ### Trasformazioni
 
@@ -28,6 +29,128 @@ l'anello dal primo minuto.
 Vinci e sblocchi un livello di difficoltà. Ognuno aggiunge **una regola sola**, e le regole si
 sommano: scrigni che non danno più potenziamenti, un alloggiamento in meno, metà vita
 iniziale, Risvegli che richiedono quattro rune in fila, guardiani in coppia. Tredici livelli.
+
+### Perché si torna
+
+Il difetto misurabile non era il minuto per minuto: era che **il gioco non prometteva niente
+alla partita successiva**. Quattro cose lo producevano, e ognuna si legge nei numeri.
+
+- **La partita 2 era il copione della partita 1.** `WAVES` è una tabella fissa a tempo e i
+  cinque guardiani arrivavano sempre nello stesso ordine agli stessi secondi. Le uniche
+  variabili erano l'RNG delle carte, l'elemento del Nodo e tre eventi d'arena.
+- **Non esisteva il momento «ho trovato una runa nuova».** `rollChoices` pescava da tutte e
+  sedici le rune al primo livello della prima partita. In tutta la vita del giocatore, mai.
+- **Le prime spese non si sentivano.** Nove voci su undici erano percentuali piccole, e le due
+  che cambiano *come* giochi costavano 700 e 1500 — più di quanto rende una partita persa al
+  minuto otto (misurato: 942). Le prime tre o quattro iterazioni del giro ricompensa
+  consegnavano zero cambiamento percepito.
+- **L'economia finiva.** Tutto il comprabile costava 21.704 frammenti: verso la partita
+  dodici i frammenti non compravano più niente, mentre `payout()` continuava a versarli.
+
+E sopra tutto questo, **la prima conclusione stava a venti minuti**: chi non ha mai visto un
+finale non ha nessun motivo per tornare, e le tredici ascensioni — cioè tutta la coda lunga —
+stanno dietro a quella prima vittoria.
+
+### Formati
+
+L'**Incursione** dura otto minuti e ha tre guardiani. Non è la Corsa tagliata a metà: è
+ritarata. Il calendario dei contenuti scorre 2,15 volte più in fretta, i nemici si
+irrobustiscono 1,65 volte più in fretta, tu sali di livello 1,85 volte più in fretta, e i tre
+guardiani hanno una vita loro invece di quella del loro slot — perché a parità di minuti la
+tua build è più debole di quanto sarebbe nella Corsa.
+
+Misurato con un bot che schiva scegliendo fra ventiquattro direzioni, quattro semi per
+formato, giocatore invulnerabile per leggere la curva e non la bravura:
+
+| | livello al finale | uccisioni | fine |
+|---|---|---|---|
+| Corsa | 29–38 | 10.594–15.365 | 1087–1107 s |
+| Incursione | 20–29 | 4.011–6.278 | 420–443 s |
+
+Vincere un'Incursione sblocca l'ascensione come vincere una Corsa: è il punto — la prima
+conclusione deve stare nella prima sessione. Il premio ha però un fattore `paga` di 0,8,
+perché il bonus di vittoria è lo stesso in un terzo del tempo e senza quel fattore la Corsa
+diventava una perdita di tempo. La modalità senza fine resta della Corsa: allungare
+l'Incursione la cancellerebbe.
+
+### Congiunzioni
+
+I Nodi elementali sono la cosa che dà più varietà fra una corsa e l'altra, perché non cambiano
+un numero: cambiano la domanda della corsa. La congiunzione porta lo stesso principio a tutta
+l'arena — una regola sorteggiata **dal seme** e **dichiarata prima di partire**, sotto al
+bottone che fa partire la corsa. Una regola che leggi prima è una scelta; una che scopri al
+terzo minuto è una sorpresa.
+
+Sciame (molti più nemici, molto più fragili), Carestia (niente cuori né bombe, frammenti +70%),
+Eco (Risvegli con una runa in meno, guardiani +40% vita), Cintura (doppio di asteroidi e di
+Nodi), Tempesta (un evento ogni quaranta secondi), Vetro (metà vita, +40% danno), Fuga (tutti
+più veloci del 18%, tu compreso). E **Quiete**, che pesa il doppio delle altre: una corsa su
+quattro deve restare quella di sempre, o «modificata» smette di voler dire qualcosa. Misurato
+su 40.000 semi: Quiete 22,2%, le altre fra 10,8% e 11,3%.
+
+Siccome esce dal seme, `Ripeti questa semenza` ripete anche la congiunzione.
+
+### I guardiani ruotano
+
+I **numeri** restano dello slot — vita, velocità, pavimento di velocità, raggio, danno,
+esperienza sono tarati su quel minuto e non si toccano. **Identità e pattern** ruotano fra i
+primi quattro. Così puoi trovarti le cariche del Titano al 2:30 senza che il 2:30 diventi più
+duro: cambia cosa devi schivare, non quanto incassi. L'ultimo slot non ruota, perché il finale
+deve restare il finale — e la vittoria adesso la decide una bandierina `fine` sul guardiano,
+non il controllo `id === 'eclissi'` che il rimescolamento avrebbe rotto.
+
+### Il mazzo cresce
+
+Si comincia con **otto rune** su sedici: le sei aperture, che devono restare tutte scegliibili,
+più Nova e Falce. Le altre otto entrano una per traguardo — sopravvivere quattro minuti,
+accendere un Risveglio, abbattere un guardiano, portare una runa al livello 5, 500
+eliminazioni, otto minuti, un Risveglio di secondo grado, tre guardiani in una partita. Ne
+esce **al massimo una per partita**, apposta: due sblocchi insieme si annullano a vicenda, e la
+fine di ogni corsa deve avere una cosa nuova da guardare.
+
+I traguardi non sono arbitrari: ognuno chiede di fare una cosa che il gioco vuole insegnare.
+
+### Contratti
+
+Le dodici sfide sono chiavi: si prendono una volta e finiscono. Dopo quelle non restava nessun
+obiettivo a portata, e «ascendi» — che chiede di vincere una corsa da venti minuti — non è un
+obiettivo a portata. I **contratti** sono tre alla volta, si rinnovano appena li completi, e il
+premio segue l'ascensione massima raggiunta (`× 1 + asc × 0,12`) così non diventano spiccioli.
+Ventuno modelli, valutati con lo stesso oggetto di statistiche delle sfide.
+
+### Reliquie
+
+Il capitolo caro dell'Osservatorio, e l'unico dove ogni voce è **una regola invece di una
+percentuale**: Semenza (inizi con un livello già preso), Mercante (dissolvere rende il doppio),
+Richiamo (eventi il 35% più spessi), Avanzo (saltare cura il doppio e dà 120 frammenti),
+Bussola (un Nodo è sempre sintonizzato sulla tua apertura), Crogiolo (trasformazioni al livello
+7), Coro di stelle (+7% danno per ogni Risveglio acceso), Respiro (una volta per partita,
+scendere sotto un quarto di vita ti cura e ti rende intoccabile per tre secondi).
+
+E **Dominio**, che è il pozzo senza fondo: quaranta livelli a passo 1,14, cioè 536.811
+frammenti. Nessuno lo finisce, ed è esattamente il punto — una valuta che non compra più
+niente è un giro rotto.
+
+| | prima | ora |
+|---|---|---|
+| prima spesa possibile | 60 (+8% vita) | **110 (l'apertura parte al livello 3)** |
+| +1 alloggiamento | 700 | **260** |
+| totale del comprabile finito | 21.704 | 38.928 |
+| pozzo senza fondo | — | 536.811 |
+
+Dopo una sola partita persa al minuto otto (~940 frammenti) si comprano **tutte e quattro** le
+voci che cambiano come si gioca: Innesco, Presagio, Ventaglio e Orbita Estesa, 760 in totale.
+
+### Corsa del giorno e storico
+
+Stessa data, stesso seme, quindi stessa arena, stesse carte e stessa congiunzione per chiunque
+la giochi: in un gioco senza rete è l'unico punteggio che si possa confrontare con qualcuno. È
+un'**Incursione**, così è una cosa che si fa davvero ogni giorno.
+
+Lo **storico** tiene le ultime venti partite — durata, formato, ascensione, nucleo,
+eliminazioni, guardiani abbattuti, congiunzione. È anche l'unica telemetria possibile: con
+dieci amici e una settimana si vede *dove* si smette invece di dedurlo. Il salvataggio non
+tocca la rete, quindi il codice di backup se lo porta dietro.
 
 ### Nuclei
 
@@ -53,7 +176,8 @@ effetti.
 ### Sfide
 
 Dodici obiettivi che danno una direzione alle partite e insegnano i sistemi. Non medaglie:
-pagano in frammenti, e due sbloccano un nucleo scavalcando il prezzo.
+pagano in frammenti, e due sbloccano un nucleo scavalcando il prezzo. Si prendono una volta —
+per gli obiettivi che si rinnovano ci sono i **contratti**.
 
 ### Terreno
 
@@ -298,13 +422,24 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `G.eliteT` | `03-systems.js` → `updateSpawns` | frequenza degli elite, cioè degli scrigni |
 | `rincorsa` | `03-systems.js` → `bossAI` | elastico del boss: accelera quanto più resta indietro |
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
+| `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
+| `CONGIUNZIONI` | `01-data.js` | le regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa il doppio |
+| `SBLOCCHI` | `01-data.js` | quale runa entra nel mazzo per quale traguardo, in ordine |
+| `CONTRATTI` | `01-data.js` | i ventuno obiettivi che si rinnovano, e il loro premio base |
+| `RELIQUIE` | `01-data.js` | le otto regole comprabili, col prezzo |
 | `G.tenacia` | `03-systems.js` → `direttore` | quanto il direttore ha indurito i nemici in questo momento (1 = non è intervenuto) |
 | `G.chiarezza` | `06-main.js` → `step` | quanto spazio visivo resta ai tuoi effetti: 1 quando il campo è vuoto, .42 quando è pieno |
 | `AREA_RIF` | `02-engine.js` → `calcolaZoom` | l'area di schermo di riferimento: da qui esce `G.zoom`, cioè quanto mondo vedi |
 
 In console è esposto `window.ORBITA` con `G` (stato), `P` (statistiche derivate), `step()`,
-`start()`, `roll()`, `apply()`, `place()`, `recalc()`, `recalcRing()`: serve a far girare partite
-simulate senza renderizzare, che è come sono state misurate e bilanciate le rune.
+`start()`, `reset()`, `endRun()`, `payout()`, `roll()`, `apply()`, `place()`, `recalc()`,
+`recalcRing()`, più le tabelle nuove (`MODI`, `CONGIUNZIONI`, `SBLOCCHI`, `CONTRATTI`,
+`RELIQUIE`) e `congiunzioneDi()`, `rosterGuardiani()`, `metaCost()`, `contrattoPremio()`,
+`statoPartita()`, `semeDelGiorno()`. Serve a far girare partite simulate senza renderizzare,
+che è come sono state misurate e bilanciate le rune, i formati e le congiunzioni.
+
+`reset(nucleo, seme, formato)` prepara una partita senza avviare l'interfaccia, quindi si può
+girare un formato intero in pochi secondi e leggere `G.roster`, `G.cong`, `G.bossKills`.
 
 ```js
 // DPS di una runa a livello 5, 25 secondi simulati
@@ -316,7 +451,10 @@ for (let i = 0; i < 1500; i++) { O.step(1/60); O.P.hp = O.P.maxHp; O.G.pending =
 console.log(Math.round(O.G.dmgDone / 25));
 ```
 
-Il salvataggio sta in `localStorage` sotto `orbita.save.v1`.
+Il salvataggio sta in `localStorage` sotto `orbita.save.v1`, e contiene anche `runes` (il mazzo
+sbloccato), `reliquie`, `contratti`, `modo`, `storico` e `giorno`. Un salvataggio della versione
+precedente si apre senza perdere niente: `sanitizeSave` gli assegna le otto rune di partenza e
+tre contratti alla prima apertura.
 
 ## Licenza
 

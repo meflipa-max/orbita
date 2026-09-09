@@ -147,6 +147,17 @@ const ICO = {
   vortice: 'M20.2 12a8.2 8.2 0 1 1-3.1-6.4|M20.4 2.8v4.2h-4.2',
   orbita: 'M12 12m-2.6 0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0|M12 12m-9 0a9 4.6 0 1 0 18 0a9 4.6 0 1 0-18 0|M20.6 5.6a1.8 1.8 0 1 1-3.6 0 1.8 1.8 0 0 1 3.6 0Z',
   rinascita: 'M12 21a9 9 0 1 0-8.6-11.6|M3 3.4v5.4h5.4|M12 7.6v5l3.4 2',
+  innesco: 'M12 3.2v6|M12 14.6a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z|M6.8 6.6 9.4 9.2|M17.2 6.6 14.6 9.2',
+  ventaglio: 'M4.2 19.4 8 6.6l3.6 1.1|M10 19.6V6.4h4.2v13.2Z|M16.4 19.4 17.4 7l3.2 1',
+  presagio: 'M3.2 12s3.4-5.4 8.8-5.4S20.8 12 20.8 12s-3.4 5.4-8.8 5.4S3.2 12 3.2 12Z|M12 9.6a2.4 2.4 0 1 1 0 4.8 2.4 2.4 0 0 1 0-4.8Z',
+  dominio: 'M12 3v18|M4.2 7.5 19.8 16.5|M19.8 7.5 4.2 16.5',
+  congiunzione: 'M9.4 12a4.6 4.6 0 1 1 9.2 0 4.6 4.6 0 0 1-9.2 0Z|M5.4 12a4.6 4.6 0 1 0 9.2 0 4.6 4.6 0 0 0-9.2 0Z',
+  contratto: 'M6.6 3.6h7.4l3.9 4v12.8H6.6Z|M14 3.6V7.7h3.9|M9.2 12.4h5.6|M9.2 15.8h3.8',
+  reliquia: 'M12 3.2 19.8 9.4 16.9 20.6H7.1L4.2 9.4Z|M4.2 9.4h15.6|M12 3.2 8.6 20.6|M12 3.2l3.4 17.4',
+  storico: 'M4.4 9.2A8 8 0 1 1 4 12.6|M4.4 4.6v4.6h4.6|M12 7.6v4.9l3.2 1.9',
+  giorno: 'M4.6 6.4h14.8v13.2H4.6Z|M4.6 10.4h14.8|M8.4 3.4v4|M15.6 3.4v4|M10.8 14.4h2.4',
+  chiave: 'M14.6 4.8a4.6 4.6 0 1 1-3.3 7.9L4.8 19.2v-2.6h2.6V14h2.7l1.2-1.3a4.6 4.6 0 0 1 3.3-7.9Z|M16.2 8.4h.01',
+  modo: 'M7 4h10|M7 20h10|M7 4c0 4 5 5.4 5 8s-5 4-5 8|M17 4c0 4-5 5.4-5 8s5 4 5 8',
   frammento: 'M12 2.2 15.4 8.6 22 12l-6.6 3.4L12 21.8 8.6 15.4 2 12l6.6-3.4Z'
 };
 function svg(id, cls) {
@@ -217,7 +228,11 @@ const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
 /* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
    elemento risvegliato */
 function canEvolve(r) {
-  return !!(r && EVO[r.id] && r.lv >= 8 && r.res >= 2 && G.awaken[r.el] >= 1);
+  /* Crogiolo (reliquia) sposta la soglia a 7: non toglie la condizione
+     posizionale, che è ciò che rende la trasformazione un progetto — la
+     anticipa di un livello, cioè di qualche minuto. */
+  const soglia = hasRel('crogiolo') ? 7 : 8;
+  return !!(r && EVO[r.id] && r.lv >= soglia && r.res >= 2 && G.awaken[r.el] >= 1);
 }
 
 /* ── passivi ────────────────────────────────────────────────── */
@@ -284,9 +299,43 @@ const BOSSES = [
   { t: 360,  id: 'aracne',  n: 'ARACNE',  hp: 3600,  spd: 132, passo: .80, r: 40, dmg: 28, c: '#b06bff', xp: 170, pat: 'radial' },
   { t: 570,  id: 'titano',  n: 'TITANO',  hp: 7800,  spd: 120, passo: .74, r: 52, dmg: 34, c: '#45d7ff', xp: 260, pat: 'charge' },
   { t: 810,  id: 'aurora',  n: 'AURORA',  hp: 13500, spd: 145, passo: .86, r: 46, dmg: 34, c: '#ffe14f', xp: 380, pat: 'mix' },
-  { t: 1080, id: 'eclissi', n: 'ECLISSI', hp: 26000, spd: 158, passo: .92, r: 58, dmg: 44, c: '#ff3d6e', xp: 700, pat: 'final' }
+  { t: 1080, id: 'eclissi', n: 'ECLISSI', hp: 26000, spd: 158, passo: .92, r: 58, dmg: 44, c: '#ff3d6e', xp: 700, pat: 'final', fine: 1 }
 ];
-const RUN_LEN = 1200; /* 20 minuti */
+const RUN_LEN = 1200; /* 20 minuti: la Corsa. L'Incursione dura MODI[1].len */
+
+/* Chi arriva, quando, e con che pattern.
+   Cinque guardiani sempre nello stesso ordine agli stessi secondi erano
+   metà del motivo per cui la partita 2 era il copione della partita 1.
+   Adesso i NUMERI restano dello slot — vita, velocità, pavimento di
+   velocità, raggio, danno, esperienza sono tarati su quel minuto e non si
+   toccano — mentre IDENTITÀ e PATTERN ruotano fra i primi quattro. Così
+   puoi trovarti le cariche del Titano al 2:30 senza che il 2:30 diventi
+   più duro: cambia cosa devi schivare, non quanto incassi.
+   L'ultimo slot non ruota: il finale deve restare il finale, e la sua
+   bandierina `fine` è ciò che decide la vittoria (vedi 02-engine).        */
+function rosterGuardiani(modo) {
+  const idx = [0, 1, 2, 3];
+  shuffle(idx);
+  const out = [];
+  const piano = modo && modo.guardiani
+    ? modo.guardiani
+    : BOSSES.map((b, i) => ({ i, t: b.t, hp: 1 }));
+  for (let k = 0; k < piano.length; k++) {
+    const passo = piano[k];
+    const slot = BOSSES[passo.i];
+    /* l'identità: per gli slot finali resta la propria, per gli altri quella
+       rimescolata. `pat` e `n`/`c` viaggiano insieme — un guardiano che si
+       chiama Aracne e carica come il Titano non si legge. */
+    const alter = passo.i < 4 ? BOSSES[idx[passo.i]] : slot;
+    out.push({
+      id: alter.id, n: alter.n, c: alter.c, pat: alter.pat,
+      t: passo.t, hp: slot.hp, hpMul: passo.hp || 1,
+      spd: slot.spd, passo: slot.passo, r: slot.r, dmg: slot.dmg, xp: slot.xp,
+      fine: k === piano.length - 1 ? 1 : 0
+    });
+  }
+  return out;
+}
 
 /* ── personaggi ─────────────────────────────────────────────── */
 /* Nuclei. Le statistiche da sole non cambiano come si gioca: si scelgono
@@ -346,21 +395,45 @@ function skinPunti(sk, r) {
   return out;
 }
 
-/* ── potenziamenti permanenti ───────────────────────────────── */
+/* ── potenziamenti permanenti ─────────────────────────
+   L'ordine e i prezzi sono la prima cosa che si incontra dopo la prima
+   sconfitta, quindi decidono se ci sarà una terza partita. Prima le prime
+   spese possibili erano tutte percentuali piccole (+8% vita, +5% danno), e
+   le uniche due voci che cambiano COME giochi — Orbita Estesa e Rinascita —
+   costavano 700 e 1500, cioè più di quanto rende una partita persa al
+   minuto otto (misurato: 942). Le prime tre o quattro iterazioni del giro
+   ricompensa consegnavano quindi zero cambiamento percepito, ed è
+   esattamente lì che si smetteva.
+   Ora in cima ci sono REGOLE a buon mercato, comprabili dopo una partita
+   sola, e i numeri vengono dopo.                                          */
 const META = [
-  { id: 'nucleo',    n: 'Nucleo Denso',   max: 5, c: 60,   step: 1.7, ico: 'vigore',     d: '+8% Vita massima' },
-  { id: 'furia',     n: 'Furia',          max: 5, c: 85,   step: 1.8, ico: 'impeto',     d: '+5% Danno' },
-  { id: 'passo',     n: 'Passo Leggero',  max: 4, c: 70,   step: 1.7, ico: 'celerita',   d: '+4% Velocità' },
-  { id: 'occhio',    n: 'Occhio Acuto',   max: 4, c: 95,   step: 1.8, ico: 'precisione', d: '+3% Critico' },
-  { id: 'avidita',   n: 'Avidità',        max: 4, c: 75,   step: 1.8, ico: 'sapienza',   d: '+8% Esperienza' },
-  { id: 'calamita',  n: 'Calamita',       max: 3, c: 65,   step: 1.8, ico: 'magnete',    d: '+22% Raggio di raccolta' },
-  { id: 'linfa',     n: 'Linfa Stellare', max: 3, c: 120,  step: 1.9, ico: 'linfa',      d: '+0,3 Rigenerazione al secondo' },
-  { id: 'fortuna',   n: 'Fortuna',        max: 4, c: 90,   step: 1.8, ico: 'frammento',  d: '+12% Frammenti raccolti' },
-  { id: 'ripensamento', n: 'Ripensamento', max: 3, c: 140, step: 1.8, ico: 'vortice',   d: '+1 Rilancio per partita' },
+  /* la prima spesa possibile, e cambia la partita invece di ritoccarla:
+     l'apertura a livello 3 vuol dire che il primo Risveglio arriva prima */
+  { id: 'innesco',   n: 'Innesco',        max: 1,  c: 110,  step: 1,    ico: 'innesco',    d: 'La runa d’apertura parte al livello 3' },
+  { id: 'presagio',  n: 'Presagio',       max: 1,  c: 160,  step: 1,    ico: 'presagio',   d: 'Il primo elite arriva al primo minuto' },
+  { id: 'ventaglio', n: 'Ventaglio',      max: 1,  c: 230,  step: 1,    ico: 'ventaglio',  d: 'Quattro carte nei primi tre livelli' },
   /* è il potenziamento che sblocca la libertà di build: con sei alloggiamenti
-     la runa iniziale ti obbliga a usare il suo elemento. Costo ridotto. */
-  { id: 'orbita',    n: 'Orbita Estesa',  max: 2, c: 700,  step: 1.9, ico: 'orbita',     d: '+1 alloggiamento nell’anello' },
-  { id: 'rinascita', n: 'Rinascita',      max: 1, c: 1500, step: 1,   ico: 'rinascita',  d: 'Torni in vita una volta per partita' }
+     la runa iniziale ti obbliga a usare il suo elemento. Costava 700, cioè
+     stava dietro a cinque o sei partite, proprio la voce che più di tutte
+     fa dire «adesso posso provare un'altra cosa». */
+  { id: 'orbita',    n: 'Orbita Estesa',  max: 2,  c: 260,  step: 1.9,  ico: 'orbita',     d: '+1 alloggiamento nell’anello' },
+  { id: 'ripensamento', n: 'Ripensamento', max: 3, c: 140,  step: 1.8,  ico: 'vortice',    d: '+1 Rilancio per partita' },
+  { id: 'rinascita', n: 'Rinascita',      max: 1,  c: 1500, step: 1,    ico: 'rinascita',  d: 'Torni in vita una volta per partita' },
+
+  { id: 'nucleo',    n: 'Nucleo Denso',   max: 5,  c: 60,   step: 1.7,  ico: 'vigore',     d: '+8% Vita massima' },
+  { id: 'furia',     n: 'Furia',          max: 5,  c: 85,   step: 1.8,  ico: 'impeto',     d: '+5% Danno' },
+  { id: 'passo',     n: 'Passo Leggero',  max: 4,  c: 70,   step: 1.7,  ico: 'celerita',   d: '+4% Velocità' },
+  { id: 'occhio',    n: 'Occhio Acuto',   max: 4,  c: 95,   step: 1.8,  ico: 'precisione', d: '+3% Critico' },
+  { id: 'avidita',   n: 'Avidità',        max: 4,  c: 75,   step: 1.8,  ico: 'sapienza',   d: '+8% Esperienza' },
+  { id: 'calamita',  n: 'Calamita',       max: 3,  c: 65,   step: 1.8,  ico: 'magnete',    d: '+22% Raggio di raccolta' },
+  { id: 'linfa',     n: 'Linfa Stellare', max: 3,  c: 120,  step: 1.9,  ico: 'linfa',      d: '+0,3 Rigenerazione al secondo' },
+  { id: 'fortuna',   n: 'Fortuna',        max: 4,  c: 90,   step: 1.8,  ico: 'frammento',  d: '+12% Frammenti raccolti' },
+  /* Il pozzo senza fondo. Comprato tutto il resto — 12.404 frammenti di
+     potenziamenti più 9.300 di nuclei — i frammenti smettevano di comprare
+     qualcosa mentre payout() continuava a versarli, e una valuta che non
+     compra più niente è un giro rotto. Quaranta livelli a passo 1,14 costano
+     oltre mezzo milione: nessuno lo finisce, ed è esattamente il punto. */
+  { id: 'dominio',   n: 'Dominio',        max: 40, c: 400,  step: 1.14, ico: 'dominio',    d: '+1,5% Danno · senza fine' }
 ];
 const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
 
@@ -419,4 +492,169 @@ function ascMods(lv) {
     if (a.twin) m.twin = 1;
   }
   return m;
+}
+
+/* ── modi di gioco ──────────────────────────────────────────────
+   La Corsa da venti minuti era l'unico formato, e per chi comincia venti
+   minuti sono una decisione, non un impulso: la prima conclusione arrivava
+   dopo ore, cioè SAVE.wins restava 0 abbastanza a lungo da far smettere
+   prima — e tutta la coda lunga del gioco, le tredici ascensioni, sta
+   dietro a quella prima vittoria.
+   L'Incursione non è la Corsa tagliata a metà: è ritarata. Il calendario
+   dei contenuti scorre più in fretta (`onda`), i nemici si irrobustiscono
+   più in fretta (`tempra`), tu sali di livello più in fretta (`xp`), e i
+   tre guardiani hanno una vita loro invece di quella dello slot — perché a
+   parità di minuti la tua build è più debole di quanto sarebbe nella Corsa.
+     len    quanto dura, in secondi
+     onda   moltiplicatore del tempo per ondate e ritmo di comparsa
+     tempra moltiplicatore del tempo per la crescita di vita dei nemici
+     xp     quanto più in fretta sali di livello
+     guardiani  quale slot di BOSSES, a che secondo, con quanta della sua vita */
+const MODI = [
+  { id: 'corsa', n: 'Corsa', d: '20 minuti · cinque guardiani',
+    sub: 'Il formato pieno: cinque guardiani, poi modalità senza fine.',
+    len: 1200, onda: 1, tempra: 1, xp: 1,
+    guardiani: null },
+  { id: 'incursione', n: 'Incursione', d: '8 minuti · tre guardiani',
+    sub: 'Una partita intera, vittoria compresa, nel tempo di un caffè.',
+    len: 480, onda: 2.15, tempra: 1.65, xp: 1.85, paga: .8,
+    guardiani: [{ i: 0, t: 100, hp: .85 }, { i: 2, t: 245, hp: .5 }, { i: 4, t: 410, hp: .36 }] }
+];
+const modoDi = id => MODI.find(m => m.id === id) || MODI[0];
+
+/* ── congiunzioni ───────────────────────────────────────────────
+   Il Nodo elementale è la cosa che dà più varietà fra una corsa e l'altra,
+   perché non cambia un numero: cambia la domanda della corsa. La
+   congiunzione porta lo stesso principio a tutta l'arena — una regola
+   sorteggiata dal seme e DICHIARATA prima di partire, così è una cosa che
+   scegli come giocare, non una sorpresa che subisci.
+   La Quiete pesa il doppio delle altre: una corsa su quattro deve restare
+   quella di sempre, o «modificata» smette di voler dire qualcosa.          */
+const CONGIUNZIONI = [
+  { id: 'quiete', n: 'Quiete', c: '#9c93c6', w: 6,
+    d: 'Nessuna congiunzione: l’arena è quella di sempre.', m: {} },
+  /* il direttore ricompensa in parte la vita tolta — è il suo mestiere —
+     ma il ritmo di comparsa non lo tocca: la marea si vede lo stesso */
+  { id: 'sciame', n: 'Sciame', c: '#6d78b8', w: 3,
+    d: 'Molti più nemici, ognuno molto più fragile.', m: { rate: 1.75, hp: .5 } },
+  { id: 'carestia', n: 'Carestia', c: '#ffc857', w: 3,
+    d: 'Niente cuori né bombe a terra, ma i frammenti rendono il 70% in più.', m: { noDrops: 1, shard: 1.7 } },
+  { id: 'eco', n: 'Eco', c: '#ff7de3', w: 3,
+    d: 'I Risvegli richiedono una runa in meno, i guardiani hanno il 40% di vita in più.', m: { chain: -1, bossHp: 1.4 } },
+  { id: 'cintura', n: 'Cintura', c: '#8b7ddb', w: 3,
+    d: 'Il doppio degli asteroidi, e il doppio dei Nodi elementali.', m: { rocce: 1.9, nodo: 1.9 } },
+  { id: 'tempesta', n: 'Tempesta', c: '#45d7ff', w: 3,
+    d: 'Un evento d’arena ogni quaranta secondi invece che ogni novanta.', m: { ev: .45 } },
+  { id: 'vetro', n: 'Vetro', c: '#ff3d6e', w: 3,
+    d: 'Parti con metà vita, ma infliggi il 40% di danno in più.', m: { startHp: .5, dmg: 1.4 } },
+  { id: 'fuga', n: 'Fuga', c: '#6ff2c4', w: 3,
+    d: 'Tutti si muovono il 18% più veloci, tu compreso.', m: { spd: 1.18, pspd: 1.18 } }
+];
+/* Sorteggiata dal seme e non dal flusso della partita: il seme decide la
+   corsa PRIMA che cominci, quindi si può mostrare sotto al bottone che la
+   fa partire, e «ripeti questa semenza» ripete anche la congiunzione. */
+function congiunzioneDi(seed) {
+  let h = ((seed >>> 0) ^ 0x9e3779b9) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 2246822507) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0;
+  h = (h ^ (h >>> 16)) >>> 0;
+  let tot = 0; for (const c of CONGIUNZIONI) tot += c.w;
+  let r = (h % 10000) / 10000 * tot;
+  for (const c of CONGIUNZIONI) { r -= c.w; if (r <= 0) return c; }
+  return CONGIUNZIONI[0];
+}
+/* i modificatori attivi, già fusi coi valori neutri: chi li legge non deve
+   sapere se c'è una congiunzione o no */
+function congMods(c) {
+  const m = Object.assign({ rate: 1, hp: 1, chain: 0, bossHp: 1, rocce: 1, nodo: 1, ev: 1, startHp: 1, dmg: 1, spd: 1, pspd: 1, shard: 1, noDrops: 0 }, (c && c.m) || {});
+  return m;
+}
+
+/* ── rune da sbloccare ──────────────────────────────────────────
+   Tutte e sedici le rune stavano nel mazzo al primo livello della prima
+   partita: non esisteva, in tutta la vita del giocatore, il momento «ho
+   trovato una runa nuova». Adesso si parte con otto — le sei aperture, che
+   devono restare tutte scegliibili, più due — e le altre otto arrivano una
+   per traguardo, cioè una quasi ogni partita per le prime dieci.
+   I traguardi non sono arbitrari: ognuno chiede di fare una cosa che il
+   gioco vuole insegnarti (durare, accendere un Risveglio, abbattere un
+   guardiano, portare una runa in alto).                                    */
+const RUNE_BASE = ['scintilla', 'scheggia', 'arco', 'sciame', 'raggio', 'iride', 'nova', 'falce'];
+const SBLOCCHI = [
+  { id: 'pira',         d: 'Sopravvivi quattro minuti in una partita.',  f: s => s.t >= 240 },
+  { id: 'filo',         d: 'Accendi un Risveglio.',                      f: s => s.awakeMax >= 1 },
+  { id: 'cristallo',    d: 'Abbatti un guardiano.',                      f: s => s.bossKills >= 1 },
+  { id: 'bruma',        d: 'Porta una runa al livello 5.',               f: s => s.maxLv >= 5 },
+  { id: 'prisma',       d: '500 eliminazioni in una partita.',           f: s => s.kills >= 500 },
+  { id: 'tempesta',     d: 'Sopravvivi otto minuti in una partita.',     f: s => s.t >= 480 },
+  { id: 'aureola',      d: 'Porta un Risveglio al secondo grado.',       f: s => s.tier2 },
+  { id: 'singolarita',  d: 'Abbatti tre guardiani in una sola partita.', f: s => s.bossKills >= 3 }
+];
+
+/* ── contratti ──────────────────────────────────────────────────
+   Le dodici sfide sono chiavi: si prendono una volta e finiscono. Dopo
+   quelle non restava nessun obiettivo a portata, e «ascendi» — che chiede
+   di vincere una corsa da venti minuti — non è un obiettivo a portata.
+   I contratti sono tre alla volta, si rinnovano appena li completi, e il
+   premio segue l'ascensione massima raggiunta così non diventano spiccioli.
+   Sono valutati con lo stesso oggetto di statistiche delle sfide.          */
+const CONTRATTI = [
+  { id: 'lungo',    n: 'Corsa lunga',    d: 'Sopravvivi dodici minuti in una partita.',            r: 320, f: s => s.t >= 720 },
+  { id: 'falciata', n: 'Falciata',       d: '900 eliminazioni in una partita.',                    r: 300, f: s => s.kills >= 900 },
+  { id: 'coro',     n: 'Coro',           d: 'Tieni due Risvegli accesi insieme.',                  r: 340, f: s => s.awakeMax >= 2 },
+  { id: 'apice',    n: 'Apice',          d: 'Porta un Risveglio al terzo grado.',                  r: 540, f: s => s.tier3 },
+  { id: 'forma',    n: 'Cambio di forma',d: 'Trasforma una runa.',                                 r: 400, f: s => s.evo >= 1 },
+  { id: 'cerchio',  n: 'Cerchio chiuso', d: 'Riempi ogni alloggiamento dell’anello.',              r: 260, f: s => s.pieno },
+  { id: 'illeso',   n: 'Illeso',         d: 'Arriva al sesto minuto senza scendere a metà vita.',  r: 360, f: s => s.t >= 360 && !s.lowHp },
+  { id: 'terna',    n: 'Terna',          d: 'Abbatti tre guardiani in una partita.',               r: 420, f: s => s.bossKills >= 3 },
+  { id: 'cinque',   n: 'Cinquina',       d: 'Abbatti cinque guardiani in una partita.',            r: 640, f: s => s.bossKills >= 5 },
+  { id: 'fretta',   n: 'Fretta',         d: 'Accendi un Risveglio entro il quarto minuto.',        r: 320, f: s => s.awakeAt > 0 && s.awakeAt <= 240 },
+  { id: 'ordine',   n: 'Ordine',         d: 'Sopravvivi dieci minuti senza riordinare l’anello.',  r: 440, f: s => s.t >= 600 && s.reorders === 0 },
+  { id: 'ponte',    n: 'Ponte',          d: 'Due Risvegli con un’Iride nell’anello.',              r: 400, f: s => s.awakeMax >= 2 && s.iride },
+  { id: 'ardore',   n: 'Ardore',         d: 'Arriva al decimo minuto con Ardore acceso.',          r: 380, f: s => s.t >= 600 && s.aw.fuoco >= 1 },
+  { id: 'torpore',  n: 'Torpore',        d: 'Arriva al decimo minuto con Torpore acceso.',         r: 380, f: s => s.t >= 600 && s.aw.gelo >= 1 },
+  { id: 'carica',   n: 'Sovraccarico',   d: 'Arriva al decimo minuto con Sovraccarico acceso.',    r: 380, f: s => s.t >= 600 && s.aw.fulmine >= 1 },
+  { id: 'collasso', n: 'Collasso',       d: 'Arriva al decimo minuto con Collasso acceso.',        r: 380, f: s => s.t >= 600 && s.aw.vuoto >= 1 },
+  { id: 'radianza', n: 'Radianza',       d: 'Arriva al decimo minuto con Radianza accesa.',        r: 380, f: s => s.t >= 600 && s.aw.luce >= 1 },
+  { id: 'frugale',  n: 'Frugale',        d: 'Arriva all’ottavo minuto senza rilanciare una carta.',r: 360, f: s => s.t >= 480 && s.rerollUsati === 0 },
+  { id: 'lampo',    n: 'Lampo',          d: 'Vinci un’Incursione.',                                r: 520, f: s => s.win && s.modo === 'incursione' },
+  { id: 'trionfo',  n: 'Trionfo',        d: 'Vinci una partita.',                                  r: 700, f: s => s.win },
+  { id: 'salita',   n: 'Salita',         d: 'Vinci ad ascensione 2 o superiore.',                  r: 900, f: s => s.win && s.ascLv >= 2 }
+];
+/* il premio sale con l'ascensione massima raggiunta: a livello 6 un
+   contratto da 320 ne vale 550, o smetterebbe di essere un motivo */
+const contrattoPremio = (c) => Math.round(c.r * (1 + (SAVE.asc | 0) * .12));
+
+/* ── reliquie ───────────────────────────────────────────────────
+   Il capitolo caro dell'Osservatorio, e l'unico dove ogni voce è una
+   regola: i potenziamenti sono numeri, le reliquie cambiano cosa succede.
+   Si comprano una volta e valgono per sempre, e servono a dare ai
+   frammenti qualcosa di grosso da comprare quando le prime spese —
+   quelle che devono essere a buon mercato — sono finite.                   */
+const RELIQUIE = [
+  { id: 'semenza',   n: 'Semenza',        c: 1400, ico: 'innesco',   d: 'Inizi ogni partita con un livello già preso.' },
+  { id: 'mercante',  n: 'Mercante',       c: 1600, ico: 'frammento', d: 'Dissolvere una runa rende il doppio dei frammenti.' },
+  { id: 'richiamo',  n: 'Richiamo',       c: 1800, ico: 'orbita',    d: 'Gli eventi d’arena arrivano il 35% più spesso.' },
+  { id: 'avanzo',    n: 'Avanzo',         c: 1900, ico: 'linfa',     d: 'Saltare una carta cura il doppio e dà 120 frammenti.' },
+  { id: 'bussola',   n: 'Bussola',        c: 2300, ico: 'magnete',   d: 'Un Nodo dell’arena è sempre sintonizzato sulla tua apertura.' },
+  { id: 'crogiolo',  n: 'Crogiolo',       c: 2600, ico: 'cometa',    d: 'Le trasformazioni arrivano al livello 7 invece che all’8.' },
+  { id: 'coro',      n: 'Coro di stelle', c: 3000, ico: 'vortice',   d: 'Ogni Risveglio acceso dà +7% danno a tutte le rune.' },
+  { id: 'respiro',   n: 'Respiro',        c: 3400, ico: 'rinascita', d: 'Una volta per partita, scendere sotto un quarto di vita ti cura del 30% e ti rende intoccabile per tre secondi.' }
+];
+const hasRel = id => SAVE.reliquie.indexOf(id) >= 0;
+
+/* ── corsa del giorno ───────────────────────────────────────────
+   Stessa data, stesso seme, quindi stessa arena, stesse carte e stessa
+   congiunzione per chiunque la giochi: è l'unico modo, in un gioco senza
+   rete, di avere una partita che si può confrontare — e un motivo per
+   riaprirlo domani invece che mai.                                          */
+function dataOggi(d) {
+  const x = d || new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+}
+function semeDelGiorno(iso) {
+  const s = iso || dataOggi();
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return (h || 1) >>> 0;
 }

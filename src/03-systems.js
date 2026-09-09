@@ -762,9 +762,15 @@ function updateParts(dt) {
 }
 
 /* ── generazione ────────────────────────────────────────────── */
+/* Il tempo del CONTENUTO, che nell'Incursione scorre più in fretta di
+   quello dell'orologio: a otto minuti reali hai attraversato la stessa
+   curva di ondate di una Corsa da venti. Non tocca il direttore, che
+   misura la potenza e non il cronometro. */
+function tempoContenuto() { return G.t * (G.modo.onda || 1); }
 function currentPool() {
+  const tc = tempoContenuto();
   let p = WAVES[0].pool;
-  for (const w of WAVES) if (G.t >= w.t) p = w.pool;
+  for (const w of WAVES) if (tc >= w.t) p = w.pool;
   return p;
 }
 function spawnRing(type, opts) {
@@ -794,7 +800,12 @@ function genRocks() {
   G.rocks.length = 0;
   G.nodo = null; G.nodoK = null;
   let nodi = 0;
-  const n = 40;
+  const n = Math.round(40 * G.cg.rocce);
+  /* Bussola (reliquia): un Nodo sintonizzato sulla tua apertura c'è sempre.
+     Senza, l'elemento su cui hai costruito l'anello poteva non comparire
+     affatto in tutta la partita — cioè la scelta di apertura e l'arena si
+     ignoravano a vicenda proprio quando dovrebbero parlarsi. */
+  let bussola = hasRel('bussola') && SAVE.apertura !== 'iride' ? SAVE.apertura : null;
   for (let i = 0; i < n * 8 && G.rocks.length < n; i++) {
     const r = rand(126, 54);
     const x = rand(ARENA - r - 120, -ARENA + r + 120);
@@ -812,7 +823,16 @@ function genRocks() {
     /* Un quarto delle formazioni è un Nodo elementale. L'elemento è
        sorteggiato a ogni partita: l'arena stessa favorisce build diverse,
        ed è questo a dare varietà fra una corsa e l'altra. */
-    if (nodi < 10 && chance(.26)) { k.nodo = pick(ELKEYS); k.aura = r + 128; nodi++; }
+    const soglia = Math.min(.62, .26 * G.cg.nodo);
+    if (nodi < Math.round(10 * G.cg.nodo) && chance(soglia)) {
+      /* `pick` si chiama SEMPRE, anche quando la Bussola ne scarta il
+         risultato: consuma un numero del flusso col seme, e saltarlo
+         darebbe arene diverse a chi ha la reliquia e a chi no — cioè
+         la corsa del giorno smetterebbe di essere la stessa per tutti. */
+      const sorteggiato = pick(ELKEYS);
+      k.nodo = bussola || sorteggiato; bussola = null;
+      k.aura = r + 128; nodi++;
+    }
     G.rocks.push(k);
   }
 }
@@ -929,7 +949,10 @@ function apriEvento() {
 function updateEventi(dt) {
   if (!G.ev) {
     G.evT -= dt;
-    if (G.evT <= 0 && G.t > 55 && !G.boss) { G.evT = rand(105, 80); apriEvento(); }
+    /* Tempesta (congiunzione) e Richiamo (reliquia) si moltiplicano: chi ha
+       comprato il Richiamo e pesca la Tempesta gioca una partita che è
+       quasi solo eventi, che è un modo di giocare, non un difetto. */
+    if (G.evT <= 0 && G.t > 55 && !G.boss) { G.evT = rand(105, 80) * G.cg.ev * (hasRel('richiamo') ? .65 : 1); apriEvento(); }
     return;
   }
   const v = G.ev; v.t += dt;
@@ -1044,8 +1067,9 @@ function updateSpawns(dt) {
      nemici piu' tenaci la pressione non ha piu' bisogno di venire dal
      numero, e duecentoquaranta sagome a schermo erano una delle ragioni per
      cui a meta' partita non si distingueva piu' la strada dai nemici. */
+  const tc = tempoContenuto();
   const cap = (W < 700 ? 115 : 160);
-  const maxE = Math.round(cap * clamp(.42 + G.t / 900 + G.diff, .42, 1));
+  const maxE = Math.round(cap * clamp(.42 + tc / 900 + G.diff, .42, 1));
   /* L'apertura era troppo tranquilla: a mezzo minuto c'erano undici nemici
      in campo e il primo livello arrivava dopo venti secondi di niente. In un
      bullet heaven il primo minuto deve gia' dire cos'e' il gioco. Adesso si
@@ -1055,7 +1079,7 @@ function updateSpawns(dt) {
      sei nemici a schermo con una build forte, che non e' piu' un bullet
      heaven. Questo esponente e' quello che tiene la densita' ferma mentre
      la vita nemica si concentra su meno bersagli piu' duri. */
-  const rate = Math.min(13, (1.8 + G.t / 28 + G.diff * 2.4) * G.asc.rate) / Math.pow(G.tenacia, .65);
+  const rate = Math.min(13, (1.8 + tc / 28 + G.diff * 2.4) * G.asc.rate * G.cg.rate) / Math.pow(G.tenacia, .65);
   G.spawnAcc += dt * rate;
   const pool = currentPool();
   while (G.spawnAcc >= 1) {
@@ -1069,7 +1093,7 @@ function updateSpawns(dt) {
        i livelli rallentavano, il totale delle interruzioni non calava mai:
        una schermata di carte ogni tredici-diciotto secondi per mezz'ora.
        Adesso la cadenza degli elite resta ferma. */
-    G.eliteT = Math.max(78, 88 - G.t / 50);
+    G.eliteT = Math.max(78, 88 - tc / 50);
     const e = spawnRing(pick(pool), { elite: true, rMul: 1.55, spdMul: .88 });
     if (e) { e.c = '#ffc857'; }
     /* la prima volta va detto a parole, e solo alle prime partite: dopo
@@ -1079,8 +1103,8 @@ function updateSpawns(dt) {
       UI.toast('ELITE', 'La barra sopra la testa è la sua vita', '#ffc857');
     }
   }
-  if (G.bossIdx < BOSSES.length && G.t >= Math.max(45, BOSSES[G.bossIdx].t + G.asc.boss)) {
-    const def = BOSSES[G.bossIdx];
+  if (G.bossIdx < G.roster.length && G.t >= Math.max(45, G.roster[G.bossIdx].t + G.asc.boss)) {
+    const def = G.roster[G.bossIdx];
     spawnBoss(def);
     /* in coppia dal terzo guardiano: il gemello è più fragile, ma raddoppia
        le cose da schivare contemporaneamente */
@@ -1090,5 +1114,5 @@ function updateSpawns(dt) {
     }
     G.bossIdx++;
   }
-  if (G.t > RUN_LEN && !G.victory) { G.diff += dt * .006; }
+  if (G.t > G.modo.len && !G.victory) { G.diff += dt * .006; }
 }

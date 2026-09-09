@@ -22,6 +22,9 @@ function showMoveHint() {
 function hideMoveHint() { elHint.className = 'clip'; G.hint = 0; G.hintOff = 0; }
 
 function shardIcon() { return svg('frammento'); }
+/* la corsa del giorno di OGGI è già stata giocata? Il record di ieri non
+   conta: il seme è cambiato, quindi non è più lo stesso confronto. */
+function giornoFatto() { return SAVE.giorno && SAVE.giorno.d === dataOggi() && SAVE.giorno.t > 0; }
 const ARC = (r, a1, a2) => {
   const x1 = 50 + Math.cos(a1) * r, y1 = 50 + Math.sin(a1) * r;
   const x2 = 50 + Math.cos(a2) * r, y2 = 50 + Math.sin(a2) * r;
@@ -75,9 +78,11 @@ const UI = {
     elHpT.textContent = Math.ceil(Math.max(0, P.hp)) + ' / ' + Math.round(P.maxHp);
     elClock.textContent = fmtTime(G.t);
     elKills.textContent = G.kills + ' ELIMINAZIONI';
-    const nb = BOSSES[G.bossIdx];
+    /* il roster della partita, non la tabella globale: l'ordine si rimescola
+       e l'Incursione ne salta due, quindi il prossimo nome è quello vero */
+    const nb = G.roster[G.bossIdx];
     if (nb && !G.boss) {
-      const left = Math.max(0, nb.t - G.t);
+      const left = Math.max(0, Math.max(45, nb.t + G.asc.boss) - G.t);
       elNext.className = left < 25 ? 'on soon' : 'on';
       elNext.innerHTML = '<i></i>' + nb.n + ' ' + fmtTime(left);
     } else elNext.className = '';
@@ -101,6 +106,32 @@ const UI = {
   },
 
   /* ── titolo ─────────────────────────────────────────────── */
+  /* Il seme della PROSSIMA partita, pescato dal menu invece che dall'avvio.
+     Serve a una cosa sola: la congiunzione è sorteggiata dal seme, quindi
+     fissandolo qui si può scriverla sotto al bottone che fa partire la
+     corsa. Una regola che scopri al terzo minuto è una sorpresa; una che
+     leggi prima di toccare Gioca è una scelta. */
+  seme: 0,
+  prossimoSeme() { return this.seme || (this.seme = newSeed()); },
+
+  /* i due formati, come due bersagli da pollice: è la scelta che decide se
+     la prima sessione conterrà una conclusione o no */
+  modoHTML() {
+    return '<div class="modorow">' + MODI.map(m =>
+      '<button class="modo clip' + (SAVE.modo === m.id ? ' on' : '') + '" data-a="modo" data-id="' + m.id + '">' +
+      '<span class="face"><span class="mn">' + m.n + '</span><span class="md">' + m.d + '</span></span></button>'
+    ).join('') + '</div>';
+  },
+
+  /* la congiunzione di questa corsa, dichiarata */
+  congHTML(seed) {
+    const c = congiunzioneDi(seed);
+    const quiete = c.id === 'quiete';
+    return '<div class="cong clip' + (quiete ? ' calma' : '') + '" style="--c:' + c.c + '">' +
+      '<span class="ci clip">' + svg('congiunzione') + '</span>' +
+      '<span class="ct"><b>' + c.n + '</b>' + c.d + '</span></div>';
+  },
+
   title() {
     const best = SAVE.best ? fmtTime(SAVE.best) : '—';
     const nu = CHARS.find(c => c.id === SAVE.char) || CHARS[0];
@@ -110,6 +141,7 @@ const UI = {
     const cfg = '<button class="cfg clip" data-a="hub"><span class="face">' +
       '<span class="pt" style="--c:' + nu.c + '">' + nu.n + '</span>' +
       '<span class="pt" style="--c:' + apEl.c + '">' + apEl.n + ' · ' + RUNES[ap.id].n + '</span>' +
+      '<span class="pt" style="--c:#6ff2c4">' + modoDi(SAVE.modo).n + '</span>' +
       (ascSel ? '<span class="pt" style="--c:#ffc857">Ascensione ' + ascSel + '</span>' : '') +
       '<span class="cam">cambia</span></span></button>';
     const chips = ELKEYS.map((e, i) =>
@@ -122,12 +154,19 @@ const UI = {
       '<p class="sub">Le tue rune ti girano intorno. Quelle vicine dello stesso elemento <em>risuonano</em>: tre di fila accendono un Risveglio che cambia le regole della partita.</p>' +
       '<div class="legend elrow">' + chips + '</div>' +
       '<div class="cta">' +
+      this.modoHTML() +
+      this.congHTML(this.prossimoSeme()) +
       '<button class="btn primary clip" data-a="go"><span class="face">Gioca</span></button>' +
       /* Cosa stai per giocare, scritto sotto al bottone che lo fa partire:
          e' anche l'unico modo di scoprire che si puo' cambiare, ora che
          Gioca non passa piu' dall'Osservatorio */
       cfg +
-      '<div class="btnrow">' +
+      /* la corsa del giorno sta nella riga dei bottoni secondari e non su una
+         riga sua: la schermata del titolo ha già guadagnato due elementi
+         (formato e congiunzione), e Gioca deve restare sopra la piega */
+      '<div class="btnrow tre">' +
+      '<button class="btn ghost clip giorno" data-a="giorno"><span class="face">' +
+      svg('giorno') + (giornoFatto() ? fmtTime(SAVE.giorno.t) : 'Del giorno') + '</span></button>' +
       '<button class="btn ghost clip" data-a="guide"><span class="face">Guida</span></button>' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
       '</div></div>' +
@@ -190,11 +229,25 @@ const UI = {
         p('I nemici non seguono solo il cronometro: seguono <b>quanto sei forte</b>. Il gioco misura a che distanza da te muoiono, e se li stai disintegrando prima ancora che entrino nello schermo li rende <b>più tenaci</b> — meno nemici, ognuno più duro e che vale di più — finché tornano ad arrivarti a tiro. Un nemico temprato si riconosce dal <b>bordo caldo</b>.') +
         p('Vale anche al contrario: se ti stanno addosso la stretta si allenta da sola, e sotto un terzo di vita smette del tutto. Non è una punizione per chi gioca bene — schivare resta la risposta giusta e funziona sempre — è la garanzia che nessuna build ti renda intoccabile per i venti minuti che restano.')) +
 
+      sec('Due formati',
+        p('La <b>Corsa</b> dura venti minuti e ha cinque guardiani, poi continua senza fine. L’<b>Incursione</b> ne dura otto e ne ha tre — non è la Corsa tagliata: sali di livello quasi il doppio più in fretta, le ondate scorrono più veloci e i guardiani hanno una vita loro. Vincere vale ugualmente per l’ascensione.') +
+        p('Il formato si sceglie dal menu, sopra al bottone Gioca.')) +
+
+      sec('Congiunzioni',
+        p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, il doppio degli asteroidi, i Risvegli che chiedono una runa in meno. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
+        p('Non è una difficoltà in più: è una domanda diversa. La stessa semenza dà sempre la stessa congiunzione, quindi «ripeti questa semenza» ripete anche quella.')) +
+
+      sec('Il mazzo cresce',
+        p('Si comincia con <b>otto rune</b> su sedici. Le altre entrano nel mazzo una alla volta, per traguardi: sopravvivere quattro minuti, accendere un Risveglio, abbattere un guardiano, portare una runa al quinto livello. L’Osservatorio dice sempre qual è la prossima e cosa chiede.')) +
+
+      sec('Contratti',
+        p('Tre obiettivi sempre in corso, e appena ne completi uno ne arriva un altro. Pagano in frammenti, e il premio cresce con l’ascensione più alta che hai raggiunto. Servono a dare una direzione alla partita di stasera quando le dodici <b>sfide</b> — che invece si prendono una volta sola — sono finite.')) +
+
       sec('Sopravvivere',
-        p('Cinque guardiani in venti minuti, con un conto alla rovescia in alto a destra. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('I guardiani hanno un conto alla rovescia in alto a destra. <b>Identità e pattern ruotano a ogni partita</b>, i numeri no: puoi trovarti le cariche del Titano al secondo minuto senza che il secondo minuto sia più duro. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
         p('A terra cadono anche <b>cuori</b> (vita) e <b>bombe</b>: la bomba non colpisce i dintorni, <b>uccide ogni nemico della mappa</b> tranne i guardiani. Il dono più vicino porta scritto cos’è.') +
         p('I nemici con una <b>barra sopra la testa</b> — elite dorati, corrieri e guardiani — sono quelli che vale la pena finire: quella barra è la loro <b>vita</b>. La scia bianca è il danno appena inflitto, e il colore vira al rosso quando stanno per cedere. In cima allo schermo c’è la barra dei guardiani: se ne hai addosso più d’uno — gemelli compresi — si <b>divide in un tratto per ciascuno</b>, largo quanto la sua stazza, col nome dello stesso colore.') +
-        p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e sfide.')) +
+        p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e <b>reliquie</b> — quelle sono care, ma ognuna è una regola invece di una percentuale.')) +
 
       '</div></div>' +
       '<button class="btn clip" style="max-width:280px;margin:0 auto" data-a="title"><span class="face">Indietro</span></button>'
@@ -281,6 +334,10 @@ const UI = {
       '<div class="reward' + (this.spesa ? ' spesa' : '') + '">' + shardIcon() + SAVE.shards +
       (this.spesa ? '<span class="delta">-' + this.spesa + '</span>' : '') + '</div></div>' +
 
+      '<div class="eyebrow" style="text-align:left">Formato · quanto dura</div>' +
+      this.modoHTML() +
+      '<div class="apnota" style="--c:#6ff2c4"><b>' + modoDi(SAVE.modo).n + '</b> · ' + modoDi(SAVE.modo).sub + '</div>' +
+
       '<div class="eyebrow" style="text-align:left">Apertura · da dove parti</div>' +
       '<div class="aprow">' + aprow + '</div>' +
       '<div class="apnota" style="--c:' + apCol(ap.el) + '"><b>' + RUNES[ap.id].n + '</b> · ' + apNota + '</div>' +
@@ -294,19 +351,28 @@ const UI = {
       '<div class="seedrow"><label for="seedin">Numero</label>' +
       '<input id="seedin" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="vuoto = casuale">' +
       '<span class="sh">Stesso numero, stessa partita: stesse ondate, stessi asteroidi, stesse carte.</span></div></details>' +
+      /* la congiunzione anche qui: dovunque si possa far partire una corsa,
+         si deve poter leggere che corsa è */
+      this.congHTML(this.prossimoSeme()) +
       '<div class="btnrow" style="max-width:420px;margin:10px auto 0">' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
       '<button class="btn primary clip" data-a="start"><span class="face">Inizia</span></button>' +
       '</div>' +
 
+      '<div class="hubsep"><span>Obiettivi</span></div>' +
+      this.contrattiHTML() +
+      this.runeHTML() +
+
       '<div class="hubsep"><span>Frammenti</span></div>' +
       '<div class="eyebrow" style="text-align:left">Potenziamenti permanenti</div>' +
       '<div class="grid2">' + ups + '</div>' +
+      this.reliquieHTML() +
       (bloccati.length
         ? '<div class="eyebrow" style="text-align:left;margin-top:4px">Nuclei da sbloccare</div>' +
           '<div class="chars">' + bloccati.map(carta).join('') + '</div>'
         : '') +
       this.sfideHTML() +
+      this.storicoHTML() +
       (STORE_OK ? '' : '<div class="warn clip" style="max-width:none">Questo browser non concede memoria al gioco: senza backup i progressi si perdono chiudendo la scheda.</div>') +
       '<details class="backup"' + (this.backupOpen ? ' open' : '') + '><summary>Backup dei progressi</summary>' +
       '<p class="hint" style="text-align:left;margin:0 0 8px">Il codice contiene frammenti, potenziamenti, nuclei e record. Conservalo per spostare i progressi su un altro dispositivo o per recuperarli se il browser cancella i dati del sito.</p>' +
@@ -319,6 +385,89 @@ const UI = {
       '</details>'
     );
     this.spesa = 0;
+  },
+
+  /* ── contratti ───────────────────────────────────────────
+     Tre alla volta, e appena ne completi uno ne arriva un altro. Le sfide
+     restano quello che sono — chiavi che si prendono una volta — e i
+     contratti sono il motivo per la partita di stasera quando le chiavi
+     sono finite. */
+  contrattiHTML(compatto) {
+    const righe = SAVE.contratti.map(id => {
+      const c = CONTRATTI.find(x => x.id === id); if (!c) return '';
+      return '<div class="sfida clip">' +
+        '<span class="sn">' + c.n + '</span>' +
+        '<span class="sd">' + c.d + '</span>' +
+        '<span class="sr">' + shardIcon() + '+' + contrattoPremio(c) + '</span>' +
+        '</div>';
+    }).join('');
+    return (compatto ? '' : '<div class="eyebrow" style="text-align:left;margin-top:4px">Contratti · si rinnovano</div>') +
+      '<div class="sfidelist">' + righe + '</div>';
+  },
+
+  /* ── reliquie ────────────────────────────────────────────
+     Il capitolo caro, e l'unico dove ogni voce è una regola invece di una
+     percentuale. Sta dopo i potenziamenti perché è lì che si arriva quando
+     le prime spese, quelle che devono costare poco, sono finite. */
+  reliquieHTML() {
+    const righe = RELIQUIE.map(r => {
+      const own = hasRel(r.id);
+      const poor = !own && SAVE.shards < r.c;
+      const arm = this.armato === 'rel:' + r.id;
+      const riga = arm
+        ? '<span class="ds conf">Tocca ancora: spendi ' + r.c + ', te ne restano ' + (SAVE.shards - r.c) + '</span>'
+        : poor
+          ? '<span class="ds">' + r.d + ' <span class="caro">· te ne mancano ' + (r.c - SAVE.shards) + '</span></span>'
+          : '<span class="ds">' + r.d + '</span>';
+      return '<button class="up clip' + (own ? ' max' : '') + (poor ? ' poor' : '') + (arm ? ' arm' : '') +
+        '" data-a="reliquia" data-id="' + r.id + '"><span class="face">' +
+        '<span class="ico clip">' + svg(r.ico) + '</span>' +
+        '<span><span class="nm">' + r.n + '</span>' + riga + '</span>' +
+        '<span class="cost' + (own ? ' done' : '') + '">' + (own ? 'TUA' : shardIcon() + r.c) + '</span>' +
+        '</span></button>';
+    }).join('');
+    return '<div class="eyebrow" style="text-align:left;margin-top:4px">Reliquie · regole, non numeri</div>' +
+      '<div class="grid2">' + righe + '</div>';
+  },
+
+  /* ── rune ────────────────────────────────────────────────
+     Quali sono nel mazzo e cosa chiede la prossima. Serve a rendere
+     visibile una cosa che altrimenti si scoprirebbe solo per caso: che il
+     mazzo cresce, e che cresce per merito. */
+  runeHTML() {
+    const set = SAVE.runes;
+    const prossimo = SBLOCCHI.find(sb => set.indexOf(sb.id) < 0);
+    const chip = id => '<span class="rn clip' + (set.indexOf(id) >= 0 ? ' on' : '') +
+      '" style="--c:' + EL[RUNES[id].el].c + '" title="' + RUNES[id].n + '">' + svg(id) + '</span>';
+    return '<div class="eyebrow" style="text-align:left;margin-top:4px">Rune nel mazzo · ' +
+      RUNEIDS.filter(id => set.indexOf(id) >= 0).length + ' di ' + RUNEIDS.length + '</div>' +
+      '<div class="runerow">' + RUNEIDS.map(chip).join('') + '</div>' +
+      (prossimo
+        ? '<div class="apnota" style="--c:#6ff2c4"><b>' + RUNES[prossimo.id].n + '</b> · ' + prossimo.d + '</div>'
+        : '<div class="hint" style="text-align:left">Tutte le rune sono nel mazzo.</div>');
+  },
+
+  /* ── storico ─────────────────────────────────────────────
+     Le ultime venti partite. In un gioco che non tocca la rete è l'unica
+     telemetria che esista: se le corse si fermano tutte fra il sesto e
+     l'ottavo minuto, è lì che c'è qualcosa da sistemare. */
+  storicoHTML() {
+    if (!SAVE.storico.length) return '';
+    const nomi = {}; for (const c of CHARS) nomi[c.id] = c.n;
+    const righe = SAVE.storico.map(r =>
+      '<div class="sr' + (r.w ? ' vinta' : '') + '">' +
+      '<span class="st">' + fmtTime(r.t) + '</span>' +
+      '<span class="sm">' + (modoDi(r.m).n) + (r.a ? ' · asc ' + r.a : '') + '</span>' +
+      '<span class="sc">' + (nomi[r.c] || r.c) + '</span>' +
+      '<span class="sk">' + r.k + ' elim.</span>' +
+      '<span class="sw">' + (r.w ? 'vinta' : (r.b ? r.b + ' guard.' : '—')) + '</span>' +
+      '</div>').join('');
+    const n = SAVE.storico.length;
+    const med = Math.round(SAVE.storico.reduce((a, r) => a + r.t, 0) / n);
+    return '<details class="seedbox"><summary>Storico · ultime ' + n + '</summary>' +
+      '<div class="hint" style="text-align:left;margin:0 0 8px">Durata media ' + fmtTime(med) +
+      ' · ' + SAVE.storico.filter(r => r.w).length + ' vinte.</div>' +
+      '<div class="storico">' + righe + '</div></details>';
   },
 
   /* ── sfide ──────────────────────────────────────────────── */
@@ -490,7 +639,12 @@ const UI = {
   /* ── scelta potenziamento ───────────────────────────────── */
   levelup(chest) {
     this.chestMode = !!chest;
-    const ch = rollChoices(3);
+    /* Ventaglio: quattro carte invece di tre, ma solo nei primi tre livelli.
+       È lì che la scelta conta di più — decide le prime due catene — ed è lì
+       che un pescato brutto costa una partita intera. Dopo tornano tre: una
+       quarta carta sempre attaccherebbe la varietà, non la fondazione. */
+    const quattro = mlv('ventaglio') && !chest && G.level <= 3;
+    const ch = rollChoices(quattro ? 4 : 3);
     this.choices = ch;
     const cards = ch.map((c, i) => this.cardHTML(c, i)).join('');
     this.open('level',
@@ -624,6 +778,56 @@ const UI = {
   },
 
   /* ── fine partita ───────────────────────────────────────── */
+  /* ── il gancio ───────────────────────────────────────────
+     La schermata finale mostrava un consuntivo: tempo, livello,
+     eliminazioni, danno, frammenti. Un consuntivo si legge e si chiude —
+     ma è esattamente il momento in cui si decide se ci sarà un'altra
+     partita, quindi deve dire cosa c'è DOPO: la prossima runa e cosa
+     chiede, la cosa più vicina da comprare e quanto manca, il contratto
+     più a portata, e con che congiunzione parte la corsa successiva. */
+  prossimoHTML() {
+    const voci = [];
+
+    /* la prossima runa del mazzo */
+    const sb = SBLOCCHI.find(x => SAVE.runes.indexOf(x.id) < 0);
+    if (sb) voci.push(['#6ff2c4', svg(sb.id), RUNES[sb.id].n, sb.d]);
+
+    /* la cosa più vicina da comprare, qualunque sia */
+    let best = null;
+    for (const m of META) {
+      const lv = mlv(m.id); if (lv >= m.max) continue;
+      const c = metaCost(m, lv);
+      if (!best || c < best.c) best = { c, n: m.n, d: m.d, ico: m.ico };
+    }
+    for (const r of RELIQUIE) {
+      if (hasRel(r.id)) continue;
+      if (!best || r.c < best.c) best = { c: r.c, n: r.n, d: r.d, ico: r.ico };
+    }
+    for (const ch of CHARS) {
+      if (SAVE.chars.indexOf(ch.id) >= 0) continue;
+      if (!best || ch.cost < best.c) best = { c: ch.cost, n: ch.n, d: ch.ruleD || ch.d, ico: 'orbita' };
+    }
+    if (best) {
+      const manca = best.c - SAVE.shards;
+      voci.push(manca > 0
+        ? ['#ffc857', svg(best.ico), best.n, 'Ti mancano ' + manca + ' frammenti. ' + best.d]
+        : ['#ffc857', svg(best.ico), best.n, 'Puoi già comprarla: ' + best.c + ' frammenti. ' + best.d]);
+    }
+
+    /* il contratto più economico fra quelli in corso: è il più vicino */
+    const cs = SAVE.contratti.map(id => CONTRATTI.find(x => x.id === id)).filter(Boolean);
+    if (cs.length) {
+      const c = cs.reduce((a, b) => (b.r < a.r ? b : a));
+      voci.push(['#b06bff', svg('contratto'), c.n, c.d + ' · ' + contrattoPremio(c) + ' frammenti']);
+    }
+
+    if (!voci.length) return '';
+    return '<div class="eyebrow" style="margin-top:2px">Dopo</div>' +
+      '<div class="dopo">' + voci.map(v =>
+        '<div class="dv clip" style="--c:' + v[0] + '"><span class="di clip">' + v[1] + '</span>' +
+        '<span class="dt"><b>' + v[2] + '</b>' + v[3] + '</span></div>').join('') + '</div>';
+  },
+
   end(win, gained) {
     const stats = [['TEMPO', fmtTime(G.t)], ['LIVELLO', G.level], ['ELIMINAZIONI', G.kills], ['DANNO', Math.round(G.dmgDone).toLocaleString('it-IT')]];
     this.open('end',
@@ -631,7 +835,22 @@ const UI = {
       '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
       '<div class="stats">' + stats.map(s => '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
-      '<div class="seedout">SEMENZA <b>' + (G.seed >>> 0) + '</b></div>' +
+      '<div class="seedout">SEMENZA <b>' + (G.seed >>> 0) + '</b> · ' + G.modo.n +
+      (G.cong.id !== 'quiete' ? ' · ' + G.cong.n : '') + '</div>' +
+      /* Una runa nuova nel mazzo è la cosa più bella che possa dire questa
+         schermata, quindi sta in cima e non in mezzo a un elenco. */
+      (G.runaNuova
+        ? '<div class="runanuova clip" style="--c:' + EL[RUNES[G.runaNuova.id].el].c + '">' +
+          '<span class="ri clip">' + svg(G.runaNuova.id) + '</span>' +
+          '<span class="rt"><span class="rk">Runa sbloccata</span><b>' + RUNES[G.runaNuova.id].n + '</b>' +
+          RUNES[G.runaNuova.id].d + '</span></div>'
+        : '') +
+      ((G.contrattiFatti && G.contrattiFatti.length)
+        ? '<div class="eyebrow" style="margin-top:2px">Contratti completati</div><div class="sfidelist">' +
+          G.contrattiFatti.map(x => '<div class="sfida fatta clip"><span class="sn">' + x.c.n + '</span>' +
+            '<span class="sd">' + x.c.d + '</span><span class="sr">' + shardIcon() + '+' + x.r + '</span></div>').join('') +
+          '</div>'
+        : '') +
       ((G.sfideNuove && G.sfideNuove.length)
         ? '<div class="eyebrow" style="margin-top:2px">Sfide completate</div><div class="sfidelist">' +
           G.sfideNuove.map(s => '<div class="sfida fatta clip"><span class="sn">' + s.n + '</span>' +
@@ -641,9 +860,16 @@ const UI = {
         : '') +
       this.ringHTML(false) +
       '<div class="hint">' + this.awakeLine() + '</div>' +
+      this.prossimoHTML() +
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
-      (win ? '<button class="btn primary clip" data-a="endless"><span class="face">Continua senza fine</span></button>' : '') +
-      '<button class="btn ' + (win ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
+      /* la modalità senza fine è della Corsa: l'Incursione è un formato
+         chiuso, e allungarla all'infinito la cancellerebbe */
+      (win && G.modo.id === 'corsa' ? '<button class="btn primary clip" data-a="endless"><span class="face">Continua senza fine</span></button>' : '') +
+      /* la congiunzione della prossima corsa, sotto al bottone che la fa
+         partire: è il gancio vero — «ancora una» è più facile da dire
+         quando la prossima è già diversa da quella appena finita */
+      this.congHTML(this.prossimoSeme()) +
+      '<button class="btn ' + (win && G.modo.id === 'corsa' ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
       '<button class="btn ghost clip" data-a="replay"><span class="face">Ripeti questa semenza</span></button>' +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
@@ -654,6 +880,13 @@ const UI = {
 };
 
 /* ── generazione delle scelte ───────────────────────────────── */
+/* Quali rune possono uscire. Le otto di partenza più quelle guadagnate,
+   e le aperture non si possono perdere per nessun motivo: se scegli di
+   aprire col Fulmine, l'Arco deve restare pescabile. */
+function runeSbloccate() {
+  const set = SAVE.runes && SAVE.runes.length ? SAVE.runes : RUNE_BASE;
+  return RUNEIDS.filter(id => set.indexOf(id) >= 0 || APERTURE.some(a => a.id === id));
+}
 function rollChoices(n) {
   const pool = [];
   const inRing = G.ring.filter(Boolean);
@@ -672,7 +905,11 @@ function rollChoices(n) {
   const vuoti = G.slots - inRing.length;
   const wNew = 3.6 + vuoti * 1.3;
   for (const r of inRing) if (r.lv < 8) pool.push({ t: 'rup', id: r.id, w: 3.4 });
-  if (empty) for (const id of RUNEIDS) {
+  /* Solo le rune sbloccate. Prima ci finivano tutte e sedici dal primo
+     livello della prima partita, quindi non esisteva — mai, in tutta la
+     vita del giocatore — il momento «ho trovato una runa nuova». Le sei
+     aperture sono sempre nel mazzo, così ogni apertura resta giocabile. */
+  if (empty) for (const id of runeSbloccate()) {
     if (inRing.some(r => r.id === id)) continue;
     pool.push({ t: 'rnew', id, w: id === 'iride' ? wNew * .55 : wNew });
   }
@@ -693,7 +930,7 @@ function rollChoices(n) {
      nuova e' garantita, finche' non ne piazzi una: il costo resta (un
      livello, e il buco nell'anello), la scommessa no. */
   if (G.dissolto && empty && !out.some(o => o.t === 'rnew')) {
-    const nuove = RUNEIDS.filter(id => !inRing.some(r => r.id === id));
+    const nuove = runeSbloccate().filter(id => !inRing.some(r => r.id === id));
     if (nuove.length) {
       /* sacrifica la carta meno preziosa, mai una trasformazione */
       let k = out.findIndex(o => o.t === 'gold');
@@ -744,11 +981,22 @@ function placeRune(id, slot) {
 }
 
 /* ── ciclo di partita ───────────────────────────────────────── */
-function resetRun(charId, seed) {
+function resetRun(charId, seed, modoId, giorno) {
   /* il seme va fissato PRIMA di qualunque altra cosa: rocce, runa iniziale
      e ricariche pescano già da qui */
   G.seed = (seed >>> 0) || newSeed();
   srand(G.seed);
+  /* Il modo dice quanto dura e con quanti guardiani; la congiunzione è la
+     regola che il SEME sorteggia per questa corsa, quindi è già decisa
+     prima che si tocchi Gioca ed è scritta sotto al bottone. `cg` sono i
+     suoi modificatori fusi coi valori neutri: chi li legge non deve sapere
+     se una congiunzione c'è o no. */
+  G.modo = modoDi(modoId || SAVE.modo);
+  G.cong = congiunzioneDi(G.seed);
+  G.cg = congMods(G.cong);
+  G.giornaliera = !!giorno;
+  /* Chi arriva e quando: identità e pattern rimescolati, numeri dello slot. */
+  G.roster = rosterGuardiani(G.modo);
   const c = CHARS.find(x => x.id === charId) || CHARS[0];
   G.char = c;
   G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
@@ -765,6 +1013,7 @@ function resetRun(charId, seed) {
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
+  G.bossKills = 0; G.maxLv = 1; G.tier2 = 0; G.rerollUsati = 0; G.respiro = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -775,35 +1024,67 @@ function resetRun(charId, seed) {
   genRocks();
   G.demo = false;
   hideMoveHint();
-  P.hp = undefined; recalc(); P.hp = P.maxHp * G.asc.startHp;
+  /* Presagio: il primo elite, cioè il primo scrigno, cioè la prima carta
+     in più, arriva al minuto invece che a un minuto e mezzo. È la spesa da
+     160 frammenti che si vede alla prima partita dopo averla fatta. */
+  if (mlv('presagio')) G.eliteT = 60;
+  /* Un pavimento al 30%: l'ascensione 8 parte a metà vita e la congiunzione
+     Vetro pure, e moltiplicate darebbero un quarto — cioè una partita già
+     persa prima del primo nemico, per una regola che non hai scelto. */
+  P.hp = undefined; recalc(); P.hp = P.maxHp * Math.max(.3, G.asc.startHp * G.cg.startHp);
   const ap = APERTURE.find(a => a.el === SAVE.apertura) || APERTURE[0];
   placeRune(ap.id, 0);
+  /* Innesco: l'apertura parte al terzo livello. Non è un +x%: vuol dire che
+     la prima catena morde subito, quindi il primo Risveglio arriva prima. */
+  if (mlv('innesco') && G.ring[0]) G.ring[0].lv = 3;
   recalcRing(false);
+  /* Semenza (reliquia): una carta in mano prima ancora di cominciare. */
+  if (hasRel('semenza')) G.pending = 1;
   UI.renderAwake();
 }
-function startRun(charId, seed) {
+function startRun(charId, seed, modoId, giorno) {
   AU.init();
-  resetRun(charId, seed);
+  /* il seme che il menu ha già mostrato: la congiunzione scritta sotto al
+     bottone dev'essere quella che si gioca, o non era una dichiarazione */
+  resetRun(charId, seed || UI.seme || 0, modoId, giorno);
+  UI.seme = 0;
   HUD.classList.add('on');
   UI.close(); G.state = 'play';
   UI.hud();
   showMoveHint();
   SAVE.runs = (SAVE.runs | 0) + 1; storeSave();
+  /* la Semenza consegna una carta prima del primo nemico */
+  if (G.pending > 0) { G.state = 'level'; UI.levelup(); }
 }
 function payout() {
   const asc = 1 + (G.ascLv || 0) * .18;   /* salire di ascensione deve convenire */
-  const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul * asc) + G.shards;
+  /* `paga` tiene onesto il confronto fra i modi: un'Incursione vinta dura
+     otto minuti e prende lo stesso premio di vittoria di una Corsa da venti,
+     quindi senza questo rendeva molto di più al minuto e la Corsa diventava
+     una perdita di tempo. Con .8 l'Incursione rende ancora un po' di più
+     all'ora — è giusto, sono otto minuti più intensi — ma non tanto da
+     cancellare l'altro formato. */
+  const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul * asc * (G.modo.paga || 1)) + G.shards;
   return Math.max(1, g);
+}
+
+/* L'istantanea della partita appena finita. La leggono le sfide, gli
+   sblocchi delle rune e i contratti: un oggetto solo, così una condizione
+   scritta una volta vale per tutti e tre.                                */
+function statoPartita(win) {
+  return {
+    win: !!win, t: G.t, kills: G.kills, level: G.level, ascLv: G.ascLv || 0,
+    awakeMax: G.awakeMax | 0, awakeAt: G.awakeAt | 0, evo: G.evoCount | 0,
+    reorders: G.reorders | 0, pieno: !!G.pieno, lowHp: !!G.lowHp,
+    tier2: !!G.tier2, tier3: !!G.tier3,
+    bossKills: G.bossKills | 0, maxLv: G.maxLv | 0, rerollUsati: G.rerollUsati | 0,
+    modo: G.modo.id, aw: G.awaken,
+    iride: G.ring.some(r => r && r.el === 'iride')
+  };
 }
 /* Valuta le sfide a fine partita. Restituisce quelle appena completate,
    così la schermata finale può mostrarle invece di farle passare inosservate. */
-function valutaSfide(win) {
-  const s = {
-    win: !!win, t: G.t, kills: G.kills, level: G.level, ascLv: G.ascLv || 0,
-    awakeMax: G.awakeMax | 0, awakeAt: G.awakeAt | 0, evo: G.evoCount | 0,
-    reorders: G.reorders | 0, pieno: !!G.pieno, lowHp: !!G.lowHp, tier3: !!G.tier3,
-    iride: G.ring.some(r => r && r.el === 'iride')
-  };
+function valutaSfide(s) {
   const nuove = [];
   for (const sf of SFIDE) {
     if (SAVE.sfide.indexOf(sf.id) >= 0) continue;
@@ -818,11 +1099,73 @@ function valutaSfide(win) {
   return nuove;
 }
 
+/* Le rune che questa partita ha portato nel mazzo. Ne esce al massimo una
+   per partita, apposta: due sblocchi insieme si annullano a vicenda, e la
+   fine di ogni corsa deve avere UNA cosa nuova da guardare. */
+function valutaSblocchi(s) {
+  for (const sb of SBLOCCHI) {
+    if (SAVE.runes.indexOf(sb.id) >= 0) continue;
+    let ok = false;
+    try { ok = !!sb.f(s); } catch (e) { ok = false; }
+    if (!ok) continue;
+    SAVE.runes.push(sb.id);
+    return sb;
+  }
+  return null;
+}
+
+/* I contratti completati si pagano e si sostituiscono subito: il posto
+   liberato viene ripescato qui, così non esiste mai lo stato «nessun
+   obiettivo». Un contratto ripescato può essere lo stesso di prima solo
+   quando il mazzo è finito, e quello è un caso che non si raggiunge. */
+function valutaContratti(s) {
+  const fatti = [];
+  const restano = [];
+  for (const id of SAVE.contratti) {
+    const c = CONTRATTI.find(x => x.id === id);
+    if (!c) continue;
+    let ok = false;
+    try { ok = !!c.f(s); } catch (e) { ok = false; }
+    if (ok) { const r = contrattoPremio(c); SAVE.shards += r; fatti.push({ c, r }); }
+    else restano.push(id);
+  }
+  SAVE.contratti = restano;
+  pescaContratti();
+  return fatti;
+}
+
+/* Le ultime venti partite. È lo storico che si legge nell'Osservatorio, ed
+   è anche l'unica telemetria possibile in un gioco che non tocca la rete:
+   con dieci amici e una settimana si vede DOVE si smette, invece di
+   dedurlo. Campi corti perché finisce nel codice di backup. */
+function registraStorico(win, g) {
+  const r = {
+    t: Math.floor(G.t), k: G.kills, l: G.level, c: G.char.id,
+    m: G.modo.id, a: G.ascLv | 0, w: win ? 1 : 0, s: g,
+    g: G.cong.id, b: G.bossKills | 0, d: Date.now()
+  };
+  SAVE.storico.unshift(r);
+  if (SAVE.storico.length > 20) SAVE.storico.length = 20;
+}
+
 function endRun(win) {
   const g = payout();
   SAVE.shards += g;
-  const sfideNuove = valutaSfide(win);
+  const s = statoPartita(win);
+  const sfideNuove = valutaSfide(s);
   G.sfideNuove = sfideNuove;
+  G.runaNuova = valutaSblocchi(s);
+  G.contrattiFatti = valutaContratti(s);
+  registraStorico(win, g);
+  /* la corsa del giorno tiene il proprio record, ed è l'unico punteggio del
+     gioco che si può confrontare con qualcun altro: stessa data, stesso
+     seme, stessa arena, stessa congiunzione */
+  if (G.giornaliera) {
+    const oggi = dataOggi();
+    if (SAVE.giorno.d !== oggi) SAVE.giorno = { d: oggi, t: 0, k: 0, w: 0 };
+    if (G.t > SAVE.giorno.t) { SAVE.giorno.t = Math.floor(G.t); SAVE.giorno.k = G.kills; }
+    if (win) SAVE.giorno.w = 1;
+  }
   if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t);
   if (G.kills > (SAVE.bestKills || 0)) SAVE.bestKills = G.kills;
   if (win) {
@@ -868,6 +1211,18 @@ SCR.addEventListener('click', ev => {
        niente. Ora ci vai quando vuoi cambiare qualcosa o spendere. */
     case 'go': startRun(SAVE.char); break;
     case 'hub': UI.hub(); break;
+    /* il formato si cambia dal titolo e dall'Osservatorio: la schermata si
+       ridisegna perché la congiunzione dichiarata resta la stessa (il seme
+       non cambia) ma il nome del formato sotto al bottone sì */
+    case 'modo': {
+      SAVE.modo = b.dataset.id; storeSave();
+      if (UI.cur === 'hub') UI.hub(); else UI.title();
+      break;
+    }
+    /* La corsa del giorno è un'Incursione: otto minuti, così è una cosa che
+       si fa davvero ogni giorno, e stessa data uguale stesso seme, quindi
+       stessa arena e stessa congiunzione per chiunque la giochi. */
+    case 'giorno': startRun(SAVE.char, semeDelGiorno(), 'incursione', true); break;
     case 'apertura': SAVE.apertura = b.dataset.id; storeSave(); AU.play('ui'); UI.hub(); break;
     case 'skin': {
       SAVE.skin = b.dataset.id; storeSave();
@@ -884,7 +1239,11 @@ SCR.addEventListener('click', ev => {
     case 'retry': startRun(SAVE.char); break;
     case 'replay': startRun(SAVE.char, G.seed); break;
     case 'resume': UI.togglePause(); break;
-    case 'quit': G.state = 'over'; HUD.classList.remove('on'); endRunSilent(); break;
+    /* Abbandonare passa dalla stessa porta di una morte. Prima saltava la
+       valutazione: chi usciva al dodicesimo minuto perdeva il contratto
+       «sopravvivi dodici minuti» che aveva appena completato, il che è
+       esattamente il tipo di sorpresa che fa smettere. */
+    case 'quit': endRun(false); break;
     case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
     case 'mus': SAVE.mus = SAVE.mus ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
     case 'endless': G.victory = true; G.state = 'play'; HUD.classList.add('on'); UI.close(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
@@ -957,18 +1316,30 @@ SCR.addEventListener('click', ev => {
       UI.toast(m.n + ' ' + (lv + 1) + ' di ' + m.max, '-' + cost + ' frammenti · te ne restano ' + SAVE.shards, '#ffc857');
       break;
     }
+    case 'reliquia': {
+      const r = RELIQUIE.find(x => x.id === b.dataset.id);
+      if (!r || hasRel(r.id)) return;
+      if (SAVE.shards < r.c) { UI.toast('TROPPO CARO', 'Ti mancano ' + (r.c - SAVE.shards) + ' frammenti', '#ff3d6e'); return; }
+      if (armato !== 'rel:' + r.id) { UI.armato = 'rel:' + r.id; UI.hub(); return; }
+      SAVE.shards -= r.c; SAVE.reliquie.push(r.id); storeSave(); AU.play('buy');
+      UI.spesa = r.c; UI.hub();
+      UI.toast(r.n, '-' + r.c + ' frammenti · te ne restano ' + SAVE.shards, '#ffc857');
+      break;
+    }
     case 'reroll': {
       if (G.rerolls <= 0) return;
-      G.rerolls--; AU.play('ui'); UI.levelup();
+      G.rerolls--; G.rerollUsati++; AU.play('ui'); UI.levelup();
       break;
     }
     case 'skip': {
       /* saltare non è pura rinuncia: cura e frammenti rendono la
          rinuncia una scelta fra potenza e sopravvivenza */
-      const cura = Math.round(P.maxHp * .15);
+      const avanzo = hasRel('avanzo');
+      const cura = Math.round(P.maxHp * (avanzo ? .3 : .15));
+      const fram = avanzo ? 120 : 40;
       P.hp = Math.min(P.maxHp, P.hp + cura);
-      G.shards += 40;
-      UI.toast('SALTATO', '+' + cura + ' vita · +40 frammenti', '#6ff2c4');
+      G.shards += fram;
+      UI.toast('SALTATO', '+' + cura + ' vita · +' + fram + ' frammenti', '#6ff2c4');
       AU.play('buy');
       G.pending--;
       if (G.pending > 0) UI.levelup(); else { UI.close(); G.state = 'play'; }
@@ -991,7 +1362,7 @@ SCR.addEventListener('click', ev => {
         if (!r) return;
         /* mai svuotare del tutto l'anello: resteresti senza attacchi */
         if (G.ring.filter(Boolean).length <= 1) { UI.toast('SERVE ALMENO UNA RUNA', null, '#ff3d6e'); return; }
-        const reso = 25 + r.lv * 20;
+        const reso = (25 + r.lv * 20) * (hasRel('mercante') ? 2 : 1);
         G.shards += reso; G.ring[i] = null; UI.dissolving = false; G.dissolto = 1;
         recalcRing(true);
         UI.toast('DISSOLTA', RUNES[r.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
@@ -1018,4 +1389,4 @@ SCR.addEventListener('click', ev => {
     }
   }
 });
-function endRunSilent() { const g = payout(); SAVE.shards += g; if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t); storeSave(); UI.end(false, g); }
+

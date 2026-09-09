@@ -489,6 +489,94 @@ ol.tips b{color:#fff;font-weight:600}
 .seedout b{font:700 13px/1 ui-monospace,Consolas,monospace;color:var(--dim);letter-spacing:0;margin-left:6px}
 
 /* sfide */
+/* ── formato della partita ───────────────────────────────────────
+   Due bersagli da pollice, non una tendina: è la scelta che decide se la
+   prima sessione conterrà una conclusione, quindi si vede senza cercarla. */
+.modorow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 9px}
+.modo{border:0;padding:0;background:none;font:inherit;cursor:pointer;--cut:8px;transition:transform .12s}
+.modo .face{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 8px;height:100%;
+  border:1px solid var(--line);background:linear-gradient(165deg,rgba(26,21,60,.62),rgba(11,9,28,.9))}
+.modo:hover{transform:translateY(-2px)}
+.modo:hover .face{border-color:var(--line-hot)}
+.modo.on .face{border-color:var(--xp);box-shadow:0 0 22px -8px var(--xp);
+  background:linear-gradient(165deg,color-mix(in srgb,var(--xp) 17%,rgba(26,21,60,.9)),rgba(11,9,28,.92))}
+.modo .mn{font:700 14px/1 var(--disp);color:#fff}
+.modo.on .mn{color:var(--xp)}
+.modo .md{font:400 10px/1.25 var(--ui);color:var(--dim);text-align:center}
+
+/* ── congiunzione ────────────────────────────────────────────────
+   La regola sorteggiata per la prossima corsa, scritta sotto al bottone
+   che la fa partire: una regola che leggi prima è una scelta, una che
+   scopri al terzo minuto è una sorpresa. */
+.cong{display:flex;align-items:center;gap:9px;padding:9px 11px;text-align:left;--cut:8px;
+  border:1px solid color-mix(in srgb,var(--c) 40%,transparent);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,rgba(15,12,36,.9)),rgba(11,9,28,.92))}
+.cong.calma{border-color:var(--line);background:linear-gradient(150deg,rgba(20,16,46,.7),rgba(11,9,28,.9))}
+.cong .ci{flex:0 0 auto;width:30px;height:30px;display:grid;place-items:center;--cut:6px;
+  border:1px solid color-mix(in srgb,var(--c) 42%,transparent)}
+.cong .ci svg{width:17px;height:17px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cong .ct{display:flex;flex-direction:column;gap:2px;min-width:0;font:400 11px/1.4 var(--ui);color:var(--dim)}
+.cong .ct b{font:700 12.5px/1 var(--disp);color:var(--c);letter-spacing:.02em}
+
+/* corsa del giorno: un bottone nella riga secondaria, non una sezione */
+/* tre bottoni nella stessa riga: .btnrow è già flex con .btn{flex:1}, qui
+   serve solo stringere il testo perché ci stia su un telefono stretto */
+.btnrow.tre{gap:7px}
+.btnrow.tre .btn .face{padding-left:5px;padding-right:5px;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.btn.giorno .face{gap:6px}
+.btn.giorno svg{width:15px;height:15px;fill:none;stroke:var(--gold);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── rune nel mazzo ──────────────────────────────────────────────
+   Sedici caselle: quelle accese sono tue, quelle spente sono il motivo
+   della prossima partita. */
+.runerow{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}
+.rn{width:30px;height:30px;display:grid;place-items:center;--cut:6px;
+  border:1px solid var(--line);background:rgba(11,9,28,.6);opacity:.32}
+.rn svg{width:17px;height:17px;fill:none;stroke:var(--faint);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.rn.on{opacity:1;border-color:color-mix(in srgb,var(--c) 46%,transparent);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 15%,rgba(15,12,36,.9)),rgba(11,9,28,.92))}
+.rn.on svg{stroke:var(--c)}
+
+/* ── storico ─────────────────────────────────────────────────────
+   Le ultime venti partite: in un gioco senza rete è l'unica telemetria. */
+.storico{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)}
+.storico .sr{display:grid;grid-template-columns:52px 1fr 1fr 74px 62px;gap:8px;align-items:center;
+  padding:7px 9px;background:var(--deep);font:400 10.5px/1.2 var(--ui);color:var(--dim)}
+.storico .sr.vinta{background:linear-gradient(90deg,rgba(20,44,44,.7),var(--deep))}
+.storico .st{font:700 12px/1 var(--disp);color:#fff}
+.storico .sw{text-align:right;color:var(--faint)}
+.storico .sr.vinta .sw{color:var(--xp);font-weight:600}
+.storico .sc,.storico .sk{color:var(--faint)}
+@media (max-width:520px){
+  .storico .sr{grid-template-columns:50px 1fr 60px;row-gap:2px}
+  .storico .sc,.storico .sk{display:none}
+}
+
+/* ── il gancio della schermata finale ────────────────────────────
+   Cosa c'è dopo: la prossima runa, la cosa più vicina da comprare, il
+   contratto più a portata. È il momento in cui si decide se ci sarà
+   un'altra partita, quindi non può essere solo un consuntivo. */
+.dopo{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));margin:2px 0 4px}
+.dv{display:flex;align-items:center;gap:9px;padding:8px 10px;text-align:left;--cut:7px;
+  border:1px solid color-mix(in srgb,var(--c) 32%,transparent);background:rgba(13,10,32,.8)}
+.dv .di{flex:0 0 auto;width:28px;height:28px;display:grid;place-items:center;--cut:6px;
+  border:1px solid color-mix(in srgb,var(--c) 38%,transparent)}
+.dv .di svg{width:16px;height:16px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dv .dt{display:flex;flex-direction:column;gap:2px;min-width:0;font:400 10.5px/1.4 var(--ui);color:var(--faint)}
+.dv .dt b{font:700 12px/1 var(--disp);color:var(--c)}
+
+/* una runa nuova nel mazzo è la cosa migliore che la schermata finale
+   possa dire: non sta in un elenco, sta da sola */
+.runanuova{display:flex;align-items:center;gap:11px;padding:11px 13px;margin:2px auto;max-width:420px;text-align:left;--cut:9px;
+  border:1px solid color-mix(in srgb,var(--c) 52%,transparent);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 18%,rgba(15,12,36,.92)),rgba(11,9,28,.94));
+  box-shadow:0 0 30px -10px var(--c)}
+.runanuova .ri{flex:0 0 auto;width:40px;height:40px;display:grid;place-items:center;--cut:7px;
+  border:1px solid color-mix(in srgb,var(--c) 46%,transparent)}
+.runanuova .ri svg{width:23px;height:23px;fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.runanuova .rt{display:flex;flex-direction:column;gap:2px;min-width:0;font:400 11px/1.4 var(--ui);color:var(--dim)}
+.runanuova .rk{font:600 9px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.runanuova .rt b{font:700 15px/1 var(--disp);color:var(--c)}
 .sfidelist{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .sfida{--cut:7px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;
   background:linear-gradient(160deg,rgba(22,18,52,.8),rgba(10,8,26,.85));border:1px solid var(--line)}
