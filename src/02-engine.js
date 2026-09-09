@@ -67,6 +67,9 @@ const DEFAULT_SAVE = {
   storico: [],
   /* le prime volte già spiegate: vedi BRIEFING in 01-data */
   visti: [],
+  /* versione del salvataggio: serve alle riparazioni una tantum, vedi
+     sanitizeSave. Non è la versione del gioco, è quella dei DATI. */
+  v: 2,
   /* la corsa del giorno: quale data, e il miglior risultato di oggi */
   giorno: { d: '', t: 0, k: 0, w: 0 }
 };
@@ -121,6 +124,24 @@ function sanitizeSave(o) {
   if (!MODI.some(m => m.id === s.modo)) s.modo = 'corsa';
   if (!Array.isArray(s.visti)) s.visti = [];
   s.visti = s.visti.filter(id => PRIMEVOLTE.indexOf(id) >= 0);
+  /* Riparazione una tantum. Per una versione la vetrina del menu — dove
+     gira il gioco vero, gemme comprese — raccoglieva una scheggia da sola
+     e segnava la lezione sulle particelle come imparata prima ancora che
+     si toccasse Gioca. Il difetto è corretto (updateGems ora ignora la
+     vetrina), ma la correzione non ripara i salvataggi che quel flag ce
+     l'hanno già: e siccome prima della correzione anche azzerare i
+     progressi lo faceva rimettere subito, chi ha provato quella versione
+     non avrebbe visto l'indicazione MAI PIÙ. Qui si toglie una volta
+     sola, e solo quello: gli altri flag li ha messi il gioco vero. */
+  /* Si legge `o`, il salvataggio GREZZO, non `s`: Object.assign ha già
+     riempito i campi mancanti coi valori predefiniti, quindi su `s` la
+     versione risulterebbe sempre quella nuova e la riparazione non
+     scatterebbe mai. */
+  if (!o || (o.v | 0) < 2) {
+    const k = s.visti.indexOf('gemme');
+    if (k >= 0) s.visti.splice(k, 1);
+  }
+  s.v = 2;
   if (!Array.isArray(s.storico)) s.storico = [];
   s.storico = s.storico.filter(r => r && typeof r === 'object').slice(0, 20);
   if (!s.giorno || typeof s.giorno !== 'object' || Array.isArray(s.giorno)) s.giorno = { d: '', t: 0, k: 0, w: 0 };

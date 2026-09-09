@@ -352,7 +352,7 @@ muove — cioè chiunque, visto che la prima lezione è «muoviti» — raccogli
 **3,5 secondi** dopo che ne è caduta una, e in quei tre secondi sta ancora guardando la
 levetta. Una lezione attaccata a un oggetto che sparisce in tre secondi non è una lezione.
 
-Ci sono voluti tre tentativi, e i due difetti che la tenevano invisibile valgono più della
+Ci sono voluti quattro tentativi, e i difetti che la tenevano invisibile valgono più della
 soluzione. Il primo: **la vetrina del menu raccoglieva una scheggia da sola**. Dietro al titolo
 gira il gioco vero, gemme comprese, e il nucleo della vetrina segnava la lezione come imparata
 prima che tu toccassi Gioca — misurato, il flag risultava già preso al secondo **1,7** della
@@ -360,6 +360,16 @@ prima partita di un salvataggio appena azzerato. Il secondo: il pannello stava a
 dell'altezza, che su un telefono è esattamente dove sta la mano che regge la levetta. Su
 puntatore grossolano ora sale al 38%. E non scade più dopo sette secondi: finisce quando la
 lezione è imparata, cioè quando raccogli una scheggia.
+
+Il terzo non era un difetto del codice ma delle **conseguenze** del primo: correggere la
+vetrina impedisce che risucceda, ma non ripara i salvataggi che quel flag ce l'hanno già —
+e prima della correzione anche azzerare i progressi lo faceva rimettere subito dalla vetrina.
+Chi aveva aperto quella versione non avrebbe visto l'indicazione mai più, per sempre. Il
+salvataggio ha quindi adesso un numero di versione (`v`), e alla prima apertura di un
+salvataggio più vecchio quel flag — e solo quello, gli altri li ha messi il gioco vero — viene
+tolto una volta sola. Il controllo legge il salvataggio **grezzo** e non quello già fuso coi
+valori predefiniti, o la versione risulterebbe sempre quella nuova e la riparazione non
+scatterebbe mai.
 
 ### Rientrare in gioco
 
@@ -624,7 +634,8 @@ for (let i = 0; i < 1500; i++) { O.step(1/60); O.P.hp = O.P.maxHp; O.G.pending =
 console.log(Math.round(O.G.dmgDone / 25));
 ```
 
-Il salvataggio sta in `localStorage` sotto `orbita.save.v1`, e contiene anche `runes` (il mazzo
+Il salvataggio sta in `localStorage` sotto `orbita.save.v1`, porta un numero di versione `v`
+per le riparazioni una tantum, e contiene anche `runes` (il mazzo
 sbloccato), `reliquie`, `contratti`, `modo`, `storico` e `giorno`. Un salvataggio della versione
 precedente si apre senza perdere niente: `sanitizeSave` gli assegna le otto rune di partenza e
 tre contratti alla prima apertura.
