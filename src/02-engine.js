@@ -869,10 +869,13 @@ function spawnBoss(def) {
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
     hp: vita, maxHp: vita, spd: def.spd * G.asc.spd * G.cg.spd,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
-    elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0
+    elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0,
+    /* corazza elementale: dimezza i colpi di UN elemento. Dal secondo
+       guardiano in poi, così il primo resta quello che insegna. */
+    corazza: G.bossIdx >= 1 ? pick(ELKEYS) : null
   };
   G.enemies.push(e); G.bosses.push(e); syncBosses();
-  UI.toast(def.n, 'Guardiano risvegliato', def.c);
+  UI.toast(def.n, e.corazza ? 'Corazza di ' + EL[e.corazza].n + ' · dimezza quell’elemento' : 'Guardiano risvegliato', def.c);
   AU.play('boss'); G.shake = 16;
   return e;
 }
@@ -902,6 +905,9 @@ function hitEnemy(e, amount, opt) {
 }
 function _hit(e, amount, opt) {
   let dmg = amount, crit = false;
+  /* la corazza va letta PRIMA del critico, così il numero che vola via è già
+     quello vero: mostrare 4000 e toglierne 2000 sarebbe una bugia */
+  if (e.corazza && opt.el && opt.el === e.corazza) dmg *= CORAZZA_BOSS;
   if (!opt.noCrit && chance(P.crit)) { crit = true; dmg *= P.critD; }
   /* Quale runa ha fatto questo danno. È la statistica che a fine partita fa
      venire voglia di ricostruire, e non esisteva. */

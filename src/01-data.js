@@ -331,8 +331,32 @@ const MOBS = {
   spettro:   { n: 'Spettro',   hp: 20,  spd: 158, r: 12, dmg: 14, xp: 3, c: '#b9a6f5', shape: 'gho' },
   dardo:     { n: 'Dardo',     hp: 30,  spd: 66,  r: 14, dmg: 9,  xp: 4, c: '#d98fd6', shape: 'tri', ranged: { cd: 2.9, spd: 210, dmg: 9, n: 1, spread: 0 } },
   lancia:    { n: 'Lanciere',  hp: 44,  spd: 58,  r: 15, dmg: 11, xp: 5, c: '#f08ab0', shape: 'dia', ranged: { cd: 1.9, spd: 265, dmg: 12, n: 3, spread: .34 } },
-  bruto:     { n: 'Bruto',     hp: 120, spd: 50,  r: 25, dmg: 22, xp: 8, c: '#ff7aa8', shape: 'hex' }
+  bruto:     { n: 'Bruto',     hp: 120, spd: 50,  r: 25, dmg: 22, xp: 8, c: '#ff7aa8', shape: 'hex' },
+  /* ── il nemico che attacca la BUILD ──────────────────────────
+     Tutti gli altri ti tolgono vita. Questo ti spegne una runa: finché resta
+     vicino, l'alloggiamento che ha agganciato smette di sparare e l'arco di
+     risonanza si spezza. È l'unico nemico che nessun altro gioco del genere
+     può avere, perché nessun altro ha un anello — e obbliga a smettere di
+     mietere per andare a prendere qualcosa. Tiene le distanze: va inseguito.
+     Non entra nelle ondate normali: uno o due alla volta, annunciati, e non
+     possono mai zittire più di due rune insieme. */
+  dissonante: { n: 'Dissonante', hp: 62, spd: 96, r: 16, dmg: 12, xp: 9, c: '#e0d0ff', shape: 'diss', keeps: 250 }
 };
+/* quante rune possono restare zitte nello stesso momento */
+const DISS_MAX = 2;
+
+/* ── formazioni ─────────────────────────────────────────────────
+   Sette tipi di nemico che vanno tutti dritti addosso: il campo si legge
+   sempre allo stesso modo, e muoversi diventa meccanico. Ogni tanto arriva
+   invece un gruppo con una FORMA, e la forma è l'informazione. */
+const FORMAZIONI = ['muro', 'accerchiamento', 'cuneo'];
+
+/* ── corazze elementali ─────────────────────────────────────────
+   Solo sui guardiani. Sui nemici comuni una resistenza punirebbe proprio
+   l'apertura, cioè la scelta su cui è costruita tutta la partita; su cinque
+   momenti a corsa crea invece la decisione giusta al momento giusto: tenere
+   una seconda catena, o un'Iride, vale davvero qualcosa. */
+const CORAZZA_BOSS = .52;
 const WAVES = [
   { t: 0,    pool: ['sciamante', 'sciamante', 'vagante'] },
   { t: 70,   pool: ['sciamante', 'vagante', 'vagante'] },

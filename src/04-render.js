@@ -284,6 +284,8 @@ function shape(e) {
     case 'dia': ctx.moveTo(0, -r * 1.2); ctx.lineTo(r * .88, 0); ctx.lineTo(0, r * 1.2); ctx.lineTo(-r * .88, 0); ctx.closePath(); break;
     case 'sq': ctx.rect(-r * .82, -r * .82, r * 1.64, r * 1.64); break;
     case 'hex': for (let i = 0; i < 6; i++) { const a = i / 6 * TAU - PI / 2; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); break;
+    /* anello spezzato: la forma dice da sola "questo rompe qualcosa" */
+    case 'diss': ctx.arc(0, 0, r * .92, -PI * .72, PI * .72); ctx.moveTo(0, -r * .34); ctx.lineTo(0, r * .34); break;
     case 'gho': ctx.arc(0, -r * .18, r * .9, PI, 0); ctx.lineTo(r * .9, r * .8); ctx.lineTo(r * .45, r * .45); ctx.lineTo(0, r * .8); ctx.lineTo(-r * .45, r * .45); ctx.lineTo(-r * .9, r * .8); ctx.closePath(); break;
     default: for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; const rr = i % 2 ? r * .62 : r; const fn = i ? 'lineTo' : 'moveTo'; ctx[fn](Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath();
   }
@@ -373,6 +375,33 @@ function drawBarreVita() {
     if (Math.abs(e.x - cx) > mw || Math.abs(e.y - cy) > mh) continue;
     const w = Math.max(38, e.r * 2.6), h = e.boss ? 7 : 5;
     barraVita(e.x - w / 2, e.y - e.r - 16, w, h, e.hp / e.maxHp, e.hpG, e.boss ? e.c : e.elite ? '#ffc857' : e.c);
+    /* corazza elementale: un cerchio del colore dell'elemento che dimezza.
+       Va vista addosso a lui, non solo scritta in un avviso che passa. */
+    if (e.boss && e.corazza) {
+      const cc = EL[e.corazza].c;
+      ctx.strokeStyle = rgba(cc, .5 + Math.sin(G.t * 2.4) * .18); ctx.lineWidth = 2.4;
+      ctx.setLineDash([10, 8]); ctx.lineDashOffset = -G.t * 26;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 13, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = '700 9px "Chakra Petch",system-ui,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(4,2,12,.92)';
+      const et = 'CORAZZA DI ' + EL[e.corazza].n.toUpperCase();
+      ctx.strokeText(et, e.x, e.y - e.r - 27);
+      ctx.fillStyle = cc; ctx.fillText(et, e.x, e.y - e.r - 27);
+    }
+  }
+  /* il Dissonante mostra a COSA è attaccato: senza il filo, una runa che
+     smette di sparare sembra un difetto invece che un attacco */
+  for (let i = 0; i < E.length; i++) {
+    const e = E[i];
+    if (!e.attiva || e.hp <= 0 || e.slot === undefined || !G.ring[e.slot]) continue;
+    const r = G.ring[e.slot];
+    ctx.save();
+    ctx.strokeStyle = 'rgba(224,208,255,.72)'; ctx.lineWidth = 2;
+    ctx.setLineDash([5, 7]); ctx.lineDashOffset = G.t * 46;
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(r.wx, r.wy); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
   }
 }
 
@@ -780,15 +809,19 @@ function drawPlayer() {
   ctx.strokeStyle = 'rgba(160,190,255,.13)'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.arc(p.x, p.y, RING_R, 0, TAU); ctx.stroke();
 
-  /* archi di risonanza */
+  /* archi di risonanza — spezzati dove un Dissonante ha agganciato */
   for (let i = 0; i < sl; i++) {
     const a = G.ring[i], b = G.ring[(i + 1) % sl];
     if (!a || !b || !compat(a, b)) continue;
     const el = a.el === 'iride' ? b.el : a.el;
     const a1 = G.ringRot + i / sl * TAU, a2 = a1 + TAU / sl;
+    const rotto = a.mutata || b.mutata;
     const pulse = .45 + Math.sin(G.t * 4 + i) * .22;
-    ctx.strokeStyle = rgba(EL[el].c, pulse); ctx.lineWidth = 3.4;
+    ctx.strokeStyle = rotto ? 'rgba(224,208,255,.30)' : rgba(EL[el].c, pulse);
+    ctx.lineWidth = rotto ? 2 : 3.4;
+    if (rotto) ctx.setLineDash([4, 9]);
     ctx.beginPath(); ctx.arc(p.x, p.y, RING_R, a1, a2); ctx.stroke();
+    if (rotto) ctx.setLineDash([]);
   }
 
   /* cristalli orbitanti */
@@ -816,18 +849,26 @@ function drawPlayer() {
   ctx.drawImage(gt, p.x - 62 * pul, p.y - 62 * pul, 124 * pul, 124 * pul); ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
 
-  /* rune */
+  /* rune — quella agganciata si spegne, e si vede che è spenta */
   for (let i = 0; i < sl; i++) {
     const r = G.ring[i]; if (!r) continue;
-    const c = EL[r.el].c;
+    const c = r.mutata ? '#6a6199' : EL[r.el].c;
     ctx.save(); ctx.translate(r.wx, r.wy);
-    ctx.globalCompositeOperation = 'lighter';
-    const t = glowTex(c, 32);
-    ctx.globalAlpha = .5 + r.res * .18; ctx.drawImage(t, -26, -26, 52, 52); ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
+    if (!r.mutata) {
+      ctx.globalCompositeOperation = 'lighter';
+      const t = glowTex(c, 32);
+      ctx.globalAlpha = .5 + r.res * .18; ctx.drawImage(t, -26, -26, 52, 52); ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      ctx.strokeStyle = 'rgba(224,208,255,.75)'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-11, -11); ctx.lineTo(11, 11); ctx.stroke();
+    }
     ctx.scale(.82, .82); ctx.translate(-12, -12);
+    ctx.globalAlpha = r.mutata ? .45 : 1;
     ctx.strokeStyle = c; ctx.lineWidth = 1.9; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for (const pp of runePaths(r.id)) ctx.stroke(pp);
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 

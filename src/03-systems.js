@@ -356,6 +356,7 @@ function updateRunes(dt) {
     const s = runeStats(r);
     if (r.id === 'raggio' || r.id === 'alba') { r.st.a = (r.st.a || 0) + dt * s.spd; }
     if (r.id === 'cristallo' || r.id === 'glaciale') {
+      if (r.mutata) continue;
       const gelido = r.id === 'glaciale';
       RUNA_ORA = r.id;
       FIRE[r.id](r, s);
@@ -386,6 +387,8 @@ function updateRunes(dt) {
       RUNA_ORA = null;
       continue;
     }
+    /* agganciata da un Dissonante: sta zitta finché non te ne liberi */
+    if (r.mutata) { r.cd = Math.min(r.cd, .18); continue; }
     r.cd -= dt * G.fireBoost;
     if (r.cd <= 0) { r.cd += Math.max(.06, s.cd); RUNA_ORA = r.id; FIRE[r.id](r, s); RUNA_ORA = null; }
   }
@@ -699,8 +702,48 @@ function tickBarra(e, dt) {
   }
 }
 
+/* ── il Dissonante ──────────────────────────────────────────────
+   Non punta alla tua vita: aggancia un alloggiamento e lo tiene ZITTO finché
+   resta in raggio. Per toglierselo bisogna smettere di mietere e andarlo a
+   prendere — tiene le distanze apposta. Aggancia sempre la runa più preziosa
+   che trova, cioè quella che risuona di più. */
+function dissonanteAI(e, dt) {
+  const dx = G.p.x - e.x, dy = G.p.y - e.y, d = Math.hypot(dx, dy) || 1;
+  const tenuta = MOBS.dissonante.keeps;
+  const sp = e.spd * (1 - e.slow);
+  const verso = d < tenuta * .82 ? -1 : d > tenuta * 1.25 ? 1 : 0;
+  if (verso) { e.vx = dx / d * sp * verso; e.vy = dy / d * sp * verso; }
+  else { e.vx = -dy / d * sp * .8; e.vy = dx / d * sp * .8; }   /* in fascia orbita */
+  e.x += e.vx * dt; e.y += e.vy * dt;
+
+  if (d < tenuta * 1.6 && (e.slot !== undefined || G.dissAtt < DISS_MAX)) {
+    if (e.slot === undefined || !G.ring[e.slot]) {
+      let best = -1, bs = -1;
+      for (let i = 0; i < G.slots; i++) {
+        const r = G.ring[i]; if (!r) continue;
+        const v = r.res * 10 + r.lv;
+        if (v > bs) { bs = v; best = i; }
+      }
+      e.slot = best >= 0 ? best : undefined;
+    }
+    if (e.slot !== undefined && G.ring[e.slot]) {
+      if (!G.ring[e.slot].mutata) G.dissAtt++;
+      G.ring[e.slot].mutata = 1;
+      e.attiva = 1;
+      if (cchance(dt * 14)) {
+        const r = G.ring[e.slot];
+        addPart(lerp(e.x, r.wx, crand(1)), lerp(e.y, r.wy, crand(1)), 0, 0, .3, 2.4, '#e0d0ff');
+      }
+    }
+  } else { e.attiva = 0; e.slot = undefined; }
+}
+
 function updateEnemies(dt) {
   const E = G.enemies, px = G.p.x, py = G.p.y;
+  /* il silenzio si riscrive a ogni fotogramma: appena muoiono o si
+     allontanano, le rune tornano a sparare senza altra contabilità */
+  for (let i = 0; i < G.slots; i++) if (G.ring[i]) G.ring[i].mutata = 0;
+  G.dissAtt = 0;
   if (G.bosses.length) syncBosses();
   for (let i = E.length - 1; i >= 0; i--) {
     const e = E[i];
@@ -723,6 +766,7 @@ function updateEnemies(dt) {
     if (e.kb > 0) { e.kb -= dt; const s = e.kb * dt * 840; e.x += e.kbx * s; e.y += e.kby * s; }
 
     if (e.boss) { bossAI(e, dt); }
+    else if (e.type === 'dissonante' && e.froze <= 0) { dissonanteAI(e, dt); }
     else if (e.froze > 0) { /* congelato */ }
     else {
       const dx = px - e.x, dy = py - e.y, d = Math.hypot(dx, dy) || 1;
@@ -1292,8 +1336,61 @@ function direttore(dt) {
   G.tenacia = clamp(G.tenacia * (1 + passo * dt * .16), 1, 40);
 }
 
+function apriFormazione() {
+  const k = pick(FORMAZIONI), pool = currentPool();
+  const dist = Math.max(600, Math.hypot(G.vw, G.vh) * .58);
+  const dentro = (x, y) => ({ x: clamp(x, -ARENA + 40, ARENA - 40), y: clamp(y, -ARENA + 40, ARENA - 40) });
+  if (k === 'accerchiamento') {
+    const n = 14 + Math.min(12, (G.t / 100) | 0), off = rand(TAU);
+    for (let i = 0; i < n; i++) {
+      const a = off + i / n * TAU;
+      const p = dentro(G.p.x + Math.cos(a) * dist * .82, G.p.y + Math.sin(a) * dist * .82);
+      spawnEnemy(pick(pool), p.x, p.y, { spdMul: .9 });
+    }
+    UI.toast('ACCERCHIAMENTO', 'Rompilo da un lato', '#ff8a5c');
+  } else if (k === 'muro') {
+    const a = rand(TAU), n = 11 + Math.min(9, (G.t / 130) | 0);
+    const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
+    for (let i = 0; i < n; i++) {
+      const off = (i - (n - 1) / 2) * 72;
+      const p = dentro(G.p.x + Math.cos(a) * dist + px * off, G.p.y + Math.sin(a) * dist + py * off);
+      spawnEnemy(pick(pool), p.x, p.y, { spdMul: .85, hpMul: 1.2 });
+    }
+    UI.toast('MURO', 'Aggiralo', '#ff8a5c');
+  } else {
+    const a = rand(TAU), n = 9 + Math.min(11, (G.t / 110) | 0);
+    const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
+    for (let i = 0; i < n; i++) {
+      const fila = (i / 3) | 0, lato = (i % 3) - 1;
+      const p = dentro(G.p.x + Math.cos(a) * (dist + fila * 46) + px * lato * (fila + 1) * 46,
+                       G.p.y + Math.sin(a) * (dist + fila * 46) + py * lato * (fila + 1) * 46);
+      spawnEnemy(pick(pool), p.x, p.y, { spdMul: 1.35 });
+    }
+    UI.toast('CUNEO', 'Sbandalo di lato', '#ff8a5c');
+  }
+  AU.play('boss');
+}
+
 function updateSpawns(dt) {
   direttore(dt);
+  /* ── formazioni: ogni tanto il campo ha una forma ─────────── */
+  if (G.t > 110 && !G.bosses.length) {
+    G.formT = (G.formT === undefined ? 52 : G.formT) - dt;
+    if (G.formT <= 0) { G.formT = rand(78, 52); apriFormazione(); }
+  }
+  /* ── il Dissonante arriva da solo, annunciato ─────────────── */
+  if (G.t > 250 && !G.bosses.length) {
+    G.dissT = (G.dissT === undefined ? 34 : G.dissT) - dt;
+    if (G.dissT <= 0) {
+      G.dissT = rand(74, 46);
+      let vivi = 0;
+      for (let i = 0; i < G.enemies.length; i++) if (G.enemies[i].type === 'dissonante' && G.enemies[i].hp > 0) vivi++;
+      if (vivi < DISS_MAX) {
+        const e = spawnRing('dissonante', { hpMul: 1 + G.t / 900 });
+        if (e) UI.toast('DISSONANTE', 'Ti sta zittendo una runa', '#e0d0ff');
+      }
+    }
+  }
   /* la pressione cresce nel tempo: né un vuoto iniziale né un muro al 4° minuto */
   /* Il tetto e' piu' basso di prima, ed e' il direttore a permetterlo: con
      nemici piu' tenaci la pressione non ha piu' bisogno di venire dal

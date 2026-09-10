@@ -1436,6 +1436,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
   G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
   G.dmgSrc = {}; G.killer = null;
+  G.dissT = 34; G.dissAtt = 0; G.formT = 52;
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');
