@@ -22,18 +22,34 @@ function nearest(x, y, maxR, skip) {
    Adesso punta dove ne infila di più, che è poi il mestiere di una lama
    perforante. Fra direzioni equivalenti vince quella più vicina al tuo
    movimento, così il carattere resta senza che il colpo si sprechi. */
+const _cand = [];
 function direzioneDensa(x, y, portata, largh, biasA, biasPeso) {
   GRID.near(x, y, portata, _q);
   if (!_q.length) return null;
-  /* candidati: le direzioni verso i nemici più vicini, al massimo dodici */
-  const cand = [];
-  for (let i = 0; i < _q.length && cand.length < 12; i++) {
+  const p2 = portata * portata;
+  /* ── i candidati sono i PIÙ VICINI, e stavolta davvero ────────
+     Erano i primi dodici che restituiva la griglia, che è un ordine di
+     CELLE e non di distanza: GRID.near scandisce il riquadro partendo
+     dall'angolo in alto a sinistra, quindi i candidati arrivavano
+     sistematicamente dal lato ovest del riquadro e il grumo a est non
+     entrava nemmeno in gara. Misurato: venti nemici fitti a est e
+     quattordici sparsi a ovest, la lama partiva a ovest — cioè l'esatto
+     contrario del mestiere che questa funzione dovrebbe fare.
+     Il riquadro della griglia è anche più largo del raggio (il suo angolo
+     sta a una volta e mezza la portata), quindi qui si filtra per davvero:
+     senza, si puntava a un nemico fuori tiro. */
+  _cand.length = 0;
+  for (let i = 0; i < _q.length; i++) {
     const e = _q[i]; if (e.hp <= 0) continue;
-    cand.push(Math.atan2(e.y - y, e.x - x));
+    const dd = (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y);
+    if (dd <= p2) { e._dd = dd; _cand.push(e); }
   }
-  if (!cand.length) return null;
+  if (!_cand.length) return null;
+  _cand.sort((a, b) => a._dd - b._dd);
+  if (_cand.length > 12) _cand.length = 12;
+  const cand = [];
+  for (let i = 0; i < _cand.length; i++) cand.push(Math.atan2(_cand[i].y - y, _cand[i].x - x));
   let best = cand[0], bs = -1;
-  const p2 = portata * portata, l2 = largh * largh;
   for (let c = 0; c < cand.length; c++) {
     const a = cand[c], ux = Math.cos(a), uy = Math.sin(a);
     let n = 0;
