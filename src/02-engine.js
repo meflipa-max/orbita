@@ -209,8 +209,22 @@ function wipeSave() {
    Sta in una chiave sua e non dentro SAVE: e' roba che dura un giorno,
    non deve gonfiare il codice di backup dei progressi.               */
 const RUNKEY = 'orbita.run.v1';
+/* Sotto questa soglia la corsa non viene offerta: serve solo a non
+   trasformare un tocco sbagliato su «Gioca» in un «Riprendi · 00:00» che
+   prende il posto del bottone che fa partire una partita nuova. Era
+   VENTICINQUE secondi, e venticinque secondi sono una partita: chi apriva,
+   giocava un po', chiudeva l'app e la riapriva si ritrovava senza niente,
+   senza che nulla gli avesse detto perche'. Il costo di riprendere una
+   corsa corta e' zero; il costo di buttarla via e' un giocatore che pensa
+   che il gioco abbia perso la sua partita. */
+const RUN_MIN_T = 3;
 function salvaCorsa() {
-  if (G.state !== 'play' && G.state !== 'pause' && G.state !== 'level') return;
+  /* `briefing` era escluso, ed e' lo stato in cui il gioco si FERMA per
+     spiegarti qualcosa: la lezione sulle schegge nei primi secondi, un
+     evento d'arena, un Nodo. Cioe' esattamente il momento in cui posi il
+     telefono o ti interrompono — e proprio li' la corsa smetteva di
+     annotarsi. */
+  if (G.state !== 'play' && G.state !== 'pause' && G.state !== 'level' && G.state !== 'briefing') return;
   if (G.demo || G.victory) return;
   try {
     const r = {
@@ -239,9 +253,9 @@ function leggiCorsa() {
     if (!r || r.v !== 1 || !Array.isArray(r.ring)) return null;
     if (!MODI.some(m => m.id === r.modo)) return null;
     if (SAVE.chars.indexOf(r.char) < 0) return null;
-    /* una corsa di dieci secondi non vale la pena di riprenderla, e una
-       di ieri l'altro non se la ricorda piu' nessuno */
-    if (!(r.t > 25) || Date.now() - (r.quando || 0) > 3 * 24 * 3600e3) return null;
+    /* un tocco sbagliato non e' una corsa, e una corsa di ieri l'altro non
+       se la ricorda piu' nessuno */
+    if (!(r.t > RUN_MIN_T) || Date.now() - (r.quando || 0) > 3 * 24 * 3600e3) return null;
     return r;
   } catch (e) { return null; }
 }
