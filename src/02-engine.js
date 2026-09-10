@@ -1105,7 +1105,15 @@ function killEnemy(e, opt) {
 
   const n = e.boss ? 26 : e.elite ? 9 : 1;
   for (let i = 0; i < n; i++) addGem(e.x + rand(30, -30), e.y + rand(30, -30), Math.max(1, Math.round(e.xp / n)));
-  if (e.elite || e.boss) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
+  /* Il guardiano non prende niente QUI: la sua ricompensa sta piu' sotto,
+     ed e' una sola. Finora cadeva in questo ramo insieme agli elite e ne
+     riceveva due — questa piu' quella — cioe' esattamente le due schermate
+     di carte di fila che la riga la' sotto dice di aver tolto: la seconda
+     arrivava mentre stavi ancora leggendo la prima. Il ramo vuoto serve a
+     tenerlo fuori anche dai sorteggi di cuore e bomba, che sono roba da
+     nemici comuni. */
+  if (e.boss) { /* vedi sotto */ }
+  else if (e.elite) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
   if (chance(.05) || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);

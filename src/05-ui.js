@@ -176,6 +176,32 @@ const UI = {
       '<b>' + c.n + '</b>' + c.d + '</span></div>';
   },
 
+  /* ── l'ascensione, dichiarata come la congiunzione ─────────
+     L'ascensione era un NUMERO: «Asc 7» nella riga di riepilogo e nella
+     targhetta dell'HUD, e le regole scritte solo dentro una scheda
+     dell'Osservatorio in cui non si passa per giocare. Ma il livello 7
+     toglie cuori e bombe da terra — la stessa identica regola della
+     Carestia, che invece sta scritta per esteso sotto al bottone che fa
+     partire la corsa. Due regole uguali, una dichiarata e una no.
+     E si arriva al 7 senza sceglierlo: vincendo al proprio massimo il
+     livello successivo si sblocca E si auto-seleziona, quindi la partita
+     dopo una vittoria cambia regole da sola. L'unico annuncio era un
+     avviso che passa 800 ms dopo la schermata di fine.
+     Adesso porta la stessa carta della congiunzione, nello stesso posto:
+     in grassetto la regola appena aggiunta — quella che non ti aspetti —
+     e di seguito le altre in vigore. */
+  ascCardHTML() {
+    const sel = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
+    if (sel <= 0) return '';
+    const altre = [];
+    for (let i = 1; i < sel; i++) altre.push(ASC[i].d);
+    return '<div class="cong asce clip" style="--c:#ffc857">' +
+      '<span class="ci clip">' + svg('ascensione') + '</span>' +
+      '<span class="ct"><span class="ck">Ascensione ' + sel + ' · ' + sel +
+      (sel === 1 ? ' regola in vigore' : ' regole in vigore') + '</span>' +
+      '<b>' + ASC[sel].d + '</b>' + altre.join(' ') + '</span></div>';
+  },
+
   /* Che partita sto per giocare. Formato, nucleo, apertura, ascensione e
      congiunzione erano cinque oggetti separati sparsi per la schermata:
      sono una cosa sola, quindi sono un blocco solo. La riga di mezzo
@@ -194,6 +220,7 @@ const UI = {
       '<span class="pt" style="--c:' + apEl.c + '">' + apEl.n + '</span>' +
       (asc ? '<span class="pt" style="--c:#ffc857">Ascensione ' + asc + '</span>' : '') +
       '<span class="cam">cambia</span></button>' +
+      this.ascCardHTML() +
       this.congHTML(seed) +
       '</div>';
   },
@@ -1183,6 +1210,9 @@ const UI = {
       /* la congiunzione della prossima corsa, sotto al bottone che la fa
          partire: è il gancio vero — «ancora una» è più facile da dire
          quando la prossima è già diversa da quella appena finita */
+      /* dopo una vittoria l'ascensione e' appena salita da sola: la carta
+         qui sotto e' l'unico posto in cui lo si legge prima di rigiocare */
+      this.ascCardHTML() +
       this.congHTML(this.prossimoSeme()) +
       '<button class="btn ' + (win && G.modo.id === 'corsa' ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
       '<button class="btn ghost clip" data-a="replay"><span class="face">Ripeti questa semenza</span></button>' +

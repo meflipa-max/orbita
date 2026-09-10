@@ -989,8 +989,23 @@ function drawScreenUI() {
       }
     }
   }
-  /* bussola per gli scrigni */
-  for (const d of G.drops) if (d.k === 'chest') bussola(d.x, d.y, 'rgba(255,200,87,.9)', 9);
+  /* Bussola per i doni fuori campo. Gli scrigni la portano tutti: sono
+     pochi e li raccogli. Cuori e bombe no — restano a terra per sempre e a
+     fine partita sono decine, quindi una freccia a testa sarebbe una
+     corona di frecce sul bordo dello schermo invece di un'indicazione.
+     Ne porta una il piu' vicino di ciascun tipo: e' la stessa regola
+     dell'etichetta a terra, ed e' l'unico che ha senso andare a prendere.
+     Senza, un cuore caduto trecento pixel fuori campo non esisteva: la
+     misura dice che meta' dei doni di una corsa non viene mai raccolta. */
+  let vCuore = null, vcd = 1e18, vBomba = null, vbd = 1e18;
+  for (const d of G.drops) {
+    const q = (d.x - G.p.x) * (d.x - G.p.x) + (d.y - G.p.y) * (d.y - G.p.y);
+    if (d.k === 'chest') bussola(d.x, d.y, 'rgba(255,200,87,.9)', 9);
+    else if (d.k === 'cuore') { if (q < vcd) { vcd = q; vCuore = d; } }
+    else if (d.k === 'bomba' && q < vbd) { vbd = q; vBomba = d; }
+  }
+  if (vCuore) bussola(vCuore.x, vCuore.y, 'rgba(255,61,110,.9)', 8);
+  if (vBomba) bussola(vBomba.x, vBomba.y, 'rgba(255,255,255,.85)', 8);
   if (G.ev) {
     if (G.ev.k === 'breccia' && !G.ev.preso) {
       const d = Math.round(Math.hypot(G.ev.x - G.p.x, G.ev.y - G.p.y));
