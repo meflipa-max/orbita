@@ -1024,6 +1024,64 @@ function drawScreenUI() {
        iniziale l'evento diventava invisibile: nemici più fitti e basta. */
     if (G.ev.k === 'marea') maree(G.ev);
   }
+  if (G.form) formazione(G.form);
+}
+
+/* ── il lato da cui arriva una formazione ──────────────────────
+   Stessa grammatica della marea, in arancione e per pochi secondi: la
+   fascia larga dice il settore, il filo netto lo delimita, le tacche
+   entrano verso il nucleo. Il messaggio diceva «aggiralo» di una cosa che
+   non era ancora sullo schermo, e senza direzione «aggiralo» non e' un
+   consiglio: e' un indovinello. L'accerchiamento non ha un lato, e infatti
+   riceve il cerchio intero — che e' l'informazione giusta. */
+function formazione(v) {
+  const col = '#ff8a5c';
+  const cx = W / 2, cy = H / 2;
+  /* Un'ELLISSE, non un cerchio. Un cerchio di raggio `min(W,H)` su un
+     telefono in verticale finisce a un terzo dell'altezza: la fascia
+     galleggiava in mezzo allo schermo come un oggetto invece di stare
+     appoggiata al bordo, che e' il posto in cui si legge «da fuori».
+     L'ellisse tiene la stessa distanza relativa dai bordi su tutti e due
+     gli assi, quindi funziona in verticale come in orizzontale. */
+  const rx = W * .40, ry = H * .40;
+  /* Da direzione VERA a parametro dell'ellisse. Sull'ellisse il parametro
+     non e' l'angolo geometrico: senza questa conversione l'arco avrebbe
+     indicato una direzione diversa da quella da cui arrivano davvero. */
+  const par = a => Math.atan2(Math.sin(a) / ry, Math.cos(a) / rx);
+  const pt = (a, k) => [cx + Math.cos(par(a)) * rx * k, cy + Math.sin(par(a)) * ry * k];
+  /* entra in fretta e se ne va sfumando: e' un avviso, non uno stato */
+  const alfa = clamp(Math.min(v.t / .22, (1 - v.t / v.dur) * 3.4), 0, 1);
+  const puls = .6 + Math.sin(G.t * 5) * .18;
+  const tondo = v.a === null;
+  const p0 = tondo ? 0 : par(v.a - v.mezzo), p1 = tondo ? TAU : par(v.a + v.mezzo);
+
+  ctx.save();
+  ctx.globalAlpha = alfa;
+  ctx.lineCap = tondo ? 'butt' : 'round';
+  ctx.strokeStyle = rgba(col, .13 * puls + .07);
+  ctx.lineWidth = 26;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, p0, p1); ctx.stroke();
+  ctx.strokeStyle = rgba(col, .88);
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx * 1.06, ry * 1.06, 0, p0, p1); ctx.stroke();
+  /* le tacche che entrano: "da fuori verso di te" */
+  ctx.strokeStyle = rgba(col, .55); ctx.lineWidth = 2.2;
+  ctx.setLineDash([11, 14]); ctx.lineDashOffset = G.t * 52;
+  const n = tondo ? 8 : 3;
+  for (let k = 0; k < n; k++) {
+    const a = tondo ? k / n * TAU : v.a + (k - 1) * v.mezzo * .6;
+    const da = pt(a, 1.02), a2 = pt(a, .88);
+    ctx.beginPath(); ctx.moveTo(da[0], da[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  const et = { muro: 'MURO', accerchiamento: 'ACCERCHIAMENTO', cuneo: 'CUNEO' }[v.k] || '';
+  const tp = pt(tondo ? -PI / 2 : v.a, .74);
+  ctx.font = '700 12px "Chakra Petch",system-ui,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(4,2,12,.92)';
+  ctx.strokeText(et, tp[0], tp[1]); ctx.fillStyle = col; ctx.fillText(et, tp[0], tp[1]);
+  ctx.restore();
 }
 
 function maree(v) {

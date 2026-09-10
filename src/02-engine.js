@@ -584,7 +584,7 @@ const G = {
   /* consuntivo: quale runa ha fatto il danno, e chi ti ha ucciso */
   dmgSrc: {}, killer: null,
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
-  starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
+  starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, form: null, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2,
   /* il direttore: vedi updateSpawns. raggio = a che distanza muoiono i
      nemici, tenacia = quanto sono duri perche' arrivino piu' vicino.

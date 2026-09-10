@@ -1400,6 +1400,20 @@ function direttore(dt) {
   G.tenacia = clamp(G.tenacia * (1 + passo * dt * .16), 1, 40);
 }
 
+/* ── da che parte arriva ───────────────────────────────────────
+   Le formazioni compaiono a `dist` dal nucleo, che e' sempre piu' della
+   mezza diagonale dello schermo: quando il messaggio dice «MURO · Aggiralo»
+   il muro non e' ancora visibile, e non c'e' niente che dica DOVE sia. E'
+   un consiglio su una cosa invisibile — aggirare che, da che parte? Ogni
+   altra cosa lontana del gioco lo dice: la breccia e il Corriere hanno la
+   freccia sul bordo, la marea ha il suo arco. Questa e' la stessa cosa, con
+   la stessa grammatica: un arco arancione sul bordo per il lato da cui
+   arrivano, e per l'accerchiamento — che non ha un lato — il cerchio
+   intero, che e' poi l'informazione giusta: da tutte le parti. */
+function segnaFormazione(k, a, mezzo) {
+  G.form = { k, a, mezzo, t: 0, dur: 4.6 };
+}
+
 function apriFormazione() {
   const k = pick(FORMAZIONI), pool = currentPool();
   const dist = Math.max(600, Math.hypot(G.vw, G.vh) * .58);
@@ -1412,6 +1426,7 @@ function apriFormazione() {
       spawnEnemy(pick(pool), p.x, p.y, { spdMul: .9 });
     }
     UI.toast('ACCERCHIAMENTO', 'Rompilo da un lato', '#ff8a5c');
+    segnaFormazione(k, null, PI);
   } else if (k === 'muro') {
     const a = rand(TAU), n = 11 + Math.min(9, (G.t / 130) | 0);
     const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
@@ -1421,6 +1436,9 @@ function apriFormazione() {
       spawnEnemy(pick(pool), p.x, p.y, { spdMul: .85, hpMul: 1.2 });
     }
     UI.toast('MURO', 'Aggiralo', '#ff8a5c');
+    /* l'arco copre quanto e' largo davvero il muro, cosi' «aggiralo» ha una
+       misura: si vede subito da che parte finisce */
+    segnaFormazione(k, a, Math.atan2((n - 1) * 72 / 2, dist));
   } else {
     const a = rand(TAU), n = 9 + Math.min(11, (G.t / 110) | 0);
     const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
@@ -1431,6 +1449,7 @@ function apriFormazione() {
       spawnEnemy(pick(pool), p.x, p.y, { spdMul: 1.35 });
     }
     UI.toast('CUNEO', 'Sbandalo di lato', '#ff8a5c');
+    segnaFormazione(k, a, .30);
   }
   AU.play('boss');
 }
@@ -1442,6 +1461,7 @@ function updateSpawns(dt) {
     G.formT = (G.formT === undefined ? 52 : G.formT) - dt;
     if (G.formT <= 0) { G.formT = rand(78, 52); apriFormazione(); }
   }
+  if (G.form) { G.form.t += dt; if (G.form.t >= G.form.dur) G.form = null; }
   /* ── il Dissonante arriva da solo, annunciato ─────────────── */
   if (G.t > 250 && !G.bosses.length) {
     G.dissT = (G.dissT === undefined ? 34 : G.dissT) - dt;
