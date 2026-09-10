@@ -1058,13 +1058,58 @@ const UI = {
         '<span class="dt"><b>' + v[2] + '</b>' + v[3] + '</span></div>').join('') + '</div>';
   },
 
+  /* Quale runa ha fatto davvero il lavoro. È la statistica che fa venire
+     voglia di ricostruire: la schermata diceva quanto eri sopravvissuto, mai
+     perché. */
+  dannoLine() {
+    const tot = Object.values(G.dmgSrc).reduce((a, b) => a + b, 0);
+    if (tot < 1) return '';
+    const righe = Object.entries(G.dmgSrc).sort((a, b) => b[1] - a[1]).slice(0, 5).map(function (kv) {
+      const k = kv[0], v = kv[1];
+      const el = RUNES[k] ? RUNES[k].el : 'iride';
+      const nome = RUNES[k] ? RUNES[k].n : k;
+      const pct = v / tot * 100;
+      return '<div class="dmgrow" style="--c:' + EL[el].c + '">' +
+        '<span class="dn">' + nome + '</span>' +
+        '<span class="db"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
+        '<span class="dp">' + (pct < 1 ? '<1' : Math.round(pct)) + '%</span></div>';
+    }).join('');
+    return '<div class="eyebrow" style="margin-top:2px">Da dove è venuto il danno</div><div class="dmglist">' + righe + '</div>';
+  },
+
+  /* Una diagnosi sola, la più utile, presa dai contatori della partita. */
+  diagnosi(win) {
+    const acceso = ELKEYS.filter(e => G.awaken[e]).length;
+    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+    if (!acceso) {
+      let best = null, bl = 0;
+      for (const e of ELKEYS) { const n = catenaDi(e); if (n > bl) { bl = n; best = e; } }
+      return best
+        ? 'Non hai mai acceso un Risveglio: eri arrivato a <b style="color:' + EL[best].c + '">' + bl + ' rune di ' + EL[best].n + '</b> di fila su ' + c0 + '. Una in più e la partita cambiava.'
+        : 'Non hai mai acceso un Risveglio. Servono <b>' + c0 + ' rune dello stesso elemento una accanto all’altra</b>.';
+    }
+    if (!G.evoCount) {
+      const soglia = hasRel('crogiolo') ? 7 : 8;
+      const quasi = G.ring.filter(r => r && EVO[r.id] && r.lv >= soglia);
+      if (quasi.length) return 'Nessuna trasformazione: <b>' + RUNES[quasi[0].id].n + '</b> era al livello giusto ma non risuonava da entrambi i lati. Riordina l’anello dalla pausa — è gratis.';
+      return 'Nessuna trasformazione. Serve una runa a <b>livello ' + soglia + '</b> che risuoni da entrambi i lati, con il suo elemento risvegliato.';
+    }
+    if ((G.culms | 0) < 3) return 'Hai usato il Culmine <b>' + (G.culms | 0) + ' volte</b>. Si ricarica uccidendo: tenerlo in tasca non serve a niente.';
+    if (acceso < 2) return 'Un solo Risveglio acceso. Con un’<b>Iride</b> fra due gruppi se ne accendono due insieme.';
+    if (!win) return 'Build solida. Il prossimo passo è un’ascensione in più, o un’apertura che non hai ancora provato.';
+    return 'Vittoria pulita. Sali di ascensione: ogni livello aggiunge <b>una regola sola</b>, e si sommano.';
+  },
+
   end(win, gained) {
     const stats = [['TEMPO', fmtTime(G.t)], ['LIVELLO', G.level], ['ELIMINAZIONI', G.kills], ['DANNO', Math.round(G.dmgDone).toLocaleString('it-IT')]];
     this.open('end',
       '<div class="eyebrow">' + (win ? 'Eclissi dissolta' : 'Il nucleo si spegne') + '</div>' +
       '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
+      (!win && G.killer ? '<div class="killer">Ucciso da <b>' + G.killer + '</b></div>' : '') +
       '<div class="stats">' + stats.map(s => '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
+      this.dannoLine() +
+      '<div class="diag clip">' + this.diagnosi(win) + '</div>' +
       '<div class="seedout">SEMENZA <b>' + (G.seed >>> 0) + '</b> · ' + G.modo.n +
       (G.cong.id !== 'quiete' ? ' · ' + G.cong.n : '') + '</div>' +
       /* Una runa nuova nel mazzo è la cosa più bella che possa dire questa

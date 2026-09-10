@@ -14,6 +14,22 @@ function nearest(x, y, maxR, skip) {
   }
   return best;
 }
+/* i `n` bersagli più vicini, ordinati per distanza */
+const _tgt = [];
+function nearestN(x, y, maxR, n) {
+  GRID.near(x, y, maxR, _q);
+  _tgt.length = 0;
+  const r2 = maxR * maxR;
+  for (let i = 0; i < _q.length; i++) {
+    const e = _q[i]; if (e.hp <= 0) continue;
+    const d = (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y);
+    if (d < r2) { e._d = d; _tgt.push(e); }
+  }
+  _tgt.sort((a, b) => a._d - b._d);
+  if (_tgt.length > n) _tgt.length = n;
+  return _tgt;
+}
+
 function areaHit(x, y, r, dmg, opt) {
   const list = GRID.near(x, y, r, []);   /* buffer proprio: hitEnemy può rientrare */
   const r2 = r * r;
@@ -40,10 +56,10 @@ const FIRE = {
     AU.play('shoot');
   },
   pira(r, s) {
-    G.zones.push({ k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
+    G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
   },
   nova(r, s) {
-    G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .46, dmg: s.dmg, hit: new Set(), c: EL.fuoco.c, kb: 340 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .46, dmg: s.dmg, hit: new Set(), c: EL.fuoco.c, kb: 340 });
     AU.play('blast'); G.shake = Math.max(G.shake, 4);
   },
   scheggia(r, s) {
@@ -67,14 +83,14 @@ const FIRE = {
     if (!t) { r.cd = .18; return; }
     G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .16, c: EL.fulmine.c });
     hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
-    chainFrom(t, s.dmg * .78, s.count - 1, s.area);
+    chainFrom(t, s.dmg * .78, s.count - 1, s.area, r.id);
     AU.play('shoot');
   },
   tempesta(r, s) {
     for (let i = 0; i < s.count; i++) {
       const a = rand(TAU), d = rand(s.area, s.area * .18);
       const x = G.p.x + Math.cos(a) * d, y = G.p.y + Math.sin(a) * d;
-      G.zones.push({ k: 'bolt', x, y, r: s.size, t: 0, dur: .42, dmg: s.dmg, done: 0, c: EL.fulmine.c });
+      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .42, dmg: s.dmg, done: 0, c: EL.fulmine.c });
     }
   },
   filo(r, s) {
@@ -120,7 +136,7 @@ const FIRE = {
       x = G.p.x + Math.cos(a) * MINIMO; y = G.p.y + Math.sin(a) * MINIMO;
     }
     x = clamp(x, -ARENA, ARENA); y = clamp(y, -ARENA, ARENA);
-    G.zones.push({ k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto' });
+    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto' });
     AU.play('blast');
   },
   falce(r, s) {
@@ -159,7 +175,7 @@ const FIRE = {
     AU.play('shoot');
   },
   aureola(r, s) {
-    G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: EL.luce.c, kb: 90 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: EL.luce.c, kb: 90 });
     P.hp = Math.min(P.maxHp, P.hp + s.heal);
     addFloat(G.p.x, G.p.y - 30, '+' + s.heal.toFixed(1), '#6ff2c4');
   },
@@ -199,8 +215,8 @@ const FIRE = {
     G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .18, c: EL.fulmine.c });
     hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
     /* due catene che partono dallo stesso bersaglio: si sdoppia */
-    chainFrom(t, s.dmg * .8, Math.ceil(s.count / 2), s.area);
-    chainFrom(t, s.dmg * .8, Math.floor(s.count / 2), s.area);
+    chainFrom(t, s.dmg * .8, Math.ceil(s.count / 2), s.area, r.id);
+    chainFrom(t, s.dmg * .8, Math.floor(s.count / 2), s.area, r.id);
     G.zones.push({ k: 'ring', x: t.x, y: t.y, r0: 6, r1: 90, t: 0, dur: .3, c: EL.fulmine.c });
     AU.play('blast');
   },
@@ -214,6 +230,101 @@ const FIRE = {
         retime: 1.5, risucchio: 150, hitRate: s.hit });
     }
     AU.play('shoot');
+  },
+  /* ── le undici forme che mancavano ──────────────────────── */
+  vulcano(r, s) {
+    /* la pozza non brucia soltanto: erutta, e ogni eruzione è un'onda d'urto */
+    G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0,
+      c: EL.fuoco.c, el: 'fuoco', erutta: 1.15, eruttaT: 1.15, eruttaDmg: s.dmg * 1.5 });
+  },
+  supernova(r, s) {
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .42, dmg: s.dmg, hit: new Set(), c: EL.fuoco.c, kb: 360 });
+    /* e poi collassa e riesplode, molto più larga */
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 20, r1: s.area * 1.6, t: 0, dur: .6, wait: .48,
+      dmg: s.dmg * 1.25, hit: new Set(), c: '#ffd7a8', el: 'fuoco', kb: 460 });
+    AU.play('blast'); G.shake = Math.max(G.shake, 8);
+  },
+  zanna(r, s) {
+    let a;
+    const mv = Math.hypot(G.p.vx, G.p.vy);
+    if (mv > 24) a = Math.atan2(G.p.vy, G.p.vx);
+    else { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : r.wa; }
+    for (let i = 0; i < s.count; i++) {
+      const aa = a + (i - (s.count - 1) / 2) * .17;
+      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg,
+        el: 'gelo', c: EL.gelo.c, pierce: s.pierce, kind: 'shard', life: 2.2, ang: aa, splitKill: 2, gela: 1 });
+    }
+    AU.play('shoot');
+  },
+  inverno(r, s) {
+    areaHit(G.p.x, G.p.y, s.area, s.dmg, { color: EL.gelo.c, noCrit: true, el: 'gelo', gela: .9 });
+    /* e lascia stagione dietro di sé */
+    if ((r.st.gelo = (r.st.gelo || 0) + 1) % 5 === 0)
+      G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area * .68, t: 0, dur: 2.6, dps: s.dmg * 1.6, tick: 0, c: EL.gelo.c, el: 'gelo', gela: 1 });
+  },
+  giudizio(r, s) {
+    for (let i = 0; i < s.count; i++) {
+      const a = rand(TAU), d = rand(s.area, s.area * .14);
+      const x = G.p.x + Math.cos(a) * d, y = G.p.y + Math.sin(a) * d;
+      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .5, dmg: s.dmg, done: 0, c: EL.fulmine.c, catena: 5 });
+    }
+    G.shake = Math.max(G.shake, 5);
+  },
+  nervo(r, s) {
+    const ts = nearestN(r.wx, r.wy, s.area, s.count);
+    if (!ts.length) return;
+    for (let i = 0; i < ts.length; i++) {
+      const t = ts[i];
+      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .12, c: EL.fulmine.c, w: 5 });
+      hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
+    }
+  },
+  abisso(r, s) {
+    const t = nearest(G.p.x, G.p.y, 700);
+    const x = t ? t.x : G.p.x + rand(240, -240), y = t ? t.y : G.p.y + rand(240, -240);
+    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto', forza: 1.5 });
+    AU.play('blast'); G.shake = Math.max(G.shake, 6);
+  },
+  nugolo(r, s) {
+    const t = nearest(G.p.x, G.p.y, 980);
+    const a0 = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
+    for (let i = 0; i < s.count; i++) {
+      const a = a0 + (i - (s.count - 1) / 2) * .16;
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
+        el: 'vuoto', c: EL.vuoto.c, pierce: s.pierce, kind: 'bolt', life: 2.6, ang: a, homing: 3.4 });
+    }
+    AU.play('shoot');
+  },
+  caleidoscopio(r, s) {
+    const t = nearest(G.p.x, G.p.y, 940);
+    const a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
+    shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
+      el: 'luce', c: EL.luce.c, pierce: 0, kind: 'orb', life: 2.4, split: s.count, splitPierce: 1,
+      splitAgain: Math.max(2, Math.round(s.count * .5)), trail: 1 });
+    AU.play('shoot');
+  },
+  sacrario(r, s) {
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: EL.luce.c, kb: 120 });
+    /* e resta un cerchio che risana finché ci stai dentro */
+    G.zones.push({ src: r.id, k: 'cura', x: G.p.x, y: G.p.y, r: s.area * .62, t: 0, dur: 3.2, hps: s.heal * .8, tick: 0, c: '#6ff2c4' });
+    P.hp = Math.min(P.maxHp, P.hp + s.heal);
+    addFloat(G.p.x, G.p.y - 30, '+' + s.heal.toFixed(1), '#6ff2c4');
+  },
+  arcobaleno(r, s) {
+    /* un dardo per ogni elemento risvegliato: è la runa che ripaga chi ha
+       costruito un anello con più catene accese insieme */
+    const els = ELKEYS.filter(e => G.awaken[e]);
+    if (!els.length) els.push(SAVE.apertura === 'iride' ? 'luce' : SAVE.apertura);
+    const t = nearest(G.p.x, G.p.y, 980);
+    const a0 = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
+    const n = els.length * s.count;
+    for (let i = 0; i < n; i++) {
+      const el = els[i % els.length];
+      const a = a0 + (i - (n - 1) / 2) * .15;
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
+        el, c: EL[el].c, pierce: s.pierce, kind: 'orb', life: 2.5, homing: 2.4, trail: 1 });
+    }
+    AU.play('blast');
   },
   alba(r, s) {
     const a = r.st.a || 0;
@@ -246,6 +357,7 @@ function updateRunes(dt) {
     if (r.id === 'raggio' || r.id === 'alba') { r.st.a = (r.st.a || 0) + dt * s.spd; }
     if (r.id === 'cristallo' || r.id === 'glaciale') {
       const gelido = r.id === 'glaciale';
+      RUNA_ORA = r.id;
       FIRE[r.id](r, s);
       const orbR = s.area, sp = s.spd * P.projMul;
       for (const o of r.st.orb) {
@@ -271,10 +383,11 @@ function updateRunes(dt) {
           }
         }
       }
+      RUNA_ORA = null;
       continue;
     }
     r.cd -= dt * G.fireBoost;
-    if (r.cd <= 0) { r.cd += Math.max(.06, s.cd); FIRE[r.id](r, s); }
+    if (r.cd <= 0) { r.cd += Math.max(.06, s.cd); RUNA_ORA = r.id; FIRE[r.id](r, s); RUNA_ORA = null; }
   }
 }
 
@@ -335,19 +448,23 @@ function updateBullets(dt) {
       if (b.kind === 'scythe') { if (b.hitCd > 0) continue; b.hitCd = b.hitRate || .16; }
       else { if (!b.hitIds) b.hitIds = []; if (b.hitIds.indexOf(e) >= 0) continue; b.hitIds.push(e); }
       const m = Math.hypot(dx, dy) || 1;
-      hitEnemy(e, b.dmg, { color: b.c, kb: 120, kbx: dx / m, kby: dy / m, el: b.el });
-      /* Cometa: ogni uccisione frantuma la sfera in schegge nuove */
+      if (b.gela && !e.boss) e.froze = Math.max(e.froze, b.gela);
+      hitEnemy(e, b.dmg, { color: b.c, kb: 120, kbx: dx / m, kby: dy / m, el: b.el, src: b.src });
+      /* Cometa e Zanna: ogni uccisione frantuma il colpo in schegge nuove */
       if (b.splitKill && e.hp <= 0) {
         for (let k = 0; k < b.splitKill; k++) {
           const a = rand(TAU);
           shoot({ x: e.x, y: e.y, vx: Math.cos(a) * 420, vy: Math.sin(a) * 420, r: b.r * .5,
-            dmg: b.dmg * .45, el: b.el, c: b.c, pierce: 0, kind: 'orb', life: .9, homing: 2, trail: 1 });
+            dmg: b.dmg * .45, el: b.el, c: b.c, src: b.src, pierce: b.kind === 'shard' ? 2 : 0,
+            kind: b.kind === 'shard' ? 'shard' : 'orb', ang: a, life: .9, homing: 2, trail: 1 });
         }
       }
       if (b.split) {
         for (let k = 0; k < b.split; k++) {
           const a = rand(TAU);
-          shoot({ x: b.x, y: b.y, vx: Math.cos(a) * 380, vy: Math.sin(a) * 380, r: b.r * .62, dmg: b.dmg * .55, el: b.el, c: b.c, pierce: 0, kind: 'orb', life: .8 });
+          shoot({ x: b.x, y: b.y, vx: Math.cos(a) * 380, vy: Math.sin(a) * 380, r: b.r * .62,
+            dmg: b.dmg * .75, el: b.el, c: b.c, src: b.src, pierce: b.splitPierce || 0, kind: 'orb',
+            life: .9, split: b.splitAgain || 0, splitPierce: 0, homing: 1.6, trail: b.splitAgain ? 1 : 0 });
         }
         B.splice(i, 1); break;
       }
@@ -393,20 +510,50 @@ function posaScia(b) {
 function updateZones(dt) {
   const Z = G.zones;
   for (let i = Z.length - 1; i >= 0; i--) {
-    const z = Z[i]; z.t += dt;
+    const z = Z[i];
+    /* attesa: la seconda onda della Supernova nasce già in lista e resta
+       ferma finché non tocca a lei */
+    if (z.wait > 0) { z.wait -= dt; continue; }
+    z.t += dt;
     if (z.k === 'pool') {
       z.tick -= dt;
-      if (z.tick <= 0) { z.tick = .26; areaHit(z.x, z.y, z.r, z.dps * .26, { color: z.c, noCrit: true, el: z.el }); }
+      if (z.tick <= 0) {
+        z.tick = .26;
+        areaHit(z.x, z.y, z.r, z.dps * .26, { color: z.c, noCrit: true, el: z.el, src: z.src });
+        if (z.gela) { const l = GRID.near(z.x, z.y, z.r, []); for (let n = 0; n < l.length; n++) if (!l[n].boss && l[n].hp > 0) l[n].froze = Math.max(l[n].froze, .5); }
+      }
+      /* Vulcano: la pozza erutta, e ogni eruzione è un'onda d'urto */
+      if (z.erutta) {
+        z.eruttaT -= dt;
+        if (z.eruttaT <= 0) {
+          z.eruttaT = z.erutta;
+          G.zones.push({ k: 'nova', x: z.x, y: z.y, r0: z.r * .3, r1: z.r * 2.1, t: 0, dur: .4,
+            dmg: z.eruttaDmg, hit: new Set(), c: '#ffd7a8', el: z.el, src: z.src, kb: 300 });
+          burstPart(z.x, z.y, 10, z.c, 260, 4, .6);
+        }
+      }
       if (cchance(dt * 22)) addPart(z.x + crand(z.r, -z.r) * .8, z.y + crand(z.r, -z.r) * .8, 0, crand(-42, -12), .6, crand(4, 2), z.c);
+    } else if (z.k === 'cura') {
+      /* Sacrario: un cerchio che risana finché ci stai dentro */
+      z.tick -= dt;
+      if (z.tick <= 0) {
+        z.tick = .35;
+        const dx = G.p.x - z.x, dy = G.p.y - z.y;
+        if (dx * dx + dy * dy < z.r * z.r && P.hp < P.maxHp) {
+          P.hp = Math.min(P.maxHp, P.hp + z.hps * .35);
+          addPart(G.p.x + crand(20, -20), G.p.y, 0, -50, .5, 3, '#6ff2c4');
+        }
+      }
     } else if (z.k === 'hole') {
       z.tick -= dt;
-      GRID.near(z.x, z.y, z.r * 3.1, _q);
+      const pull = z.r * 3.1 * (z.forza || 1);
+      GRID.near(z.x, z.y, pull, _q);
       for (let n = 0; n < _q.length; n++) {
         const e = _q[n]; if (e.hp <= 0 || e.boss) continue;
         const dx = z.x - e.x, dy = z.y - e.y, d = Math.hypot(dx, dy) || 1;
-        if (d < z.r * 3.1) { const f = (1 - d / (z.r * 3.1)) * 300; e.x += dx / d * f * dt; e.y += dy / d * f * dt; }
+        if (d < pull) { const f = (1 - d / pull) * 300 * (z.forza || 1); e.x += dx / d * f * dt; e.y += dy / d * f * dt; }
       }
-      if (z.tick <= 0) { z.tick = .24; areaHit(z.x, z.y, z.r, z.dps * .24, { color: z.c, noCrit: true, el: z.el }); }
+      if (z.tick <= 0) { z.tick = .24; areaHit(z.x, z.y, z.r, z.dps * .24, { color: z.c, noCrit: true, el: z.el, src: z.src }); }
       if (cchance(dt * 30)) {
         const a = rand(TAU), d = z.r * rand(3, 1.4);
         addPart(z.x + Math.cos(a) * d, z.y + Math.sin(a) * d, -Math.cos(a) * 130, -Math.sin(a) * 130, .5, rand(3, 1.4), z.c);
@@ -419,12 +566,18 @@ function updateZones(dt) {
         const dx = e.x - z.x, dy = e.y - z.y, d = Math.hypot(dx, dy);
         if (d < r + e.r) {
           z.hit.add(e);
-          hitEnemy(e, z.dmg, { color: z.c, kb: z.kb, kbx: dx / (d || 1), kby: dy / (d || 1) });
+          hitEnemy(e, z.dmg, { color: z.c, kb: z.kb, kbx: dx / (d || 1), kby: dy / (d || 1), el: z.el, src: z.src });
         }
       }
       z.r = r;
     } else if (z.k === 'bolt') {
-      if (!z.done && z.t > .16) { z.done = 1; areaHit(z.x, z.y, z.r, z.dmg, { color: z.c, el: 'fulmine' }); burstPart(z.x, z.y, 8, z.c, 190, 3, .35); }
+      if (!z.done && z.t > .16) {
+        z.done = 1;
+        areaHit(z.x, z.y, z.r, z.dmg, { color: z.c, el: 'fulmine', src: z.src });
+        burstPart(z.x, z.y, 8, z.c, 190, 3, .35);
+        /* Giudizio: dove cade, scarica anche una catena */
+        if (z.catena) { const t = nearest(z.x, z.y, z.r * 1.6); if (t) chainFrom(t, z.dmg * .55, z.catena, 260, z.src); }
+      }
     }
     if (z.t >= z.dur) Z.splice(i, 1);
   }
@@ -652,7 +805,7 @@ function updateEnemies(dt) {
 
     /* contatto */
     const dx = px - e.x, dy = py - e.y, rr = e.r + G.p.r;
-    if (dx * dx + dy * dy < rr * rr) hurtPlayer(e.dmg);
+    if (dx * dx + dy * dy < rr * rr) hurtPlayer(e.dmg, e.boss ? e.boss.n : (MOBS[e.type] ? MOBS[e.type].n : 'contatto'));
   }
 }
 
@@ -672,7 +825,7 @@ function updateEBullets(dt) {
       B.splice(i, 1); continue;
     }
     const dx = G.p.x - b.x, dy = G.p.y - b.y, rr = b.r + G.p.r * .8;
-    if (dx * dx + dy * dy < rr * rr) { hurtPlayer(b.dmg); B.splice(i, 1); }
+    if (dx * dx + dy * dy < rr * rr) { hurtPlayer(b.dmg, b.fonte || 'un colpo nemico'); B.splice(i, 1); }
   }
 }
 

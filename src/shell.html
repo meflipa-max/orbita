@@ -148,6 +148,22 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   box-shadow:0 0 22px rgba(120,220,255,.4),inset 0 0 16px rgba(120,220,255,.22)}
 #joy.max .nub{box-shadow:0 0 26px rgba(180,240,255,.85)}
 
+/* ---------- fine partita: chi ti ha ucciso, cosa ha fatto la build ---------- */
+.killer{font:600 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#ff8fae;
+  text-align:center;margin-top:-8px}
+.killer b{color:#fff}
+.dmglist{display:flex;flex-direction:column;gap:5px;max-width:420px;margin:0 auto}
+.dmgrow{display:grid;grid-template-columns:1fr 2fr auto;align-items:center;gap:9px;
+  font:600 11px/1 var(--ui);color:var(--dim)}
+.dmgrow .dn{color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dmgrow .db{height:7px;background:rgba(158,138,255,.12);display:block;--cut:3px;position:relative}
+.dmgrow .db i{position:absolute;inset:0 auto 0 0;background:var(--c);display:block;
+  box-shadow:0 0 10px color-mix(in srgb,var(--c) 65%,transparent)}
+.dmgrow .dp{color:#ece8ff;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.diag{font:500 12.5px/1.6 var(--ui);color:var(--dim);text-align:center;max-width:52ch;margin:0 auto;
+  padding:10px 14px;background:rgba(111,242,196,.07);border:1px solid rgba(111,242,196,.26);--cut:8px}
+.diag b{color:#ece8ff}
+
 /* ---------- il momento del Risveglio ---------- */
 #awakefx{position:absolute;inset:0;z-index:15;pointer-events:none;display:none;place-items:center;--c:#fff}
 #awakefx.on{display:grid;animation:awFade 1.8s ease-out forwards}

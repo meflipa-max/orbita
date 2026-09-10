@@ -877,14 +877,20 @@ function spawnBoss(def) {
   return e;
 }
 
+/* Chi sta sparando in questo istante. Serve ad attribuire il danno alla runa
+   giusta senza cablare `src` in ogni singola chiamata: i colpi immediati lo
+   leggono qui, quelli differiti (proiettili e zone) se lo portano dietro. */
+let RUNA_ORA = null;
+
 /* ── proiettili ─────────────────────────────────────────────── */
 function shoot(o) {
+  if (o.src === undefined) o.src = RUNA_ORA;
   o.life = o.life === undefined ? 2.4 : o.life;
   o.hit = null; o.t = 0;
   G.bullets.push(o);
 }
-function eShoot(x, y, vx, vy, dmg, r, c) {
-  G.ebul.push({ x, y, vx, vy, dmg, r: r || 6, c: c || '#ff5b8a', t: rand(TAU), life: 3.6 });
+function eShoot(x, y, vx, vy, dmg, r, c, fonte) {
+  G.ebul.push({ x, y, vx, vy, dmg, r: r || 6, c: c || '#ff5b8a', t: rand(TAU), life: 3.6 , fonte: fonte || null });
 }
 
 /* ── danno ──────────────────────────────────────────────────── */
@@ -897,8 +903,13 @@ function hitEnemy(e, amount, opt) {
 function _hit(e, amount, opt) {
   let dmg = amount, crit = false;
   if (!opt.noCrit && chance(P.crit)) { crit = true; dmg *= P.critD; }
+  /* Quale runa ha fatto questo danno. È la statistica che a fine partita fa
+     venire voglia di ricostruire, e non esisteva. */
+  const chi = opt.src || RUNA_ORA;
   /* la statistica conta il danno utile, non l'eccesso (una bomba fa 99999 a testa) */
-  G.dmgDone += Math.max(0, Math.min(dmg, e.hp));
+  const utile = Math.max(0, Math.min(dmg, e.hp));
+  G.dmgDone += utile;
+  if (chi) G.dmgSrc[chi] = (G.dmgSrc[chi] || 0) + utile;
   e.hp -= dmg;
   /* Il lampo di "colpito" durava 0.13s. Con otto rune che sparano da sole
      un nemico viene colpito molto piu' spesso di così, quindi restava
@@ -969,7 +980,7 @@ function _hit(e, amount, opt) {
   if (e.hp <= 0) killEnemy(e, opt);
 }
 
-function chainFrom(src, dmg, jumps, range) {
+function chainFrom(src, dmg, jumps, range, srcId) {
   let cur = src; const used = new Set([cur]);
   for (let j = 0; j < jumps; j++) {
     GRID.near(cur.x, cur.y, range, _q);
@@ -982,7 +993,7 @@ function chainFrom(src, dmg, jumps, range) {
     if (!best) break;
     G.zones.push({ k: 'spark', x1: cur.x, y1: cur.y, x2: best.x, y2: best.y, t: 0, dur: .16, c: '#ffe14f' });
     used.add(best); cur = best;
-    hitEnemy(best, dmg, { noChain: true, color: '#ffe14f', noCrit: true });
+    hitEnemy(best, dmg, { noChain: true, color: '#ffe14f', noCrit: true, el: 'fulmine', src: srcId });
   }
 }
 
@@ -1150,7 +1161,10 @@ function updateCombo(dt) {
   G.comboLv = lv;
 }
 
-function hurtPlayer(amount) {
+function hurtPlayer(amount, fonte) {
+  /* chi ti sta facendo male: senza, la schermata di fine dice quanto sei
+     sopravvissuto ma non cosa e' andato storto */
+  if (fonte && G.p.inv <= 0 && G.state === 'play') G.killer = fonte;
   if (G.p.inv > 0 || G.state !== 'play') return;
   const d = amount * P.dr;
   P.hp -= d; G.p.inv = .62; G.p.hurt = .3;

@@ -146,6 +146,17 @@ const ICO = {
   fulgore: 'M13.5 2.6 7.2 12h4.6l-1.5 9.4L17 11.2h-4.6Z|M3.4 6.6 1.4 5.2|M3.4 17.4 1.4 18.8|M20.6 6.6l2-1.4|M20.6 17.4l2 1.4',
   mietitore: 'M4.4 4.4a11 11 0 0 1 15.2 15.2A14.4 14.4 0 0 0 4.4 4.4Z|M19.6 4.4a11 11 0 0 0-15.2 15.2A14.4 14.4 0 0 1 19.6 4.4Z',
   alba: 'M6.4 17.2a5.6 5.6 0 0 1 11.2 0|M2.4 17.2h19.2|M12 3.6v2.8|M5.4 6.4 7.5 8.5|M18.6 6.4l-2.1 2.1|M2.6 11.6h2.8|M18.6 11.6h2.8',
+  vulcano: 'M3 20.4h18|M6.4 20.4 12 9.2l5.6 11.2|M12 9.2V4.4|M9.4 6.4 8 3.4|M14.6 6.4 16 3.4',
+  supernova: 'M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0|M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0|M12 2.6v2.6|M12 18.8v2.6|M2.6 12h2.6|M18.8 12h2.6|M5.6 5.6 7.5 7.5|M16.5 16.5l1.9 1.9|M18.4 5.6l-1.9 1.9|M7.5 16.5l-1.9 1.9',
+  zanna: 'M12 2.2 16.2 11 12 21.8 7.8 11Z|M12 2.2v19.6|M4.4 7 8.4 11|M19.6 7l-4 4',
+  inverno: 'M12 3v18|M4.2 7.5 19.8 16.5|M19.8 7.5 4.2 16.5|M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0',
+  giudizio: 'M13.8 1.8 6.4 12.4h5L9.6 22.2 18 10.6h-5.2Z|M2.6 20.4h4.4|M17 20.4h4.4',
+  nervo: 'M6 12m-2.6 0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0|M8.6 12h12.8|M8.2 10.2 20.6 4.4|M8.2 13.8 20.6 19.6|M8.4 8.6 17 2.6|M8.4 15.4 17 21.4',
+  abisso: 'M12 12m-3.4 0a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0-6.8 0|M12 12m-7.4 0a7.4 7.4 0 1 0 14.8 0a7.4 7.4 0 1 0-14.8 0|M12 1.4v3.2|M12 19.4v3.2|M1.4 12h3.2|M19.4 12h3.2',
+  nugolo: 'M2.2 7.4 8.2 9.8 2.2 12.2|M8.4 4.8 14.4 7.2 8.4 9.6|M2.2 14 8.2 16.4 2.2 18.8|M14.6 9.2 20.6 11.6 14.6 14|M8.6 13.4 14.6 15.8 8.6 18.2',
+  caleidoscopio: 'M12 2.6 20.8 18.6H3.2Z|M12 2.6v16|M3.2 18.6 20.8 8.8|M20.8 18.6 3.2 8.8',
+  sacrario: 'M12 12m-3.8 0a3.8 3.8 0 1 0 7.6 0a3.8 3.8 0 1 0-7.6 0|M12 12m-8.6 0a8.6 8.6 0 1 0 17.2 0a8.6 8.6 0 1 0-17.2 0|M12 1.8v2.8|M12 19.4v2.8|M1.8 12h2.8|M19.4 12h2.8',
+  arcobaleno: 'M2.4 19.6a9.6 9.6 0 0 1 19.2 0|M6 19.6a6 6 0 0 1 12 0|M9.5 19.6a2.5 2.5 0 0 1 5 0',
   vigore: 'M12 20.8S4 16.2 4 10.6A4.8 4.8 0 0 1 12 6.8a4.8 4.8 0 0 1 8 3.8c0 5.6-8 10.2-8 10.2Z',
   impeto: 'M5 15.4 12 3.6l7 11.8|M8.4 20.6h7.2',
   celerita: 'M3 8h9|M3 12h12.5|M3 16h7|M15.5 7.6 20.4 12l-4.9 4.4',
@@ -231,11 +242,42 @@ const RUNES = {
      aria insieme, e mordendo dieci volte al secondo l'una */
   mietitore: { n: 'Mietitore', el: 'vuoto', tag: 'trasformazione', evo: 1, d: 'Lame che spiraleggiano a lungo risucchiando i nemici lungo il cammino.',
     base: { dmg: 56, cd: 1.25, spd: 320, count: 3, size: 27, dur: 2.6, hit: .24 }, g: { dmg: 22, cd: -.07, count: .3, spd: 10 } },
+  vulcano: { n: 'Vulcano', el: 'fuoco', tag: 'trasformazione', evo: 1, d: 'Le pozze non bruciano soltanto: eruttano, e ogni eruzione è un’onda d’urto.',
+    base: { dmg: 30, cd: 1.7, area: 74, dur: 4.2 }, g: { dmg: 12, cd: -.07, area: 6, dur: .2 } },
+  supernova: { n: 'Supernova', el: 'fuoco', tag: 'trasformazione', evo: 1, d: 'Un’onda che collassa e poi esplode di nuovo, molto più larga.',
+    base: { dmg: 52, cd: 3.0, area: 170 }, g: { dmg: 21, cd: -.2, area: 17 } },
+  zanna: { n: 'Zanna', el: 'gelo', tag: 'trasformazione', evo: 1, d: 'Lance che trapassano qualsiasi cosa e si sdoppiano su ogni uccisione.',
+    base: { dmg: 52, cd: .8, spd: 620, count: 3, pierce: 8, size: 9 }, g: { dmg: 21, cd: -.045, count: .45, pierce: .8 } },
+  inverno: { n: 'Inverno', el: 'gelo', tag: 'trasformazione', evo: 1, d: 'L’alone diventa una stagione: congela al tocco e lascia chiazze di gelo.',
+    base: { dmg: 15, cd: .30, area: 158 }, g: { dmg: 6.2, area: 13 } },
+  giudizio: { n: 'Giudizio', el: 'fulmine', tag: 'trasformazione', evo: 1, d: 'Poche saette, enormi, e ognuna scarica una catena dove cade.',
+    base: { dmg: 74, cd: 1.1, count: 2, area: 380, size: 64 }, g: { dmg: 30, cd: -.05, count: .3, size: 3.6 } },
+  nervo: { n: 'Nervo', el: 'fulmine', tag: 'trasformazione', evo: 1, d: 'Non un filamento: un fascio, agganciato a più bersagli insieme.',
+    base: { dmg: 40, cd: .10, area: 350, count: 4 }, g: { dmg: 16, area: 16, count: .7 } },
+  abisso: { n: 'Abisso', el: 'vuoto', tag: 'trasformazione', evo: 1, d: 'Il pozzo non si richiude: resta, risucchia da lontano e divora.',
+    base: { dmg: 27, cd: 5.0, area: 142, dur: 6.0 }, g: { dmg: 10.5, cd: -.24, area: 10, dur: .3 } },
+  nugolo: { n: 'Nugolo', el: 'vuoto', tag: 'trasformazione', evo: 1, d: 'Una nube di dardi che insegue e non smette mai di trapassare.',
+    base: { dmg: 34, cd: .8, count: 9, spd: 480, pierce: 4, size: 8 }, g: { dmg: 14, cd: -.04, count: 1.1, pierce: .4, spd: 12 } },
+  caleidoscopio: { n: 'Caleidoscopio', el: 'luce', tag: 'trasformazione', evo: 1, d: 'Il colpo si frantuma, e ogni scheggia si frantuma ancora.',
+    base: { dmg: 62, cd: 1.05, spd: 500, count: 6, size: 11 }, g: { dmg: 25, cd: -.055, count: .75 } },
+  sacrario: { n: 'Sacrario', el: 'luce', tag: 'trasformazione', evo: 1, d: 'Ogni pulsazione lascia dietro di sé un cerchio di luce che ti risana.',
+    base: { dmg: 52, cd: 1.9, area: 176, heal: 4.6 }, g: { dmg: 21, cd: -.12, area: 15, heal: 1.1 } },
+  arcobaleno: { n: 'Arcobaleno', el: 'iride', tag: 'trasformazione', evo: 1, d: 'Spara un dardo per ogni elemento risvegliato nel tuo anello.',
+    base: { dmg: 62, cd: .75, spd: 540, count: 2, pierce: 3, size: 12 }, g: { dmg: 25, cd: -.04, count: .5, pierce: .45 } },
   alba: { n: 'Alba', el: 'luce', tag: 'trasformazione', evo: 1, d: 'Due fasci opposti che spazzano l’arena senza fermarsi mai.',
     base: { dmg: 8, cd: .09, area: 335, spd: 1.05 }, g: { dmg: 2.9, area: 17, spd: .04 } }
 };
 /* quale runa diventa cosa */
-const EVO = { scintilla: 'cometa', cristallo: 'glaciale', arco: 'fulgore', falce: 'mietitore', raggio: 'alba' };
+/* Ogni runa ne ha una: sedici momenti "ce l'ho fatta" invece di cinque, e
+   sedici ragioni diverse per costruire un anello diverso. */
+const EVO = {
+  scintilla: 'cometa', pira: 'vulcano', nova: 'supernova',
+  scheggia: 'zanna', bruma: 'inverno', cristallo: 'glaciale',
+  arco: 'fulgore', tempesta: 'giudizio', filo: 'nervo',
+  singolarita: 'abisso', falce: 'mietitore', sciame: 'nugolo',
+  raggio: 'alba', prisma: 'caleidoscopio', aureola: 'sacrario',
+  iride: 'arcobaleno'
+};
 const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
 
 /* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
@@ -245,7 +287,15 @@ function canEvolve(r) {
      posizionale, che è ciò che rende la trasformazione un progetto — la
      anticipa di un livello, cioè di qualche minuto. */
   const soglia = hasRel('crogiolo') ? 7 : 8;
-  return !!(r && EVO[r.id] && r.lv >= soglia && r.res >= 2 && G.awaken[r.el] >= 1);
+  if (!r || !EVO[r.id] || r.lv < soglia || r.res < 2) return false;
+  /* L'Iride non ha un elemento suo, quindi non può avere un Risveglio suo:
+     si trasforma quando fa davvero il mestiere per cui esiste, cioè quando è
+     il ponte fra DUE Risvegli diversi accesi insieme. */
+  if (r.el === 'iride') {
+    let n = 0; for (const e of ELKEYS) if (G.awaken[e]) n++;
+    return n >= 2;
+  }
+  return G.awaken[r.el] >= 1;
 }
 
 /* ── passivi ────────────────────────────────────────────────── */
