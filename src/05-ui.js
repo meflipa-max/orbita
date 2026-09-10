@@ -5,7 +5,8 @@
 const SCR = $('#screens'), HUD = $('#hud');
 const elLv = $('#lvnum'), elXp = $('#xpfill'), elXpLine = $('#xpline'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
-  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip');
+  elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip'),
+  elCulm = $('#culm'), elCombo = $('#combo');
 
 /* dito o tastiera? Deciso a ogni partita, non al caricamento:
    così regge anche i portatili con schermo touch e i cambi di contesto. */
@@ -49,7 +50,7 @@ const ARC = (r, a1, a2) => {
 };
 
 const UI = {
-  cur: null, sel: -1, placing: null, dissolving: false, chestMode: false,
+  cur: null, sel: -1, placing: null, dissolving: false, ritemprando: false, chestMode: false,
   /* armato: cosa attende conferma ("char:lyra"); spesa: quanto e' appena
      uscito dal borsello, per farlo vedere sul contatore. */
   armato: null, spesa: 0,
@@ -86,6 +87,21 @@ const UI = {
   },
 
   hud() {
+    /* Culmine: il suo indicatore deve stare dove il pollice lo cerca e dirsi
+       da solo, perché è l'unica cosa che si preme in tutta la partita. */
+    if (elCulm) {
+      const pieno = G.charge >= 1, att = G.culm > 0;
+      elCulm.className = 'clip on' + (pieno && !att ? ' pronto' : '') + (att ? ' attivo' : '');
+      elCulm.style.setProperty('--f', att ? 1 - G.culm / CULM_DUR : clamp(G.charge, 0, 1));
+      elCulm.querySelector('.lab').textContent = att ? Math.ceil(G.culm) + 's'
+        : (pieno ? (isCoarse() ? 'TOCCA' : 'SPAZIO') : Math.round(G.charge * 100) + '%');
+    }
+    if (elCombo) {
+      if (G.combo >= 6) {
+        elCombo.className = 'clip on g' + G.comboLv;
+        elCombo.innerHTML = '<b>' + G.combo + '</b><small>al secondo</small>';
+      } else elCombo.className = 'clip';
+    }
     elLv.textContent = G.level;
     elXp.style.width = (clamp(G.xp / G.xpNeed, 0, 1) * 100) + '%';
     const f = clamp(P.hp / P.maxHp, 0, 1);
@@ -675,8 +691,20 @@ const UI = {
          invisibile e la trasformazione non capita mai */
       /* in dissoluzione il segnale rosso vince su quello di trasformazione:
          altrimenti le rune trasformabili non risultavano rimovibili */
-      let evoCls = '';
-      if (this.dissolving) evoCls = r ? ' dissolvibile' : '';
+      let evoCls = '', tag = '';
+      if (this.ritemprando) {
+        const bg = r ? (this.ritBersagli || []).find(x => x.slot === i) : null;
+        if (bg) { evoCls = ' ritemprabile'; c = EL[bg.el].c; tag = '<span class="tagslot" style="--c:' + c + '">→ ' + EL[bg.el].n.toUpperCase() + '</span>'; }
+        else if (r) evoCls = ' inerte';
+      }
+      else if (this.placing && r) {
+        /* ad anello pieno si può prendere il posto di una runa che non
+           risuona: l'alternativa era restare inchiodati alla composizione
+           uscita dai primi cinque sorteggi */
+        if (sacrificabile(i)) { evoCls = ' sostituibile'; tag = '<span class="tagslot" style="--c:#ff3d6e">SOSTITUISCI</span>'; }
+        else evoCls = ' inerte';
+      }
+      else if (this.dissolving) evoCls = r ? ' dissolvibile' : '';
       else if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (r.lv >= 8 ? ' vicino' : '');
       const vuoto = !r;
       const dentro = r ? svg(r.id)
@@ -686,7 +714,7 @@ const UI = {
         ' style="left:' + x.toFixed(2) + '%;top:' + y.toFixed(2) + '%;--c:' + c + '">' +
         '<span class="in clip" style="--c:' + c + '">' + dentro + '</span>' +
         (r && r.lv > 1 ? '<span class="lv" style="--c:' + c + '">' + r.lv + '</span>' : '') +
-        '</button>';
+        tag + '</button>';
     }
     let aw = 0; for (const e of ELKEYS) if (G.awaken[e]) aw++;
     return '<div class="ringwrap">' +
@@ -700,17 +728,56 @@ const UI = {
      un segreto e la trasformazione non capita mai. */
   evoLine() {
     const parts = [];
-    for (const r of G.ring) {
+    const soglia = hasRel('crogiolo') ? 7 : 8;
+    for (let i = 0; i < G.slots; i++) {
+      const r = G.ring[i];
       if (!r || !EVO[r.id]) continue;
       const nome = RUNES[r.id].n, col = EL[r.el].c;
       if (canEvolve(r)) { parts.push('<b style="color:' + col + '">' + nome + ' può trasformarsi</b>'); continue; }
-      if (r.lv < 8) continue;
+      if (r.lv < soglia) continue;
       const manca = [];
-      if (r.res < 2) manca.push('rune compatibili su <b>entrambi</b> i lati');
+      if (r.res < 2) {
+        /* Dire "manca la risonanza su entrambi i lati" descrive il problema.
+           Dire "spostala nell'alloggiamento 3" lo risolve — ed è la differenza
+           fra una regola che si capisce e una che non scatta mai. */
+        const j = scambioUtile(i);
+        manca.push(j >= 0
+          ? 'risuonare da <b>entrambi</b> i lati — <b>spostala nell’alloggiamento ' + (j + 1) + '</b>'
+          : 'rune compatibili su <b>entrambi</b> i lati');
+      }
       if (!G.awaken[r.el]) manca.push('il Risveglio ' + EL[r.el].aw);
-      parts.push('<span style="color:' + col + '">' + nome + '</span> è al massimo: manca ' + manca.join(' e '));
+      if (manca.length) parts.push('<span style="color:' + col + '">' + nome + '</span>: manca ' + manca.join(' e '));
     }
     return parts.join('<br>');
+  },
+
+  /* Chi era a una runa dal momento più importante della partita non lo sapeva:
+     l'interfaccia mostrava soltanto i Risvegli GIÀ accesi. */
+  catenaLine() {
+    const c0 = Math.max(2, G.asc.chain + G.cg.chain), parts = [];
+    for (const e of ELKEYS) {
+      if (G.awaken[e]) continue;
+      const run = catenaDi(e);
+      if (!run) continue;
+      parts.push('<span style="color:' + EL[e].c + '">' + EL[e].n + ' ' + run + '/' + c0 + '</span>');
+    }
+    return parts.length ? '<br><span style="color:#6a6199">Verso il Risveglio: </span>' + parts.join(' · ') : '';
+  },
+
+  /* Il Risveglio a schermo intero. Era un avviso in alto: il momento attorno
+     a cui è costruito tutto il gioco veniva trattato come la raccolta di una
+     gemma. */
+  awakeFx(e, tier) {
+    const el = EL[e], fx = $('#awakefx');
+    if (!fx) return;
+    fx.style.setProperty('--c', el.c);
+    fx.innerHTML = '<div class="aw-in">' +
+      '<div class="aw-k">Risveglio · grado ' + 'I'.repeat(tier) + '</div>' +
+      '<div class="aw-n">' + el.aw.toUpperCase() + '</div>' +
+      '<div class="aw-d">' + el.awd[tier - 1] + '</div></div>';
+    fx.className = ''; void fx.offsetWidth; fx.className = 'on' + (tier >= 3 ? ' max' : '');
+    clearTimeout(this._awT);
+    this._awT = setTimeout(() => { fx.className = ''; }, 1800);
   },
 
   awakeLine() {
@@ -793,6 +860,9 @@ const UI = {
     this.open('level',
       '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + G.level) + '</div>' +
       '<h2 class="ttl">' + (chest ? 'Un dono dal vuoto' : 'Il nucleo cresce') + '</h2>' +
+      /* La domanda che questa schermata pone è "questa runa si incastra?", e
+         si poneva tenendo l'anello fuori vista, dietro un altro tocco. */
+      '<div class="ringmini">' + this.ringHTML(false) + '</div>' +
       '<div id="cards">' + cards + '</div>' +
       /* Nessuna delle tre va bene? Due verbi diversi: Rilancia se speri in
          qualcosa di meglio, Salta se preferisci non toccare la build. In
@@ -803,7 +873,7 @@ const UI = {
       '<span class="face">Rilancia' + (G.rerolls > 0 ? ' · ' + G.rerolls : '') + '</span></button>' +
       '<button class="btn ghost clip" data-a="skip"><span class="face">Salta</span></button>' +
       '</div>' +
-      '<div class="hint" style="margin-top:2px">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
+      '<div class="hint" style="margin-top:2px">' + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       '<button class="btn ghost clip" style="max-width:280px;margin:0 auto" data-a="ringedit"><span class="face">Riordina l’anello</span></button>'
     );
   },
@@ -815,6 +885,13 @@ const UI = {
         '<span class="newtag" style="--c:' + el.c + '">TRASFORMA</span>' +
         '<span class="ico clip">' + svg(c.to) + '</span><span class="body">' +
         '<span class="kicker">' + from.n + ' → ' + to.n + '</span><h3>' + to.n + '</h3><p>' + to.d + '</p>' +
+        '</span></span></button>';
+    }
+    if (c.t === 'ritempra') {
+      return '<button class="card rit clip" data-a="pick" data-i="' + i + '" style="--c:#ff7de3"><span class="face">' +
+        '<span class="ico clip">' + svg('iride') + '</span><span class="body">' +
+        '<span class="kicker">Anello</span><h3>Ritempra</h3>' +
+        '<p>Riaccorda una runa <em>all’elemento di una vicina</em>. Conserva forma e livello: cambia solo con chi risuona.</p>' +
         '</span></span></button>';
     }
     if (c.t === 'diss') {
@@ -872,27 +949,33 @@ const UI = {
   },
 
   /* ── editor dell’anello ─────────────────────────────────── */
-  ringEdit(placing, dissolving) {
-    this.placing = placing || null; this.dissolving = !!dissolving; this.sel = -1;
-    const t = this.dissolving
+  ringEdit(placing, dissolving, ritemprando) {
+    this.placing = placing || null; this.dissolving = !!dissolving;
+    this.ritemprando = !!ritemprando; this.sel = -1;
+    if (this.ritemprando) this.ritBersagli = bersagliRitempra();
+    const t = this.ritemprando
+      ? 'Tocca la runa da riaccordare: prende l’elemento che le fa allungare la catena.'
+      : this.dissolving
       ? 'Tocca la runa da dissolvere. L’alloggiamento torna libero.'
       : this.placing
-        ? 'Scegli dove collocare <span style="color:' + EL[RUNES[this.placing].el].c + '">' + RUNES[this.placing].n + '</span>'
+        ? 'Scegli dove collocare <span style="color:' + EL[RUNES[this.placing].el].c + '">' + RUNES[this.placing].n + '</span>' +
+          (G.ring.every(Boolean) ? '<br><span style="color:#6a6199">L’anello è pieno: può prendere il posto di una runa che non regge un Risveglio.</span>' : '')
         : 'Tocca due rune per scambiarle';
     this.open('ring',
       '<div class="eyebrow">Anello · ' + G.slots + ' alloggiamenti</div>' +
-      '<h2 class="ttl">' + (this.dissolving ? 'Dissoluzione' : this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
+      '<h2 class="ttl">' + (this.ritemprando ? 'Ritempra' : this.dissolving ? 'Dissoluzione' : this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
       '<p class="sub" style="margin-top:-8px">' + t + '</p>' +
       this.ringHTML(true) +
-      '<div class="hint" id="ringinfo">' + this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
-      (this.placing || this.dissolving ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
+      '<div class="hint" id="ringinfo">' + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
+      (this.placing || this.dissolving || this.ritemprando ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
     );
   },
   refreshRing() {
+    if (this.ritemprando) this.ritBersagli = bersagliRitempra();
     const w = SCR.querySelector('.ringwrap');
     if (w) w.outerHTML = this.ringHTML(true);
     const inf = SCR.querySelector('#ringinfo');
-    if (inf) inf.innerHTML = this.awakeLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
+    if (inf) inf.innerHTML = this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
   },
 
   /* ── pausa ──────────────────────────────────────────────── */
@@ -1034,6 +1117,102 @@ function runeSbloccate() {
   const set = SAVE.runes && SAVE.runes.length ? SAVE.runes : RUNE_BASE;
   return RUNEIDS.filter(id => set.indexOf(id) >= 0 || APERTURE.some(a => a.id === id));
 }
+/* ── analisi dell'anello ──────────────────────────────
+   Funzioni pure: rispondono a "quanto sarebbe lunga la catena SE…" senza
+   toccare lo stato. Servono a tre cose che prima non esistevano — non
+   proporre mai tre carte che non possono sbloccare niente, sapere quando la
+   Ritempra ha senso, e dire DOVE spostare una runa perché si trasformi. */
+function catenaDi(el, ovr) {
+  const n = G.slots, R = G.ring;
+  const ok = new Array(n), isE = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const e = (ovr && ovr.i === i) ? ovr.el : (R[i] ? R[i].el : null);
+    ok[i] = !!e && (e === el || e === 'iride');
+    isE[i] = e === el;
+  }
+  const rule = G.char && G.char.rule;
+  return maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1) + (G.nodo === el ? 1 : 0);
+}
+/* quali rune, riaccordate, allungherebbero una catena — e verso quale elemento */
+function bersagliRitempra() {
+  const out = [], n = G.slots, R = G.ring;
+  const base = {}; for (const e of ELKEYS) base[e] = catenaDi(e);
+  for (let i = 0; i < n; i++) {
+    const r = R[i]; if (!r) continue;
+    const cand = new Set();
+    const a = R[(i - 1 + n) % n], b = R[(i + 1) % n];
+    if (a && a.el !== 'iride') cand.add(a.el);
+    if (b && b.el !== 'iride') cand.add(b.el);
+    if (SAVE.apertura && SAVE.apertura !== 'iride') cand.add(SAVE.apertura);
+    let best = null, gain = 0;
+    for (const el of cand) {
+      if (el === r.el) continue;
+      let g = 0;
+      for (const e of ELKEYS) g += Math.max(0, catenaDi(e, { i, el }) - base[e]);
+      if (g > gain) { gain = g; best = el; }
+    }
+    if (best) out.push({ slot: i, el: best, gain });
+  }
+  return out;
+}
+/* risonanza che avrebbe la runa in posizione i, su un anello ipotetico */
+function resInPosizione(arr, i) {
+  const n = G.slots, a = arr[i];
+  if (!a) return 0;
+  let res = 0;
+  const b1 = arr[(i - 1 + n) % n], b2 = arr[(i + 1) % n];
+  if (b1 && compat(a, b1)) res++;
+  if (b2 && compat(a, b2)) res++;
+  if (G.char && G.char.rule === 'ecoLunga' && n >= 5) {
+    const c1 = arr[(i - 2 + n) % n], c2 = arr[(i + 2) % n];
+    if (c1 && compat(a, c1)) res = Math.min(3, res + 1);
+    if (c2 && compat(a, c2)) res = Math.min(3, res + 1);
+  }
+  return res;
+}
+/* Questa runa si può sacrificare? Il criterio "non risuona" non bastava:
+   con un'Iride nell'anello risuona tutto, e le rune nuove sparivano di nuovo
+   dal mazzo. Quello che conta davvero è se toglierla SPEGNEREBBE un Risveglio.
+   Se no, è materiale di scambio — e il giocatore vede gli archi, quindi la
+   conseguenza non è nascosta. */
+function sacrificabile(i) {
+  const r = G.ring[i];
+  if (!r) return false;
+  const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+  for (const e of ELKEYS) {
+    if (!G.awaken[e]) continue;
+    if (catenaDi(e, { i, el: null }) < c0) return false;
+  }
+  return true;
+}
+
+/* dove spostare la runa dell'alloggiamento i perché risuoni da entrambi i lati */
+function scambioUtile(i) {
+  const n = G.slots, R = G.ring;
+  if (!R[i]) return -1;
+  for (let j = 0; j < n; j++) {
+    if (j === i) continue;
+    const arr = R.slice();
+    const t = arr[j]; arr[j] = arr[i]; arr[i] = t;
+    if (resInPosizione(arr, j) >= 2) return j;
+  }
+  return -1;
+}
+/* questa carta può cambiare la COMPOSIZIONE dell'anello? */
+function aiutaAnello(c) {
+  if (c.t === 'evo' || c.t === 'ritempra' || c.t === 'diss') return true;
+  if (c.t === 'rnew') {
+    const el = RUNES[c.id].el, n = G.slots;
+    const fit = x => x && (x.el === el || x.el === 'iride' || el === 'iride');
+    for (let i = 0; i < n; i++) {
+      const libero = !G.ring[i] || sacrificabile(i);
+      if (!libero) continue;
+      if (fit(G.ring[(i - 1 + n) % n]) || fit(G.ring[(i + 1) % n])) return true;
+    }
+  }
+  return false;
+}
+
 function rollChoices(n) {
   const pool = [];
   const inRing = G.ring.filter(Boolean);
@@ -1048,7 +1227,14 @@ function rollChoices(n) {
      alloggiamenti ti obbliga a usare il suo elemento come una delle due
      catene, o a rinunciare al secondo Risveglio. Pesa di più ad anello
      pieno, che è quando è l'unico modo di cambiare idea. */
-  if (inRing.length >= 3) pool.push({ t: 'diss', w: empty ? 1.8 : 5.5 });
+  if (inRing.length >= 3) pool.push({ t: 'diss', w: empty ? 1.8 : 4.2 });
+  /* Ritempra: riaccorda una runa all'elemento di una vicina, conservandone
+     forma e livello. Compare solo se c'è davvero una runa che, riaccordata,
+     allungherebbe una catena — altrimenti sarebbe una carta vuota travestita
+     da carta interessante. È il secondo modo di scongelare l'anello, e a
+     differenza di Dissolvi non lascia un buco. */
+  const rit = bersagliRitempra();
+  if (rit.length) pool.push({ t: 'ritempra', w: empty ? 2.2 : 6.5 });
   const vuoti = G.slots - inRing.length;
   const wNew = 3.6 + vuoti * 1.3;
   for (const r of inRing) if (r.lv < 8) pool.push({ t: 'rup', id: r.id, w: 3.4 });
@@ -1056,9 +1242,23 @@ function rollChoices(n) {
      livello della prima partita, quindi non esisteva — mai, in tutta la
      vita del giocatore — il momento «ho trovato una runa nuova». Le sei
      aperture sono sempre nel mazzo, così ogni apertura resta giocabile. */
-  if (empty) for (const id of runeSbloccate()) {
+  /* Le rune nuove restavano fuori dal mazzo appena l'anello si riempiva, cioè
+     dopo cinque o sei livelli: da lì la composizione elementale era decisa per
+     il resto della partita. Misurato su una corsa vera: al quarto minuto sei
+     elementi diversi, nessun Risveglio, e nel mazzo nemmeno una `rnew`. Ora si
+     offrono sempre — ad anello pieno la nuova runa PRENDE IL POSTO di una che
+     non risuona, e quella si dissolve in frammenti. */
+  let sostituibili = 0;
+  for (let i = 0; i < G.slots; i++) if (G.ring[i] && sacrificabile(i)) sostituibili++;
+  if (empty || sostituibili) for (const id of runeSbloccate()) {
     if (inRing.some(r => r.id === id)) continue;
-    pool.push({ t: 'rnew', id, w: id === 'iride' ? wNew * .55 : wNew });
+    let w = id === 'iride' ? wNew * .55 : wNew;
+    if (!empty) w *= .5;                      /* sostituire costa: pesa meno di riempire */
+    /* un elemento già presente pesa di più: è così che la catena si forma da
+       sola invece di dipendere da sei sorteggi indipendenti */
+    const gia = inRing.filter(r => r.el === RUNES[id].el).length;
+    if (gia) w *= 1 + gia * .7;
+    pool.push({ t: 'rnew', id, w });
   }
   for (const id of PASSIDS) { const lv = G.passives[id] | 0; if (lv < PASSIVES[id].max) pool.push({ t: 'pas', id, w: 2.5 }); }
   const out = [];
@@ -1087,11 +1287,30 @@ function rollChoices(n) {
       out[k] = { t: 'rnew', id: nuove[(nextRand() * nuove.length) | 0] };
     }
   }
+  /* Nessuna mano morta. Finché non hai acceso un Risveglio, almeno una delle
+     tre carte deve poter cambiare la composizione dell'anello: era questo, più
+     di ogni altra cosa, a far finire partite intere senza mai vedere la
+     meccanica principale. E fra quelle utili vince, se c'è, una runa della tua
+     apertura — la direzione che hai scelto deve poter essere seguita. */
+  const acceso = ELKEYS.some(e => G.awaken[e]);
+  if (!acceso && !out.some(aiutaAnello)) {
+    const utili = pool.filter(aiutaAnello);
+    if (utili.length) {
+      const pref = utili.filter(c => c.t === 'rnew' && RUNES[c.id].el === SAVE.apertura);
+      const src = pref.length ? pref : utili;
+      src.sort((a, b) => b.w - a.w);
+      let k = out.findIndex(o => o.t === 'gold');
+      if (k < 0) k = out.findIndex(o => o.t === 'pas');
+      if (k < 0) k = out.length - 1;
+      out[k] = src[0];
+    }
+  }
   return out;
 }
 
 function applyChoice(c) {
-  if (c.t === 'diss') return 'diss';   /* la scelta di quale runa avviene nell'anello */
+  if (c.t === 'diss') return 'diss';       /* quale runa lo si sceglie nell'anello */
+  if (c.t === 'ritempra') return 'ritempra';
   if (c.t === 'evo') {
     const i = G.ring.findIndex(x => x && x.id === c.id);
     if (i >= 0) {
@@ -1168,6 +1387,10 @@ function resetRun(charId, seed, modoId, giorno) {
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
+  G.awk = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
+  G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
+  G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
+  G.dmgSrc = {}; G.killer = null;
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');
@@ -1563,6 +1786,7 @@ SCR.addEventListener('click', ev => {
       const needsPlace = applyChoice(c);
       G.pending--;
       if (needsPlace === 'diss') UI.ringEdit(null, true);
+      else if (needsPlace === 'ritempra') UI.ringEdit(null, false, true);
       else if (needsPlace) UI.ringEdit(c.id);
       else if (G.pending > 0) UI.levelup();
       else riprendiGioco();
@@ -1570,6 +1794,18 @@ SCR.addEventListener('click', ev => {
     }
     case 'slot': {
       const i = +b.dataset.i;
+      if (UI.ritemprando) {
+        const r = G.ring[i];
+        const t = (UI.ritBersagli || []).find(x => x.slot === i);
+        if (!r || !t) { UI.toast('NESSUN GUADAGNO', 'Riaccordare questa runa non allunga nessuna catena', '#ff3d6e'); return; }
+        const prima = RUNES[r.id].n, da = EL[r.el].n;
+        r.el = t.el; UI.ritemprando = false;
+        recalcRing(true);
+        UI.toast('RITEMPRATA', prima + ' · da ' + da + ' a ' + EL[t.el].n, EL[t.el].c);
+        AU.play('buy'); G.shake = Math.max(G.shake, 7);
+        if (G.pending > 0) UI.levelup(); else riprendiGioco();
+        return;
+      }
       if (UI.dissolving) {
         const r = G.ring[i];
         if (!r) return;
@@ -1584,7 +1820,14 @@ SCR.addEventListener('click', ev => {
         return;
       }
       if (UI.placing) {
-        if (G.ring[i]) { UI.toast('ALLOGGIAMENTO OCCUPATO', 'Scegline uno vuoto', '#ff3d6e'); return; }
+        const occ = G.ring[i];
+        if (occ && !sacrificabile(i)) { UI.toast('SPEGNEREBBE UN RISVEGLIO', 'Scegli una runa che non regge una catena accesa', '#ff3d6e'); return; }
+        if (occ) {
+          const reso = (20 + occ.lv * 16) * (hasRel('mercante') ? 2 : 1);
+          G.shards += reso;
+          UI.toast('SOSTITUITA', RUNES[occ.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
+          G.shake = Math.max(G.shake, 6);
+        }
         placeRune(UI.placing, i); UI.placing = null;
         if (G.pending > 0) UI.levelup(); else riprendiGioco();
         return;

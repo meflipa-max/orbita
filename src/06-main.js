@@ -61,6 +61,8 @@ function step(dt) {
   const E = G.enemies;
   for (let n = 0; n < E.length; n++) if (E[n].hp > 0) GRID.add(E[n]);
 
+  updateCombo(dt);
+  updateCulmine(dt);
   updateRunes(dt);
   updateBullets(dt);
   updateEBullets(dt);
@@ -338,6 +340,11 @@ function boot() {
   /* e comunque ogni pochi secondi, perché una chiusura brusca non avvisa */
   setInterval(salvaCorsa, 4000);
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
+  /* il Culmine su schermo tattile: pointerdown, non click — con la levetta
+     che nasce sotto il dito un tap lungo non deve perdersi */
+  const bCulm = $('#culm');
+  bCulm.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); AU.init(); attivaCulmine(); });
+  bCulm.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
   /* handle di debug: utile per collaudo e bilanciamento */
   window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave };
   addEventListener('pointerdown', () => AU.init(), { once: true });

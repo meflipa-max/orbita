@@ -365,6 +365,18 @@ const AU = {
       case 'level': [0, 4, 7, 12].forEach((n, i) => setTimeout(() => this.tone(440 * Math.pow(2, n / 12), .3, 'triangle', .12), i * 62)); break;
       case 'boss': this.tone(70, 1.4, 'sawtooth', .26, 42); this.burst(.9, .2, 200, .5); break;
       case 'blast': this.burst(.34, .26, 320, .5); this.tone(120, .34, 'sawtooth', .16, 40); break;
+      case 'culmine':
+        this.tone(70, .9, 'sawtooth', .26, 240);
+        this.burst(.42, .22, 900, .5);
+        [0, 5, 10, 17].forEach((n, i) => setTimeout(() => this.tone(392 * Math.pow(2, n / 12), .34, 'square', .085), i * 44));
+        break;
+      case 'ready': this.tone(1046, .12, 'triangle', .09, 1568); setTimeout(() => this.tone(1568, .18, 'triangle', .07), 90); break;
+      case 'combo': {
+        const g = Math.max(1, G.comboLv);
+        this.tone(180 * Math.pow(1.5, g - 1), .3, 'sawtooth', .17, 70);
+        this.burst(.24, .17, 500 + g * 400, .6);
+        break;
+      }
       case 'ui': this.tone(760, .05, 'square', .05, 640); break;
       case 'buy': this.tone(520, .09, 'triangle', .12, 780); setTimeout(() => this.tone(780, .16, 'triangle', .1, 1040), 70); break;
       case 'die': this.tone(220, 1.1, 'sawtooth', .22, 40); this.burst(.9, .18, 260, .4); break;
@@ -449,9 +461,13 @@ const IN = { ax: 0, ay: 0, keys: {}, touchId: null, ox: 0, oy: 0 };
 const joyEl = $('#joy'), joyNub = joyEl.querySelector('.nub');
 
 addEventListener('keydown', e => {
+  if (e.repeat) { if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault(); return; }
   const k = e.key.toLowerCase();
   IN.keys[k] = 1;
   if (k === 'escape' || k === 'p') { e.preventDefault(); UI.togglePause(); }
+  /* Spazio: Culmine. È l'unico tasto d'azione del gioco, quindi è il più
+     grande e il più a portata di pollice della tastiera. */
+  if (k === ' ' && G.state === 'play') { e.preventDefault(); attivaCulmine(); }
   if (k === ' ' && G.state !== 'play') e.preventDefault();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
 });
@@ -550,6 +566,14 @@ const G = {
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
+  /* awk = Risvegli EFFETTIVI (base + il grado in più del Culmine): è questo
+     che legge tutto ciò che infligge danno. */
+  awk: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
+  charge: 0, culm: 0, culms: 0, chargeAnn: 0,
+  /* raffica: uccisioni nell'ultimo secondo, in due secchielli da mezzo */
+  combo: 0, comboMax: 0, comboLv: 0, kb0: 0, kb1: 0, kbT: .5,
+  /* consuntivo: quale runa ha fatto il danno, e chi ti ha ucciso */
+  dmgSrc: {}, killer: null,
   spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
   starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2,
@@ -611,7 +635,7 @@ function recalc() {
      bonus secco per averli accesi. È la reliquia che premia chi progetta
      l'anello per averne due invece di uno solo grosso. */
   let coro = 1;
-  if (hasRel('coro')) { let n = 0; for (const k of ELKEYS) if (G.awaken[k]) n++; coro = 1 + .07 * n; }
+  if (hasRel('coro')) { let n = 0; for (const k of ELKEYS) if (G.awk[k]) n++; coro = 1 + .07 * n; }
   P.dmgMul = (1 + .05 * mlv('furia')) * (1 + .015 * mlv('dominio')) * (m.dmg || 1) * (1 + .12 * lv('impeto')) * G.cg.dmg * coro;
   P.cdMul = Math.max(.32, 1 - .10 * lv('frenesia'));
   P.areaMul = (m.area || 1) * (1 + .14 * lv('ampiezza'));
@@ -620,13 +644,22 @@ function recalc() {
      corsa dura otto minuti invece di venti, e senza questo la build non
      farebbe in tempo a esistere prima dell'ultimo guardiano */
   P.xpMul = (1 + .08 * mlv('avidita')) * (m.xp || 1) * (1 + .20 * lv('sapienza')) * (G.modo.xp || 1);
-  P.crit = .05 + .03 * mlv('occhio') + (m.crit || 0) + .08 * lv('precisione') + [0, .12, .22, .35][G.awaken.luce];
+  P.crit = .05 + .03 * mlv('occhio') + (m.crit || 0) + .08 * lv('precisione') + [0, .12, .22, .35][G.awk.luce];
   P.critD = 2 + (m.critD || 0);
   P.dr = Math.max(.35, 1 - .10 * lv('corazza'));
   P.regen = .3 * mlv('linfa') + .7 * lv('linfa');
   P.projMul = 1 + .22 * lv('vortice');
   P.shardMul = (1 + .12 * mlv('fortuna')) * G.cg.shard;
   P.hp = Math.min(P.hp, P.maxHp);
+}
+
+/* ── Risvegli effettivi ─────────────────────────────────────────
+   Il Culmine alza di un grado ogni Risveglio GIÀ acceso: G.awaken resta la
+   base costruita con l'anello, G.awk è quello che infligge davvero danno. */
+function recalcAwk() {
+  const su = G.culm > 0 ? 1 : 0;
+  for (const e of ELKEYS) { const b = G.awaken[e]; G.awk[e] = b ? Math.min(3, b + su) : 0; }
+  recalc();
 }
 
 /* ── anello: risonanze e risvegli ───────────────────────────── */
@@ -679,10 +712,7 @@ function recalcRing(announce) {
     const prev = G.awaken[e];
     G.awaken[e] = tier;
     if (tier && !G.awakeAt) G.awakeAt = G.t;
-    if (announce && tier > prev) {
-      UI.toast('RISVEGLIO · ' + EL[e].aw.toUpperCase(), EL[e].awd[tier - 1], EL[e].c);
-      AU.play('awake'); G.shake = Math.max(G.shake, 9);
-    }
+    if (announce && tier > prev) risveglioFx(e, tier);
   }
   /* Quali elementi hai davvero nell'anello. Serve al terreno: un Nodo si
      accende solo se e' sintonizzato su un elemento che stai giocando
@@ -707,7 +737,7 @@ function recalcRing(announce) {
   /* il livello più alto toccato da una runa in questa partita: serve a uno
      degli sblocchi, e va letto qui perché una runa dissolta sparisce */
   for (let i = 0; i < n; i++) if (R[i] && R[i].lv > G.maxLv) G.maxLv = R[i].lv;
-  recalc();
+  recalcAwk();
   UI.renderAwake();
 }
 
@@ -895,8 +925,8 @@ function _hit(e, amount, opt) {
       for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - .04);
     }
     burstPart(e.x, e.y, 4, '#fff', 190, 3, .28);
-    if (G.awaken.luce && G.healCd <= 0) {
-      G.healCd = .55; const h = [0, 1, 2, 3.5][G.awaken.luce];
+    if (G.awk.luce && G.healCd <= 0) {
+      G.healCd = .55; const h = [0, 1, 2, 3.5][G.awk.luce];
       P.hp = Math.min(P.maxHp, P.hp + h); addFloat(G.p.x, G.p.y - 26, '+' + h, '#6ff2c4');
     }
   } else AU.play('hit');
@@ -921,7 +951,7 @@ function _hit(e, amount, opt) {
   burstPart(e.x, e.y, crit ? 5 : 2, opt.color || e.c, 140, 2.6, .26);
 
   /* risvegli: regole globali del run */
-  const aw = G.awaken;
+  const aw = G.awk;
   if (aw.fuoco && !opt.noStatus) { e.burn = Math.max(e.burn, [0, 5, 11, 24][aw.fuoco] * P.dmgMul); e.burnT = 3.2; }
   if (aw.gelo && !opt.noStatus) {
     e.slow = Math.max(e.slow, [0, .26, .42, .56][aw.gelo]); e.slowT = 2.2;
@@ -996,15 +1026,15 @@ function killEnemy(e, opt) {
      catena (Falce da 5.8 a 95.4 uccisioni al secondo col solo Risveglio
      acceso, contro il x1.0 di Ardore e Torpore). Adesso e' una detonazione,
      non una reazione: chi cade nell'implosione non ne accende una nuova. */
-  if (G.awaken.vuoto && !(opt && opt.implosione)) {
-    const f = [0, .3, .5, .8][G.awaken.vuoto];
-    const rr = 78 + e.r * 2.2 + G.awaken.vuoto * 22;
-    const dm = Math.min(e.maxHp * f, 420 * G.awaken.vuoto);
+  if (G.awk.vuoto && !(opt && opt.implosione)) {
+    const f = [0, .3, .5, .8][G.awk.vuoto];
+    const rr = 78 + e.r * 2.2 + G.awk.vuoto * 22;
+    const dm = Math.min(e.maxHp * f, 420 * G.awk.vuoto);
     G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: 4, r1: rr, t: 0, dur: .34, c: '#b06bff' });
     const near = GRID.near(e.x, e.y, rr, []);
     for (let i = 0; i < near.length; i++) {
       const o = near[i]; if (o === e || o.hp <= 0) continue;
-      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, implosione: 1, noStatus: G.awaken.vuoto < 3 });
+      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, implosione: 1, noStatus: G.awk.vuoto < 3 });
     }
   }
 
@@ -1019,6 +1049,14 @@ function killEnemy(e, opt) {
     const d = Math.hypot(e.x - G.p.x, e.y - G.p.y);
     G.raggio += (d - G.raggio) * .02;
     G.kAcc++;
+    G.kb0++;
+    /* Culmine: ogni uccisione carica l'indicatore. È il ponte fra il ciclo
+       del mietere e l'unico momento in cui decidi tu quando succede la cosa
+       grossa — senza, il gioco ha un verbo solo, che è schivare. */
+    if (G.culm <= 0) {
+      G.charge = Math.min(1, G.charge + (e.boss ? 14 : e.elite ? 5 : 1) / culmineCost(G.t));
+      if (G.charge >= 1 && !G.chargeAnn) { G.chargeAnn = 1; AU.play('ready'); }
+    }
   }
 
   const n = e.boss ? 26 : e.elite ? 9 : 1;
@@ -1047,6 +1085,69 @@ function killEnemy(e, opt) {
        proprietà della partita, non un nome. */
     if (e.boss.fine) winRun();
   }
+}
+
+/* ── il momento del Risveglio ───────────────────────────────────
+   È il momento attorno a cui è costruito tutto il gioco e veniva annunciato
+   come la raccolta di uno scrigno: un avviso e una scossa da 9. Qui il tempo
+   si ferma, lo schermo si tinge dell'elemento, l'anello si incendia e il nome
+   brucia al centro. Un secondo e mezzo che si ricorda. */
+function risveglioFx(e, tier) {
+  G.hitstop = Math.max(G.hitstop, .38);
+  G.shake = Math.max(G.shake, 20);
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: 760, t: 0, dur: .95, c: EL[e].c });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 8, r1: 300, t: 0, dur: .55, c: '#ffffff' });
+  AU.play('awake');
+  UI.awakeFx(e, tier);
+}
+
+/* ── Culmine ────────────────────────────────────────────────────
+   Tre effetti insieme: l'anello spara tutto in una volta, le ricariche vanno
+   quasi al doppio, e ogni Risveglio acceso sale di un grado. */
+function puoCulmine() { return G.state === 'play' && G.culm <= 0 && G.charge >= 1; }
+function attivaCulmine() {
+  if (!puoCulmine()) return false;
+  G.charge = 0; G.chargeAnn = 0; G.culm = CULM_DUR; G.culms++;
+  recalcAwk();
+  G.hitstop = Math.max(G.hitstop, .12);
+  G.shake = Math.max(G.shake, 14);
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 12, r1: 620, t: 0, dur: .7, c: '#ffe9b0' });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: 200, t: 0, dur: .4, c: '#ffffff' });
+  for (const r of G.ring) if (r) r.cd = 0;   /* l'anello spara insieme */
+  AU.play('culmine');
+  UI.toast('CULMINE', 'Ogni Risveglio sale di un grado', '#ffe9b0');
+  return true;
+}
+function updateCulmine(dt) {
+  if (G.culm > 0) {
+    G.culm -= dt;
+    if (cchance(dt * 26)) {
+      const a = crand(TAU), d = RING_R + crand(26);
+      addPart(G.p.x + Math.cos(a) * d, G.p.y + Math.sin(a) * d, Math.cos(a) * 90, Math.sin(a) * 90, .45, crand(4, 2), '#ffe9b0');
+    }
+    if (G.culm <= 0) { G.culm = 0; recalcAwk(); }
+  }
+}
+
+/* uccisioni nell'ultimo secondo, e le soglie che le celebrano. Conta il
+   RITMO, non la catena ininterrotta: mietendo di continuo una catena non si
+   spezza mai e il numero arriva a diecimila senza voler dire niente. */
+const COMBO_SOGLIE = [10, 25, 50, 90];
+const COMBO_NOMI = ['', 'RAFFICA', 'ONDATA', 'MASSACRO', 'ANNIENTAMENTO'];
+function updateCombo(dt) {
+  G.kbT -= dt;
+  if (G.kbT <= 0) { G.kbT += .5; G.kb1 = G.kb0; G.kb0 = 0; }
+  G.combo = G.kb0 + G.kb1;
+  if (G.combo > G.comboMax) G.comboMax = G.combo;
+  let lv = 0;
+  for (let i = COMBO_SOGLIE.length - 1; i >= 0; i--) if (G.combo >= COMBO_SOGLIE[i]) { lv = i + 1; break; }
+  if (lv > G.comboLv) {
+    G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 20, r1: 200 + lv * 130, t: 0, dur: .5, c: '#ffffff' });
+    G.shake = Math.max(G.shake, 4 + lv * 3);
+    addFloat(G.p.x, G.p.y - 46, COMBO_NOMI[lv], '#ffffff', true);
+    AU.play('combo');
+  }
+  G.comboLv = lv;
 }
 
 function hurtPlayer(amount) {

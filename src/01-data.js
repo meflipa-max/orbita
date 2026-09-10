@@ -97,6 +97,18 @@ const ELKEYS = ['fuoco', 'gelo', 'fulmine', 'vuoto', 'luce'];
    da DOVE parti, e sono due scelte separate.
    Per ogni elemento la runa più semplice che ce l'ha: la prima arma deve
    spiegare l'elemento, non sorprenderti. */
+/* ── culmine ────────────────────────────────────────────────────
+   L'unica cosa che facevi con le mani era schivare. Un gioco con un verbo
+   solo ha il soffitto basso: manca il momento in cui DECIDI tu quando
+   succede la cosa grossa. L'indicatore si riempie uccidendo, e spenderlo
+   alza di un grado ogni Risveglio acceso per qualche secondo — non ne
+   accende di nuovi, sarebbe una scorciatoia alla costruzione dell'anello:
+   moltiplica quello che hai costruito, e per questo premia chi l'anello
+   l'ha costruito bene.                                                   */
+const CULM_DUR = 5.5;
+const CULM_CD = 1.85;
+function culmineCost(t) { return 42 + t * .085; }
+
 const APERTURE = [
   { el: 'fuoco',   id: 'scintilla' },
   { el: 'gelo',    id: 'scheggia' },
@@ -158,6 +170,7 @@ const ICO = {
   giorno: 'M4.6 6.4h14.8v13.2H4.6Z|M4.6 10.4h14.8|M8.4 3.4v4|M15.6 3.4v4|M10.8 14.4h2.4',
   chiave: 'M14.6 4.8a4.6 4.6 0 1 1-3.3 7.9L4.8 19.2v-2.6h2.6V14h2.7l1.2-1.3a4.6 4.6 0 0 1 3.3-7.9Z|M16.2 8.4h.01',
   modo: 'M7 4h10|M7 20h10|M7 4c0 4 5 5.4 5 8s-5 4-5 8|M17 4c0 4-5 5.4-5 8s5 4 5 8',
+  culmine: 'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0|M13.2 5.6 8.6 12.6h3.6l-1 5.8 4.6-7h-3.6Z',
   frammento: 'M12 2.2 15.4 8.6 22 12l-6.6 3.4L12 21.8 8.6 15.4 2 12l6.6-3.4Z'
 };
 function svg(id, cls) {
