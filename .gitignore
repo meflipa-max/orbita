@@ -7,3 +7,6 @@ Thumbs.db
 # generati da build.mjs / build.ps1 — ricostruiti da Vercel a ogni deploy
 orbita.html
 dist/
+
+# config locale dell'anteprima
+.claude/
