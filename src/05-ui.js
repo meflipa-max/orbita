@@ -160,9 +160,11 @@ const UI = {
     ).join('') + '</div>';
   },
 
-  /* la congiunzione di questa corsa, dichiarata */
-  congHTML(seed) {
-    const c = congiunzioneDi(seed);
+  /* la congiunzione, dichiarata. `congCard` prende la congiunzione e non
+     il seme, così la stessa carta serve sia a dichiarare quella della
+     PROSSIMA corsa (dal seme, nel menu) sia a ricordare quella in vigore
+     in QUESTA (da G.cong, in pausa). */
+  congCard(c, quale) {
     const quiete = c.id === 'quiete';
     /* La riga diceva «Vetro» e cosa fa, ma non che cosa FOSSE: un nome
        proprio mai visto, senza una categoria sopra, non si può indovinare.
@@ -172,9 +174,10 @@ const UI = {
        corsa, altrimenti sembra una statistica del tuo nucleo. */
     return '<div class="cong clip' + (quiete ? ' calma' : '') + '" style="--c:' + c.c + '">' +
       '<span class="ci clip">' + svg('congiunzione') + '</span>' +
-      '<span class="ct"><span class="ck">Congiunzione · cambia a ogni corsa</span>' +
+      '<span class="ct"><span class="ck">Congiunzione · ' + (quale || 'cambia a ogni corsa') + '</span>' +
       '<b>' + c.n + '</b>' + c.d + '</span></div>';
   },
+  congHTML(seed) { return this.congCard(congiunzioneDi(seed)); },
 
   /* ── l'ascensione, dichiarata come la congiunzione ─────────
      L'ascensione era un NUMERO: «Asc 7» nella riga di riepilogo e nella
@@ -190,8 +193,8 @@ const UI = {
      Adesso porta la stessa carta della congiunzione, nello stesso posto:
      in grassetto la regola appena aggiunta — quella che non ti aspetti —
      e di seguito le altre in vigore. */
-  ascCardHTML() {
-    const sel = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
+  ascCard(lv) {
+    const sel = Math.min(lv | 0, ASC.length - 1);
     if (sel <= 0) return '';
     const altre = [];
     for (let i = 1; i < sel; i++) altre.push(ASC[i].d);
@@ -201,6 +204,7 @@ const UI = {
       (sel === 1 ? ' regola in vigore' : ' regole in vigore') + '</span>' +
       '<b>' + ASC[sel].d + '</b>' + altre.join(' ') + '</span></div>';
   },
+  ascCardHTML() { return this.ascCard(Math.min(SAVE.ascSel | 0, SAVE.asc | 0)); },
 
   /* Che partita sto per giocare. Formato, nucleo, apertura, ascensione e
      congiunzione erano cinque oggetti separati sparsi per la schermata:
@@ -263,7 +267,17 @@ const UI = {
       svg('giorno') + (giornoFatto() ? fmtTime(SAVE.giorno.t) : 'Del giorno') + '</span></button>' +
       '<button class="btn ghost clip" data-a="guide"><span class="face">Guida</span></button>' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
-      '</div></div>' +
+      '</div>' +
+      /* «Del giorno» non parte dal seme dichiarato qui sopra: parte da
+         quello della data, che sorteggia una congiunzione tutta sua. La
+         carta sopra al bottone diceva quindi una regola e il bottone ne
+         faceva partire un'altra — e una corsa del giorno con la Carestia
+         cominciava senza che niente, da nessuna parte, avesse mai scritto
+         «niente cuori». Una riga sola: la corsa del giorno è un formato
+         fisso, non ha bisogno di una seconda carta intera. */
+      '<div class="giornoline">Del giorno · ' + modoDi('incursione').n + ' · <b style="--c:' +
+      congiunzioneDi(semeDelGiorno()).c + '">' + congiunzioneDi(semeDelGiorno()).n + '</b></div>' +
+      '</div>' +
       '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
       (STORE_OK ? '' : '<div class="warn clip">Questo browser non concede memoria: i progressi durano solo finché la scheda resta aperta. Nell’Osservatorio trovi il codice di backup.</div>') +
       '</div>'
@@ -1051,10 +1065,25 @@ const UI = {
     else if (G.state === 'pause') riprendiGioco();
   },
   pause() {
+    /* ── le regole di QUESTA corsa ─────────────────────────
+       La dichiarazione nel menu vale solo per il bottone «Gioca»: «Del
+       giorno» parte su un altro seme, «Ripeti questa semenza» sul seme
+       di prima, e chi scrive un seme a mano non la legge affatto. Da lì
+       in poi, in partita, non c'era un solo posto in cui si potesse
+       scoprire perché i cuori non cadono — né l'HUD, né la pausa, né la
+       carta delle scelte: solo la riga della semenza a partita FINITA,
+       cioè quando non serve più. Qui invece la corsa in corso dice le
+       sue regole, e le dice con le stesse due carte del menu. */
     this.open('pause',
       '<div class="eyebrow">Pausa</div><h2 class="ttl">' + fmtTime(G.t) + '</h2>' +
       this.ringHTML(false) +
       '<div class="hint">' + this.awakeLine() + '</div>' +
+      ((G.cong.id !== 'quiete' || G.ascLv > 0)
+        ? '<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 4px">' +
+          this.ascCard(G.ascLv) +
+          (G.cong.id !== 'quiete' ? this.congCard(G.cong, 'in vigore in questa corsa') : '') +
+          '</div>'
+        : '') +
       '<div class="hint">' + (isCoarse()
         ? 'Trascina ovunque per muoverti · le rune sparano da sole'
         : '<kbd>WASD</kbd> o frecce per muoverti · <kbd>Esc</kbd> pausa · le rune sparano da sole') + '</div>' +
