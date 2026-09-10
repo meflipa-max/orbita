@@ -1213,6 +1213,19 @@ function updateCombo(dt) {
     G.shake = Math.max(G.shake, 4 + lv * 3);
     addFloat(G.p.x, G.p.y - 46, COMBO_NOMI[lv], '#ffffff', true);
     AU.play('combo');
+    /* «RAFFICA» compariva a schermo senza che niente, in nessun punto del
+       gioco, dicesse che cosa fosse: né la guida, né una prima volta. È il
+       ritmo di uccisione — il numero che il contatore a destra mostra come
+       «al secondo» — e le quattro parole sono le sue quattro soglie.
+       Un pannello che ferma il gioco qui sarebbe la cosa sbagliata: succede
+       nel mezzo di dieci uccisioni al secondo, cioè nel momento più fitto
+       della partita. Un avviso che scorre no: si legge senza fermare niente,
+       e lega la parola al contatore che sta già girando. Una volta sola per
+       salvataggio, alla prima soglia. */
+    if (!G.demo && lv === 1 && !visto('raffica')) {
+      UI.primaVolta('raffica');
+      UI.toast('RAFFICA', COMBO_SOGLIE[0] + ' uccisioni al secondo · guarda il contatore', '#bff6ff');
+    }
   }
   G.comboLv = lv;
 }

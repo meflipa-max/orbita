@@ -189,16 +189,25 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   background:radial-gradient(60% 45% at 50% 50%,color-mix(in srgb,var(--c) 34%,transparent),transparent 72%);
   mix-blend-mode:screen}
 #awakefx .aw-in{position:relative;text-align:center;padding:26px 30px;
+  width:100%;box-sizing:border-box;
   animation:awPop .7s cubic-bezier(.16,1.2,.3,1) both}
 #awakefx .aw-in::before{content:"";position:absolute;inset:-10% -6%;z-index:-1;
   background:radial-gradient(60% 70% at 50% 50%,rgba(4,3,12,.88),rgba(4,3,12,.55) 62%,rgba(4,3,12,0) 100%)}
 #awakefx .aw-k{font:700 10px/1 var(--ui);letter-spacing:.34em;text-transform:uppercase;color:var(--c);
   text-shadow:0 0 12px rgba(0,0,0,.9)}
+/* `--fit` e' il corpo massimo che ci sta in larghezza, e lo misura awakeFx
+   a nome gia' scritto: il CSS da solo non puo' saperlo, perche' dipende da
+   quanto e' larga QUELLA parola in QUEL carattere. Senza, SOVRACCARICO —
+   tredici lettere, il nome piu' lungo — usciva dallo schermo di un telefono
+   tagliato a destra, di 58px a 390 di larghezza e di 123px al terzo grado.
+   Il `nowrap` e' quello che rende onesta la misura: senza, la parola andava
+   a capo invece di dire che non ci stava. */
 #awakefx .aw-n{font:800 clamp(38px,13vw,92px)/1 var(--disp);letter-spacing:.02em;color:#fff;
+  font-size:min(clamp(38px,13vw,92px),var(--fit,999px));white-space:nowrap;
   text-shadow:0 0 40px var(--c),0 0 90px color-mix(in srgb,var(--c) 60%,transparent);margin:8px 0 10px}
-#awakefx .aw-d{font:600 13.5px/1.45 var(--ui);color:#fff;text-wrap:balance;max-width:360px;margin:0 auto;
-  text-shadow:0 1px 10px rgba(0,0,0,.95)}
-#awakefx.max .aw-n{font-size:clamp(44px,15vw,108px)}
+#awakefx .aw-d{font:600 13.5px/1.45 var(--ui);color:#fff;text-wrap:balance;margin:0 auto;
+  max-width:min(360px,100% - 24px);text-shadow:0 1px 10px rgba(0,0,0,.95)}
+#awakefx.max .aw-n{font-size:min(clamp(44px,15vw,108px),var(--fit,999px))}
 @keyframes awFade{0%{opacity:0}8%{opacity:1}72%{opacity:1}100%{opacity:0}}
 @keyframes awPop{from{transform:scale(.82);filter:blur(6px)}to{transform:scale(1);filter:blur(0)}}
 
@@ -207,25 +216,73 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
    arriva senza spostare la mano dalla levetta (che nasce sotto il dito,
    ovunque). Quando non e' pronto lascia passare i tocchi: un angolo morto da
    74px sarebbe un pezzo di schermo in cui non ci si puo' muovere. */
+/* Il pulsante e' l'unica cosa che PREMI in tutto il gioco, e da pronto
+   sembrava spento. Il motivo era letterale: il `clip-path` che gli taglia
+   gli angoli ritaglia via anche la sua ombra, quindi l'onda di `culmPulse`
+   — l'unico segnale che dicesse «adesso» — non arrivava mai a schermo.
+   Adesso il taglio sta su `.face`, che e' il pezzo squadrato, e il bordo
+   del pulsante resta libero per l'alone. Sopra ci sono tre strati che
+   esistono solo da pronto: l'ALONE che respira fuori dai bordi, una LAMA
+   di luce che gira sull'anello (l'energia che circola, non un anello
+   fermo), e il NUCLEO che pulsa dietro al glifo. Da carico invece sta
+   zitto: e' un indicatore, e un indicatore che lampeggia sempre non dice
+   piu' quando. */
 #culm{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--sab));
   width:74px;height:74px;--cut:14px;pointer-events:none;cursor:pointer;display:none;
-  place-items:center;border:1px solid rgba(255,233,176,.28);background:rgba(12,10,30,.66);
-  backdrop-filter:blur(6px);color:#ffe9b0;padding:0;--f:0;z-index:6;
-  transition:border-color .2s,background .2s}
+  place-items:center;background:none;border:0;padding:0;color:#ffe9b0;--f:0;z-index:6}
 #culm.on{display:grid}
 #culm.pronto{pointer-events:auto}
+#culm>*{grid-area:1/1}
+
+/* l'alone: fuori dal taglio, quindi si vede davvero */
+/* piu' larga del pulsante: il bagliore deve uscire dai bordi, che e'
+   esattamente quello che il vecchio `box-shadow` non riusciva a fare */
+/* `screen` e' quello che lo rende LUCE: un alone normale, sfocato sopra un
+   fondo scuro, aggiunge grigio e sembra una sbavatura di disegno. In screen
+   puo' solo schiarire, quindi il fondo resta nero e l'oro resta oro. */
+#culm .halo{width:136%;height:136%;border-radius:50%;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle,rgba(255,214,122,.75) 0 26%,rgba(255,190,80,.3) 48%,transparent 68%);
+  filter:blur(7px);transition:opacity .25s}
+#culm.pronto .halo{opacity:1;animation:culmAlone 1.15s ease-in-out infinite}
+#culm.attivo .halo{opacity:1;background:radial-gradient(circle,rgba(255,255,255,.7) 0 30%,rgba(255,236,190,.32) 52%,transparent 70%);animation:none}
+
+#culm .face{position:relative;width:100%;height:100%;display:grid;place-items:center;
+  border:1px solid rgba(255,233,176,.28);background:rgba(12,10,30,.66);
+  backdrop-filter:blur(6px);transition:border-color .2s,background .2s}
+#culm.pronto .face{border-color:#ffe9b0;background:rgba(30,22,8,.78)}
+#culm.attivo .face{border-color:#fff;background:rgba(48,36,10,.82)}
+
+/* l'anello di carica: quanto manca */
 #culm .arc{position:absolute;inset:4px;border-radius:50%;
   background:conic-gradient(from -90deg,#ffe9b0 calc(var(--f)*360deg),rgba(255,233,176,.10) 0);
   -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);mask:radial-gradient(circle,transparent 60%,#000 62%);
   opacity:.9}
-#culm .glif{font:400 24px/1 var(--disp);color:rgba(255,233,176,.42);transition:color .2s,transform .2s}
-#culm .lab{position:absolute;bottom:7px;left:0;right:0;text-align:center;
-  font:700 8.5px/1 var(--ui);letter-spacing:.12em;color:var(--faint)}
-#culm.pronto{border-color:#ffe9b0;background:rgba(60,48,16,.7);animation:culmPulse 1.05s ease-in-out infinite}
-#culm.pronto .glif{color:#fff;transform:scale(1.12)}
-#culm.pronto .lab{color:#ffe9b0}
-#culm.attivo{border-color:#fff;background:rgba(90,70,20,.75);animation:none}
-#culm.attivo .glif,#culm.attivo .lab{color:#fff}
+/* la lama di luce che gira: solo da pronto, se no e' rumore */
+#culm .sweep{position:absolute;inset:1px;border-radius:50%;opacity:0;mix-blend-mode:screen;
+  background:conic-gradient(from 0deg,transparent 0 54%,rgba(255,240,200,.35) 70%,#fff 84%,rgba(255,233,176,.55) 90%,transparent 97%);
+  -webkit-mask:radial-gradient(circle,transparent 55%,#000 60%,#000 97%,transparent 99%);
+  mask:radial-gradient(circle,transparent 55%,#000 60%,#000 97%,transparent 99%)}
+#culm.pronto .sweep{opacity:1;animation:culmGira 1.9s linear infinite}
+/* il nucleo che respira dietro al glifo */
+#culm .core{position:absolute;width:34px;height:34px;border-radius:50%;opacity:0;filter:blur(5px);
+  background:radial-gradient(circle,color-mix(in srgb,#ffe9b0 42%,transparent),transparent 70%)}
+#culm.pronto .core{opacity:1;animation:culmCuore 1.15s ease-in-out infinite}
+#culm.attivo .core{opacity:.75;background:radial-gradient(circle,rgba(255,255,255,.4),transparent 70%)}
+
+/* glifo ed etichetta impilati AL CENTRO: prima l'etichetta stava sul fondo
+   del pulsante, dove il taglio dell'angolo le mangiava le lettere */
+#culm .stack{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1}
+#culm .glif{font:400 23px/1 var(--disp);color:rgba(255,233,176,.42);transition:color .2s,transform .2s,text-shadow .2s}
+#culm .lab{font:700 7.5px/1 var(--ui);letter-spacing:.09em;color:var(--faint);white-space:nowrap;
+  transition:color .2s}
+#culm.pronto .glif{color:#fff;transform:scale(1.14);text-shadow:0 0 14px #ffe9b0,0 0 28px rgba(255,233,176,.7)}
+#culm.pronto .lab{color:#fff;text-shadow:0 0 8px rgba(255,233,176,.9)}
+#culm.attivo .glif{color:#fff;text-shadow:0 0 16px #fff}
+#culm.attivo .lab{color:#fff}
+
+@keyframes culmAlone{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.28);opacity:1}}
+@keyframes culmGira{to{transform:rotate(1turn)}}
+@keyframes culmCuore{0%,100%{transform:scale(.8);opacity:.4}50%{transform:scale(1.06);opacity:.85}}
 @keyframes culmPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,233,176,.42)}50%{box-shadow:0 0 0 9px rgba(255,233,176,0)}}
 
 /* ---------- raffica ----------
@@ -1070,8 +1127,12 @@ ol.tips b{color:#fff;font-weight:600}
     <div id="nodochip"></div>
   </div>
 
-  <button id="culm" class="clip" aria-label="Culmine">
-    <span class="arc"></span><span class="glif">&#10209;</span><span class="lab">0%</span>
+  <button id="culm" aria-label="Culmine">
+    <span class="halo"></span>
+    <span class="face clip">
+      <span class="arc"></span><span class="sweep"></span><span class="core"></span>
+      <span class="stack"><span class="glif">&#10209;</span><span class="lab">0%</span></span>
+    </span>
   </button>
   <div id="combo" class="clip"></div>
 

@@ -821,5 +821,5 @@ const BRIEFING = {
         'Il cuore del cristallo è solido: <b>ci si gira intorno</b>. Si accende solo se stai giocando il suo elemento.']
   }
 };
-const PRIMEVOLTE = Object.keys(BRIEFING).concat(['gemme']);
+const PRIMEVOLTE = Object.keys(BRIEFING).concat(['gemme', 'raffica']);
 const visto = id => SAVE.visti.indexOf(id) >= 0;

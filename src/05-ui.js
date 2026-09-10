@@ -844,11 +844,28 @@ const UI = {
     const el = EL[e], fx = $('#awakefx');
     if (!fx) return;
     fx.style.setProperty('--c', el.c);
+    fx.style.removeProperty('--fit');
     fx.innerHTML = '<div class="aw-in">' +
       '<div class="aw-k">Risveglio · grado ' + 'I'.repeat(tier) + '</div>' +
       '<div class="aw-n">' + el.aw.toUpperCase() + '</div>' +
       '<div class="aw-d">' + el.awd[tier - 1] + '</div></div>';
     fx.className = ''; void fx.offsetWidth; fx.className = 'on' + (tier >= 3 ? ' max' : '');
+    /* ── il nome dentro lo schermo ─────────────────────────
+       Il corpo era una `clamp` sulla larghezza della finestra, cioè tarata
+       sul nome medio. Ma i nomi non sono lunghi uguale: SOVRACCARICO ne ha
+       tredici di lettere contro le sei di ARDORE, e su un telefono usciva
+       dallo schermo — misurato in Chromium, tagliato a destra di 58px a
+       390 di larghezza e di 123px al terzo grado, dove il corpo cresce
+       ancora. Il CSS non può saperlo da solo: dipende da quanto è larga
+       QUELLA parola in QUEL carattere, e nemmeno contare le lettere basta.
+       Quindi si misura a parola già scritta e si stringe quel tanto che
+       serve. Sui nomi che ci stanno non tocca niente. */
+    const n = fx.querySelector('.aw-n');
+    const utile = fx.clientWidth - 72;
+    if (n.scrollWidth > utile && utile > 0) {
+      const corpo = parseFloat(getComputedStyle(n).fontSize);
+      fx.style.setProperty('--fit', (corpo * utile / n.scrollWidth) + 'px');
+    }
     clearTimeout(this._awT);
     this._awT = setTimeout(() => { fx.className = ''; }, 1800);
   },
@@ -865,9 +882,14 @@ const UI = {
      cancellato da una modifica — e la partita restava congelata per
      sempre sulla carta. Un errore a tempo di esecuzione, che `node
      --check` non vede e nessun test premeva quel bottone. */
+  /* «l'ho già visto una volta», per le cose che non passano dal briefing */
+  primaVolta(id) {
+    if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
+  },
+
   chiudiBriefing() {
     const id = G.briefing; G.briefing = null;
-    if (id && SAVE.visti.indexOf(id) < 0) { SAVE.visti.push(id); storeSave(); }
+    this.primaVolta(id);
     /* «Ho capito» chiude la spiegazione, non la lezione: da qui fino alla
        prima scheggia raccolta la più vicina resta scritta e la barra
        aspetta di lampeggiare. Il nesso si chiude quando lo fai. */
