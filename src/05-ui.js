@@ -477,7 +477,7 @@ const UI = {
             '<div class="chars">' + bloccati.map(c => this.cartaNucleo(c)).join('') + '</div>'
           : '');
     } else if (sc === 'obiettivi') {
-      corpo = this.contrattiHTML() + this.runeHTML() + this.sfideHTML();
+      corpo = this.contrattiHTML() + this.runeHTML() + this.formeHTML() + this.sfideHTML();
     } else {
       corpo =
         (this.storicoHTML() || '<div class="hint" style="text-align:left">Nessuna partita ancora. Lo storico tiene le ultime venti.</div>') +
@@ -556,6 +556,26 @@ const UI = {
       (prossimo
         ? '<div class="apnota" style="--c:#6ff2c4"><b>' + RUNES[prossimo.id].n + '</b> · ' + prossimo.d + '</div>'
         : '<div class="hint" style="text-align:left">Tutte le rune sono nel mazzo.</div>');
+  },
+
+  /* ── forme scoperte ─────────────────────────────────────
+     Sedici trasformazioni, e nessuna traccia di quali avessi gia' visto. Una
+     collezione visibile e' l'alimento piu' economico per la coda lunga: dice
+     cosa c'e' ancora la' fuori senza chiudere niente dietro un muro. */
+  formeHTML() {
+    const righe = RUNEIDS.map(base => {
+      const evo = EVO[base]; if (!evo) return '';
+      const d = RUNES[evo], el = EL[d.el];
+      const visto = SAVE.evoVisti.indexOf(evo) >= 0;
+      return '<div class="forma clip' + (visto ? ' vista' : '') + '" style="--c:' + el.c + '">' +
+        '<span class="fi clip">' + (visto ? svg(evo) : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.6v-1.2c0-1.6 2.6-2 2.6-4a2.6 2.6 0 0 0-5.2 0"/><path d="M12 18.6v.2"/></svg>') + '</span>' +
+        '<span class="fb"><span class="fn">' + (visto ? d.n : '???') + '</span>' +
+        '<span class="fd">' + (visto ? d.d : 'da ' + RUNES[base].n) + '</span></span></div>';
+    }).join('');
+    return '<div class="eyebrow" style="text-align:left;margin-top:4px">Forme scoperte · ' +
+      SAVE.evoVisti.length + ' di ' + RUNEIDS.length + '</div>' +
+      '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello 8, risonanza da entrambi i lati, elemento risvegliato.</div>' +
+      '<div class="formelist">' + righe + '</div>';
   },
 
   /* ── storico ─────────────────────────────────────────────
@@ -913,6 +933,14 @@ const UI = {
         '<p>Rimuovi una runa dall’anello e <em>libera il suo alloggiamento</em>. Ti restituisce frammenti in base al livello.</p>' +
         '</span></span></button>';
     }
+    if (c.t === 'ascesi') {
+      const na = (G.ascesi | 0) + 1;
+      return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:#bff6ff"><span class="face">' +
+        '<span class="ico clip">' + svg('orbita') + '</span><span class="body">' +
+        '<span class="kicker">Ascesi · ' + na + '</span><h3>Ascesi</h3>' +
+        '<p><em>+5% danno, +4% vita massima, +3% area.</em> Si accumula senza limite.</p>' +
+        '</span></span></button>';
+    }
     if (c.t === 'gold') {
       return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:#ffc857"><span class="face">' +
         '<span class="ico clip">' + svg('frammento') + '</span><span class="body">' +
@@ -920,11 +948,11 @@ const UI = {
         '</span></span></button>';
     }
     if (c.t === 'pas') {
-      const d = PASSIVES[c.id], lv = G.passives[c.id] | 0;
+      const d = PASSIVES[c.id], lv = G.passives[c.id] | 0, oltre = lv >= d.max;
       let pips = ''; for (let k = 0; k < d.max; k++) pips += '<i class="' + (k < lv + 1 ? 'f' : '') + '"></i>';
       return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:' + d.c + '"><span class="face">' +
         '<span class="ico clip">' + svg(d.ico) + '</span><span class="body">' +
-        '<span class="kicker">Passivo · liv ' + (lv + 1) + '</span><h3>' + d.n + '</h3><p><em>' + d.d + '</em></p>' +
+        '<span class="kicker">' + (oltre ? 'Eccesso · ' + (lv - d.max + 1) : 'Passivo · liv ' + (lv + 1)) + '</span><h3>' + d.n + '</h3><p><em>' + d.d + '</em></p>' +
         '<span class="pips">' + pips + '</span></span></span></button>';
     }
     const d = RUNES[c.id], el = EL[d.el];
@@ -1317,7 +1345,16 @@ function rollChoices(n) {
     if (gia) w *= 1 + gia * .7;
     pool.push({ t: 'rnew', id, w });
   }
-  for (const id of PASSIDS) { const lv = G.passives[id] | 0; if (lv < PASSIVES[id].max) pool.push({ t: 'pas', id, w: 2.5 }); }
+  for (const id of PASSIDS) {
+    const lv = G.passives[id] | 0, max = PASSIVES[id].max;
+    if (lv < max) pool.push({ t: 'pas', id, w: 2.5 });
+    /* oltre il massimo, a valore ridotto: senza, in una corsa lunga la pool si
+       svuota e restano "Dissolvi" e due mucchi di frammenti */
+    else if (lv < max + ECCESSO_MAX) pool.push({ t: 'pas', id, w: .8 });
+  }
+  /* Ascesi: piccola, ripetibile all'infinito, sempre valida. È il pavimento
+     della pool — con questa nessuna schermata può ridursi a un riempitivo. */
+  pool.push({ t: 'ascesi', w: pool.length <= 4 ? 9 : 1.2 });
   const out = [];
   let total = 0; for (const o of pool) total += o.w;
   while (out.length < n && pool.length) {
@@ -1325,7 +1362,7 @@ function rollChoices(n) {
     for (; k < pool.length - 1; k++) { r -= pool[k].w; if (r <= 0) break; }
     total -= pool[k].w; out.push(pool.splice(k, 1)[0]);
   }
-  while (out.length < n) out.push({ t: 'gold' });
+  while (out.length < n) out.push({ t: 'ascesi' });
   /* Ad anello pieno le rune nuove non entrano nemmeno nel mazzo, quindi
      Dissolvere e' l'unico modo di cambiare idea. Ma era in due tempi:
      dissolvi adesso e SPERI che al livello dopo esca la runa. Nel frattempo
@@ -1374,11 +1411,18 @@ function applyChoice(c) {
       const el = RUNES[c.to].el;
       G.ring[i] = { id: c.to, el, lv: 5, cd: 0, res: 0, slot: i, st: {} };
       G.evoCount++;
+      if (SAVE.evoVisti.indexOf(c.to) < 0) { SAVE.evoVisti.push(c.to); storeSave(); }
       recalcRing(true);
       UI.toast('TRASFORMAZIONE', RUNES[c.to].n, EL[el].c);
       AU.play('awake'); G.shake = Math.max(G.shake, 16); G.hitstop = .12;
       G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 460, t: 0, dur: .7, c: EL[el].c });
     }
+    return false;
+  }
+  if (c.t === 'ascesi') {
+    G.ascesi = (G.ascesi | 0) + 1;
+    recalc();
+    UI.toast('ASCESI ' + G.ascesi, '+5% danno · +4% vita · +3% area', '#bff6ff');
     return false;
   }
   if (c.t === 'gold') { G.shards += 120; UI.toast('+120', 'Frammenti', '#ffc857'); return false; }
@@ -1448,7 +1492,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
   G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
   G.dmgSrc = {}; G.killer = null;
-  G.dissT = 34; G.dissAtt = 0; G.formT = 52;
+  G.dissT = 34; G.dissAtt = 0; G.formT = 52; G.ascesi = 0;
   G.p.x = 0; G.p.y = 0; G.p.vx = 0; G.p.vy = 0; G.p.inv = 1.2; G.p.hurt = 0;
   G.cam.x = 0; G.cam.y = 0;
   G.revives = mlv('rinascita');

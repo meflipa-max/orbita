@@ -60,6 +60,8 @@ const DEFAULT_SAVE = {
   best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [],
   /* quali rune sono entrate nel mazzo: vedi SBLOCCHI in 01-data */
   runes: RUNE_BASE.slice(),
+  /* quali trasformazioni hai gia' visto almeno una volta */
+  evoVisti: [],
   /* le reliquie comprate, i tre contratti in corso, il modo scelto */
   reliquie: [], contratti: [], modo: 'corsa',
   /* le ultime venti partite: è lo storico che si legge nell'Osservatorio ed
@@ -107,6 +109,8 @@ function sanitizeSave(o) {
      sporcava i valori predefiniti — cioe' l'azzeramento non azzerava. */
   if (!s.meta || typeof s.meta !== 'object' || Array.isArray(s.meta)) s.meta = {};
   else s.meta = Object.assign({}, s.meta);
+  if (!Array.isArray(s.evoVisti)) s.evoVisti = [];
+  s.evoVisti = s.evoVisti.filter(id => !!RUNES[id] && RUNES[id].evo);
   if (!Array.isArray(s.sfide)) s.sfide = [];
   s.sfide = s.sfide.filter(id => SFIDE.some(x => x.id === id));
   if (s.chars.indexOf(s.char) < 0) s.char = s.chars[0];
@@ -468,6 +472,10 @@ addEventListener('keydown', e => {
   /* Spazio: Culmine. È l'unico tasto d'azione del gioco, quindi è il più
      grande e il più a portata di pollice della tastiera. */
   if (k === ' ' && G.state === 'play') { e.preventDefault(); attivaCulmine(); }
+  /* R sulla schermata di fine: si riparte senza passare da nessun menu. Il
+     tempo fra una morte e la partita dopo è la leva di ritenzione più forte
+     che esista nel genere, e va tenuto sotto il secondo. */
+  if (k === 'r' && G.state === 'over') { e.preventDefault(); startRun(SAVE.char); }
   if (k === ' ' && G.state !== 'play') e.preventDefault();
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
 });
@@ -569,7 +577,7 @@ const G = {
   /* awk = Risvegli EFFETTIVI (base + il grado in più del Culmine): è questo
      che legge tutto ciò che infligge danno. */
   awk: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
-  charge: 0, culm: 0, culms: 0, chargeAnn: 0,
+  charge: 0, culm: 0, culms: 0, chargeAnn: 0, ascesi: 0,
   /* raffica: uccisioni nell'ultimo secondo, in due secchielli da mezzo */
   combo: 0, comboMax: 0, comboLv: 0, kb0: 0, kb1: 0, kbT: .5,
   /* consuntivo: quale runa ha fatto il danno, e chi ti ha ucciso */
@@ -622,11 +630,22 @@ const P = {}; /* statistiche derivate */
 function xpFor(lv) { return Math.floor(4 + 13 * lv + lv * lv * 3 + lv * lv * lv * .07); }
 
 /* ── statistiche derivate ───────────────────────────────────── */
+/* Un passivo può superare il suo massimo, ma oltre rende meno della metà.
+   Serve perché la pool si svuota: in una corsa lunga tutti gli undici passivi
+   arrivano al tetto, tutte le rune al livello 8, e le tre carte diventano
+   "Dissolvi" e due volte "120 frammenti" — una schermata di scelta senza
+   scelte. */
+const ECCESSO_MAX = 4, ECCESSO_VAL = .45;
+function pEff(pv, id) {
+  const l = pv[id] | 0, m = PASSIVES[id].max;
+  return l <= m ? l : m + (l - m) * ECCESSO_VAL;
+}
+
 function recalc() {
   const m = G.char.mod || {}, pv = G.passives;
-  const lv = id => pv[id] | 0;
+  const lv = id => pEff(pv, id);
   /* i passivi crescono col ritmo delle rune: meno livelli, ma ognuno si sente */
-  const base = 100 * (1 + .08 * mlv('nucleo')) * (m.hp || 1) * (1 + .18 * lv('vigore'));
+  const base = (100 * (1 + .08 * mlv('nucleo')) * (m.hp || 1) * (1 + .18 * lv('vigore'))) * (1 + .04 * (G.ascesi | 0));
   const oldMax = P.maxHp || base;
   P.maxHp = Math.round(base);
   if (P.hp === undefined) P.hp = P.maxHp; else if (P.maxHp > oldMax) P.hp += (P.maxHp - oldMax);
@@ -636,9 +655,9 @@ function recalc() {
      l'anello per averne due invece di uno solo grosso. */
   let coro = 1;
   if (hasRel('coro')) { let n = 0; for (const k of ELKEYS) if (G.awk[k]) n++; coro = 1 + .07 * n; }
-  P.dmgMul = (1 + .05 * mlv('furia')) * (1 + .015 * mlv('dominio')) * (m.dmg || 1) * (1 + .12 * lv('impeto')) * G.cg.dmg * coro;
+  P.dmgMul = (1 + .05 * (G.ascesi | 0)) * (1 + .05 * mlv('furia')) * (1 + .015 * mlv('dominio')) * (m.dmg || 1) * (1 + .12 * lv('impeto')) * G.cg.dmg * coro;
   P.cdMul = Math.max(.32, 1 - .10 * lv('frenesia'));
-  P.areaMul = (m.area || 1) * (1 + .14 * lv('ampiezza'));
+  P.areaMul = (1 + .03 * (G.ascesi | 0)) * (m.area || 1) * (1 + .14 * lv('ampiezza'));
   P.pickR = 78 * (1 + .22 * mlv('calamita')) * (1 + .38 * lv('magnete'));
   /* nell'Incursione si sale di livello quasi il doppio più in fretta: la
      corsa dura otto minuti invece di venti, e senza questo la build non
@@ -708,7 +727,11 @@ function recalcRing(announce) {
        isolata accenderebbe il suo Risveglio e la risonanza smetterebbe di
        essere una decisione. */
     const c0 = Math.max(2, G.asc.chain + G.cg.chain);
-    const tier = run >= c0 + 4 ? 3 : run >= c0 + 2 ? 2 : run >= c0 ? 1 : 0;
+    /* Gradi a 3 / 4 / 5. Erano 3 / 5 / 7: con sei alloggiamenti il terzo grado
+       chiedeva sette rune in fila su un anello che ne tiene sei — contenuto
+       morto — e il secondo costava l'intero anello, cioè rinunciare a ogni
+       altra catena. */
+    const tier = run >= c0 + 2 ? 3 : run >= c0 + 1 ? 2 : run >= c0 ? 1 : 0;
     const prev = G.awaken[e];
     G.awaken[e] = tier;
     if (tier && !G.awakeAt) G.awakeAt = G.t;
@@ -862,12 +885,13 @@ function spawnBoss(def) {
      che un muro il cui unico effetto e' durare. */
   /* `def.hpMul` lo mette il modo: nell'Incursione un guardiano non può
      avere la vita del suo slot, perché ci arrivi con meno livelli addosso. */
-  const vita = def.hp * (def.hpMul || 1) * (1 + G.diff * .55) * G.asc.hp * G.cg.bossHp * (1 + (Math.min(G.tenacia, 10) - 1) * .5);
+  const mod = G.bossIdx >= 1 ? pick(BOSSMOD) : BOSSMOD[0];
+  const vita = mod.hp * def.hp * (def.hpMul || 1) * (1 + G.diff * .55) * G.asc.hp * G.cg.bossHp * (1 + (Math.min(G.tenacia, 10) - 1) * .5);
   const e = {
     type: 'boss', x: clamp(G.p.x + Math.cos(a) * d, -ARENA + def.r, ARENA - def.r),
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
-    hp: vita, maxHp: vita, spd: def.spd * G.asc.spd * G.cg.spd,
+    hp: vita, maxHp: vita, spd: def.spd * G.asc.spd * G.cg.spd * mod.spd, mod,
     dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0,
     /* corazza elementale: dimezza i colpi di UN elemento. Dal secondo
@@ -875,7 +899,9 @@ function spawnBoss(def) {
     corazza: G.bossIdx >= 1 ? pick(ELKEYS) : null
   };
   G.enemies.push(e); G.bosses.push(e); syncBosses();
-  UI.toast(def.n, e.corazza ? 'Corazza di ' + EL[e.corazza].n + ' · dimezza quell’elemento' : 'Guardiano risvegliato', def.c);
+  const sub2 = e.corazza ? 'Corazza di ' + EL[e.corazza].n + (mod.d ? ' · ' + mod.d : '')
+    : (mod.d || 'Guardiano risvegliato');
+  UI.toast(def.n + (mod.n ? ' · ' + mod.n.toUpperCase() : ''), sub2, def.c);
   AU.play('boss'); G.shake = 16;
   return e;
 }

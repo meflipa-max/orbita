@@ -5,8 +5,9 @@ una schermata inventario separata, le rune che vedi orbitare *sono* l'interfacci
 
 - Rune **adiacenti** dello stesso elemento **risuonano**: +30% danno a testa.
 - **Tre di fila** accendono un **Risveglio**, una regola che vale per tutti i tuoi colpi
-  (incendio, rallentamento, catene, implosioni, critici che curano). A cinque e a sette
-  di fila diventa più forte.
+  (incendio, rallentamento, catene, implosioni, critici che curano). A **quattro** e a
+  **cinque** di fila diventa più forte — erano cinque e sette, cioè un terzo grado che
+  chiedeva più rune di quante l'anello ne tenga.
 - L'**Iride** conta come qualsiasi elemento: messa fra due gruppi, ne accende due insieme.
 - Riordinare l'anello è quindi il vero puzzle strategico, e si può fare in qualsiasi momento
   dalla pausa.
@@ -41,6 +42,18 @@ filo che parte da lui e la runa che si spegne. Tiene le distanze apposta, quindi
 e non può mai zittire più di due rune insieme. Ogni tanto un gruppo arriva con una **forma**: un
 muro si aggira, un accerchiamento va rotto da un lato, un cuneo si schiva di fianco. E dal
 secondo guardiano in poi ognuno porta una **corazza elementale**: quell'elemento fa metà danno.
+
+### Quando finisce tutto il resto
+
+In una corsa lunga i passivi arrivano tutti al massimo e le rune al livello 8: la pool si
+svuotava e restavano «Dissolvi» e due mucchi di frammenti — una schermata di scelta senza
+scelte. Ora un passivo può superare il proprio massimo a **valore ridotto**, e l'**Ascesi**
+(+5% danno, +4% vita, +3% area) è ripetibile all'infinito: è il pavimento della pool.
+
+I guardiani portano ognuno un **modificatore sorteggiato** — corazzato, rapido, vorace,
+riflesso — che non tocca la tabella di vita, quindi il bilanciamento resta quello ma lo
+scontro no. E l'Osservatorio tiene la collezione delle **sedici forme**: quali trasformazioni
+hai già visto, e da quale runa nascono quelle che ti mancano.
 
 ### La schermata di fine
 
@@ -617,7 +630,7 @@ righe di JavaScript, canvas 2D puro.
 | | |
 |---|---|
 | Mobile | Trascina ovunque: la levetta compare sotto il dito, con la destra o con la sinistra |
-| Desktop | `WASD` o frecce · `Esc` / `P` pausa |
+| Desktop | `WASD` o frecce · `Spazio` Culmine · `R` rigioca dalla fine · `Esc` / `P` pausa |
 
 Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 

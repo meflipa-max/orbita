@@ -148,6 +148,24 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   box-shadow:0 0 22px rgba(120,220,255,.4),inset 0 0 16px rgba(120,220,255,.22)}
 #joy.max .nub{box-shadow:0 0 26px rgba(180,240,255,.85)}
 
+/* forme scoperte: la collezione delle sedici trasformazioni */
+.formelist{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.forma{--cut:7px;padding:7px 9px;display:flex;align-items:center;gap:9px;
+  background:linear-gradient(160deg,rgba(22,18,52,.8),rgba(10,8,26,.85));border:1px solid var(--line)}
+.forma .fi{width:30px;height:30px;flex:0 0 auto;display:grid;place-items:center;--cut:6px;
+  border:1px solid var(--line);background:rgba(8,6,22,.7)}
+.forma .fi svg{width:18px;height:18px;fill:none;stroke:var(--faint);stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.forma.vista{border-color:color-mix(in srgb,var(--c) 50%,transparent)}
+.forma.vista .fi{border-color:color-mix(in srgb,var(--c) 45%,transparent);
+  background:color-mix(in srgb,var(--c) 12%,rgba(8,6,22,.8))}
+.forma.vista .fi svg{stroke:var(--c)}
+.forma .fb{min-width:0}
+.forma .fn{display:block;font:700 11.5px/1.2 var(--disp);color:var(--dim)}
+.forma.vista .fn{color:var(--c)}
+.forma .fd{display:block;font:400 10px/1.35 var(--ui);color:var(--faint);
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
 /* ---------- fine partita: chi ti ha ucciso, cosa ha fatto la build ---------- */
 .killer{font:600 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:#ff8fae;
   text-align:center;margin-top:-8px}

@@ -370,6 +370,19 @@ const FORMAZIONI = ['muro', 'accerchiamento', 'cuneo'];
    momenti a corsa crea invece la decisione giusta al momento giusto: tenere
    una seconda catena, o un'Iride, vale davvero qualcosa. */
 const CORAZZA_BOSS = .52;
+
+/* ── modificatori dei guardiani ─────────────────────────────────
+   Cinque guardiani sempre uguali: alla quarta partita si conoscono a memoria.
+   Ognuno ne porta uno sorteggiato — la tabella di vita non si muove, quindi
+   il bilanciamento resta quello, ma lo scontro no. Il primo resta pulito:
+   è il guardiano che insegna. */
+const BOSSMOD = [
+  { id: 'nessuno',   n: null,        hp: 1,    spd: 1,    d: null },
+  { id: 'corazzato', n: 'Corazzato', hp: 1.4,  spd: .86,  d: 'Più vita, meno velocità' },
+  { id: 'rapido',    n: 'Rapido',    hp: .8,   spd: 1.26, d: 'Meno vita, molto più veloce' },
+  { id: 'vorace',    n: 'Vorace',    hp: 1.1,  spd: 1.04, d: 'Evoca senza sosta', evoca: 1 },
+  { id: 'riflesso',  n: 'Riflesso',  hp: .92,  spd: 1.08, d: 'Colpisce più spesso', atk: .64 }
+];
 const WAVES = [
   { t: 0,    pool: ['sciamante', 'sciamante', 'vagante'] },
   { t: 70,   pool: ['sciamante', 'vagante', 'vagante'] },

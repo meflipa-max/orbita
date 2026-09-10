@@ -635,7 +635,7 @@ function bossAI(e, dt) {
   }
   if (d.pat === 'radial' || d.pat === 'mix' || d.pat === 'final') {
     if (e.atk <= 0) {
-      e.atk = d.pat === 'final' ? 2.1 : 3.0;
+      e.atk = (d.pat === 'final' ? 2.1 : 3.0) * ((e.mod && e.mod.atk) || 1);
       const n = d.pat === 'final' ? 22 : 15, off = rand(TAU);
       volata(e, d, n, off);
       /* Una corona sola e' uno steccato, non un muro: fra due colpi ci sono
@@ -651,7 +651,7 @@ function bossAI(e, dt) {
   }
   if (d.pat === 'summon' || d.pat === 'mix' || d.pat === 'final') {
     if (e.atk2 <= 0) {
-      e.atk2 = d.pat === 'summon' ? 6.5 : 9;
+      e.atk2 = (d.pat === 'summon' ? 6.5 : 9) * ((e.mod && e.mod.evoca) ? .45 : 1);
       const n = d.pat === 'final' ? 8 : 5;
       for (let i = 0; i < n; i++) {
         const a = rand(TAU), r = 110;
