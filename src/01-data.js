@@ -239,7 +239,7 @@ const RUNES = {
 
   /* ── trasformazioni ──────────────────────────────────────────
      Non compaiono fra le carte normali: si ottengono solo portando la
-     runa a livello 8 mentre risuona da entrambi i lati e il suo elemento
+     runa a livello 6 mentre risuona da entrambi i lati e il suo elemento
      è risvegliato. La condizione è POSIZIONALE: obbliga a progettare
      l'anello dal primo minuto invece di prendere quel che capita.      */
   cometa: { n: 'Cometa', el: 'fuoco', tag: 'trasformazione', evo: 1, d: 'Sfere enormi che lasciano una scia ardente e si frantumano su ogni uccisione.',
@@ -296,10 +296,16 @@ const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
 /* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
    elemento risvegliato */
 function canEvolve(r) {
-  /* Crogiolo (reliquia) sposta la soglia a 7: non toglie la condizione
-     posizionale, che è ciò che rende la trasformazione un progetto — la
-     anticipa di un livello, cioè di qualche minuto. */
-  const soglia = hasRel('crogiolo') ? 7 : 8;
+  /* Misurato sulla curva dei livelli attuale, con un giocatore che infila
+     OGNI potenziamento nella stessa runa: livello 5 al minuto quattordici,
+     livello 8 — se va tutto bene — nell'ultimo minuto della partita. A otto
+     la trasformazione non era difficile: era l'evento che non capitava mai,
+     e il Crogiolo proteggeva una soglia che comunque non scattava.
+     A sei arriva verso il quindicesimo minuto, cioè in tempo per contare, e
+     la condizione POSIZIONALE — risuonare da entrambi i lati, elemento
+     risvegliato — resta intatta: è quella a rendere la trasformazione un
+     progetto invece di un premio a tempo. */
+  const soglia = hasRel('crogiolo') ? 5 : 6;
   if (!r || !EVO[r.id] || r.lv < soglia || r.res < 2) return false;
   /* L'Iride non ha un elemento suo, quindi non può avere un Risveglio suo:
      si trasforma quando fa davvero il mestiere per cui esiste, cioè quando è

@@ -63,7 +63,7 @@ partita: *«Non hai mai acceso un Risveglio: eri arrivato a due rune di Fuoco di
 
 ### Trasformazioni
 
-Una runa portata a livello 8 **mentre risuona da entrambi i lati e il suo elemento è
+Una runa portata a livello 6 **mentre risuona da entrambi i lati e il suo elemento è
 risvegliato** si trasforma. Ne ha una **ognuna delle sedici rune**. Non diventa più grande: diventa un'altra cosa. La Cometa lascia
 una scia che brucia davvero e si frantuma a ogni uccisione; il Glaciale congela al tocco; il
 Fulgore sdoppia la catena a ogni salto; il Mietitore risucchia i nemici lungo il cammino;

@@ -14,6 +14,49 @@ function nearest(x, y, maxR, skip) {
   }
   return best;
 }
+/* ── dove punta una lama che trapassa ──────────────────────────
+   La Scheggia sparava nella direzione in cui ti muovi. Suona bene — incidi
+   un solco mentre corri — ma in un bullet heaven ci si muove LONTANO dai
+   nemici: le lame partivano sistematicamente verso il vuoto, e chi apriva
+   sul Gelo si ritrovava con una runa che non colpiva niente.
+   Adesso punta dove ne infila di più, che è poi il mestiere di una lama
+   perforante. Fra direzioni equivalenti vince quella più vicina al tuo
+   movimento, così il carattere resta senza che il colpo si sprechi. */
+function direzioneDensa(x, y, portata, largh, biasA, biasPeso) {
+  GRID.near(x, y, portata, _q);
+  if (!_q.length) return null;
+  /* candidati: le direzioni verso i nemici più vicini, al massimo dodici */
+  const cand = [];
+  for (let i = 0; i < _q.length && cand.length < 12; i++) {
+    const e = _q[i]; if (e.hp <= 0) continue;
+    cand.push(Math.atan2(e.y - y, e.x - x));
+  }
+  if (!cand.length) return null;
+  let best = cand[0], bs = -1;
+  const p2 = portata * portata, l2 = largh * largh;
+  for (let c = 0; c < cand.length; c++) {
+    const a = cand[c], ux = Math.cos(a), uy = Math.sin(a);
+    let n = 0;
+    for (let i = 0; i < _q.length; i++) {
+      const e = _q[i]; if (e.hp <= 0) continue;
+      const dx = e.x - x, dy = e.y - y;
+      const t = dx * ux + dy * uy;                 /* quanto avanti sta */
+      if (t < 0 || t * t > p2) continue;
+      const px = dx - ux * t, py = dy - uy * t;    /* quanto fuori asse */
+      const rr = largh + e.r;
+      if (px * px + py * py <= rr * rr) n++;
+    }
+    /* a parità, quella più allineata al movimento */
+    let sc = n;
+    if (biasPeso && biasA !== null) {
+      let d = a - biasA; while (d > PI) d -= TAU; while (d < -PI) d += TAU;
+      sc += biasPeso * (1 - Math.abs(d) / PI);
+    }
+    if (sc > bs) { bs = sc; best = a; }
+  }
+  return best;
+}
+
 /* i `n` bersagli più vicini, ordinati per distanza */
 const _tgt = [];
 function nearestN(x, y, maxR, n) {
@@ -63,10 +106,10 @@ const FIRE = {
     AU.play('blast'); G.shake = Math.max(G.shake, 4);
   },
   scheggia(r, s) {
-    let a;
     const mv = Math.hypot(G.p.vx, G.p.vy);
-    if (mv > 24) a = Math.atan2(G.p.vy, G.p.vx);
-    else { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : r.wa; }
+    const bias = mv > 24 ? Math.atan2(G.p.vy, G.p.vx) : null;
+    let a = direzioneDensa(G.p.x, G.p.y, 780, s.size + 16, bias, .45);
+    if (a === null) { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : (bias !== null ? bias : r.wa); }
     for (let i = 0; i < s.count; i++) {
       const aa = a + (i - (s.count - 1) / 2) * .2;
       shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg, el: 'gelo', c: EL.gelo.c, pierce: s.pierce, kind: 'shard', life: 1.7, ang: aa });
@@ -250,10 +293,10 @@ const FIRE = {
     AU.play('blast'); G.shake = Math.max(G.shake, 8);
   },
   zanna(r, s) {
-    let a;
     const mv = Math.hypot(G.p.vx, G.p.vy);
-    if (mv > 24) a = Math.atan2(G.p.vy, G.p.vx);
-    else { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : r.wa; }
+    const bias = mv > 24 ? Math.atan2(G.p.vy, G.p.vx) : null;
+    let a = direzioneDensa(G.p.x, G.p.y, 900, s.size + 20, bias, .45);
+    if (a === null) { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : (bias !== null ? bias : r.wa); }
     for (let i = 0; i < s.count; i++) {
       const aa = a + (i - (s.count - 1) / 2) * .17;
       shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg,

@@ -286,7 +286,7 @@ const UI = {
         '</ol>') +
 
       sec('Trasformazioni',
-        p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. Ne ha una <b>ognuna delle sedici rune</b>, e l’anello dice sempre cosa manca — compreso in quale alloggiamento spostarla.') +
+        p('Una runa a <b>livello 6</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. Ne ha una <b>ognuna delle sedici rune</b>, e l’anello dice sempre cosa manca — compreso in quale alloggiamento spostarla.') +
         p('L’Iride fa eccezione, perché non ha un elemento suo: si trasforma quando fa il mestiere per cui esiste, cioè quando è il <b>ponte fra due Risvegli</b> accesi insieme.')) +
 
       sec('Chi ti viene addosso',
@@ -574,7 +574,7 @@ const UI = {
     }).join('');
     return '<div class="eyebrow" style="text-align:left;margin-top:4px">Forme scoperte · ' +
       SAVE.evoVisti.length + ' di ' + RUNEIDS.length + '</div>' +
-      '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello 8, risonanza da entrambi i lati, elemento risvegliato.</div>' +
+      '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello 6, risonanza da entrambi i lati, elemento risvegliato.</div>' +
       '<div class="formelist">' + righe + '</div>';
   },
 
@@ -760,7 +760,7 @@ const UI = {
      un segreto e la trasformazione non capita mai. */
   evoLine() {
     const parts = [];
-    const soglia = hasRel('crogiolo') ? 7 : 8;
+    const soglia = hasRel('crogiolo') ? 5 : 6;
     for (let i = 0; i < G.slots; i++) {
       const r = G.ring[i];
       if (!r || !EVO[r.id]) continue;
@@ -1129,7 +1129,7 @@ const UI = {
         : 'Non hai mai acceso un Risveglio. Servono <b>' + c0 + ' rune dello stesso elemento una accanto all’altra</b>.';
     }
     if (!G.evoCount) {
-      const soglia = hasRel('crogiolo') ? 7 : 8;
+      const soglia = hasRel('crogiolo') ? 5 : 6;
       const quasi = G.ring.filter(r => r && EVO[r.id] && r.lv >= soglia);
       if (quasi.length) return 'Nessuna trasformazione: <b>' + RUNES[quasi[0].id].n + '</b> era al livello giusto ma non risuonava da entrambi i lati. Riordina l’anello dalla pausa — è gratis.';
       return 'Nessuna trasformazione. Serve una runa a <b>livello ' + soglia + '</b> che risuoni da entrambi i lati, con il suo elemento risvegliato.';
@@ -1489,6 +1489,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.awk = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
+  G.awakeVisto = {};
   G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
   G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
   G.dmgSrc = {}; G.killer = null;

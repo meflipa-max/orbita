@@ -577,6 +577,7 @@ const G = {
   /* awk = Risvegli EFFETTIVI (base + il grado in più del Culmine): è questo
      che legge tutto ciò che infligge danno. */
   awk: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
+  awakeVisto: {},
   charge: 0, culm: 0, culms: 0, chargeAnn: 0, ascesi: 0,
   /* raffica: uccisioni nell'ultimo secondo, in due secchielli da mezzo */
   combo: 0, comboMax: 0, comboLv: 0, kb0: 0, kb1: 0, kbT: .5,
@@ -1135,13 +1136,28 @@ function killEnemy(e, opt) {
    come la raccolta di uno scrigno: un avviso e una scossa da 9. Qui il tempo
    si ferma, lo schermo si tinge dell'elemento, l'anello si incendia e il nome
    brucia al centro. Un secondo e mezzo che si ricorda. */
+/* La festa e' per la PRIMA volta che accendi un grado, non per lo stato.
+   Dentro un Nodo la catena conta una runa in piu': entri e si accende, esci e
+   si spegne, rientri e si riaccende — e a ogni passo si prendeva mezzo secondo
+   di fermo immagine e uno schermo pieno di scritte. Girando attorno a un
+   cristallo non era un momento memorabile: era un impuntamento.
+   La prima volta resta l'evento intero. Dalla seconda in poi restano l'onda,
+   il suono e la targhetta: la stessa informazione, senza fermare il gioco. */
 function risveglioFx(e, tier) {
-  G.hitstop = Math.max(G.hitstop, .38);
-  G.shake = Math.max(G.shake, 20);
-  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: 760, t: 0, dur: .95, c: EL[e].c });
-  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 8, r1: 300, t: 0, dur: .55, c: '#ffffff' });
-  AU.play('awake');
-  UI.awakeFx(e, tier);
+  const chiave = e + tier;
+  const primo = !G.awakeVisto[chiave];
+  G.awakeVisto[chiave] = 1;
+  G.shake = Math.max(G.shake, primo ? 18 : 7);
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: primo ? 760 : 380, t: 0, dur: primo ? .95 : .5, c: EL[e].c });
+  if (primo) {
+    G.hitstop = Math.max(G.hitstop, .26);
+    G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 8, r1: 300, t: 0, dur: .55, c: '#ffffff' });
+    AU.play('awake');
+    UI.awakeFx(e, tier);
+  } else {
+    AU.play('buy');
+    UI.toast('RISVEGLIO · ' + EL[e].aw.toUpperCase(), EL[e].awd[tier - 1], EL[e].c);
+  }
 }
 
 /* ── Culmine ────────────────────────────────────────────────────
