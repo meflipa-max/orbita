@@ -189,40 +189,53 @@ function svg(id, cls) {
   return '<svg viewBox="0 0 24 24" class="' + (cls || '') + '" aria-hidden="true">' + p + '</svg>';
 }
 
+/* ── bilanciamento ──────────────────────────────────────────────
+   Misurato runa per runa su un banco isolato: livello 5, nessuna risonanza,
+   centosettanta nemici che convergono davvero (è così che si gioca, e con i
+   nemici fermi Pira sembrava debolissima). Divario fra la migliore e la
+   peggiore: 32×, e le rune "da bersaglio singolo" perdevano ANCHE sul
+   bersaglio singolo.
+   Il guaio peggiore era però un altro: quattro delle SEI APERTURE — Scintilla,
+   Arco, Sciame, Iride — stavano nella metà bassa. Il gioco chiedeva da dove
+   volevi cominciare e poi puniva quattro risposte su sei.
+   Qui il divario è compresso soprattutto DAL BASSO: le rune di punta scendono
+   di poco, quelle in fondo salgono di parecchio, e ognuna vince da qualche
+   parte. */
+
 /* ── rune (8 livelli ciascuna) ──────────────────────────────── */
 const RUNES = {
-  scintilla: { n: 'Scintilla', el: 'fuoco', tag: 'proiettile', d: 'Sfere ardenti verso il nemico più vicino.',
-    base: { dmg: 15, cd: .78, spd: 430, count: 1, pierce: 0, size: 7 }, g: { dmg: 6.6, cd: -.045, count: .42, spd: 14 } },
+  scintilla: { n: 'Scintilla', el: 'fuoco', tag: 'proiettile', d: 'Sfere ardenti che trapassano e inseguono il nemico più vicino.',
+    base: { dmg: 17, cd: .72, spd: 430, count: 1, pierce: 1, size: 8 }, g: { dmg: 7.4, cd: -.042, count: .55, pierce: .28, spd: 14 } },
   pira: { n: 'Pira', el: 'fuoco', tag: 'terreno', d: 'Lascia pozze di fuoco lungo il tuo cammino.',
-    base: { dmg: 17, cd: 1.75, area: 54, dur: 3.4 }, g: { dmg: 7, cd: -.09, area: 5.5, dur: .26 } },
+    base: { dmg: 18, cd: 2.0, area: 50, dur: 2.9 }, g: { dmg: 7.4, cd: -.085, area: 4.4, dur: .16 } },
   nova: { n: 'Nova', el: 'fuoco', tag: 'esplosione', d: 'Onda d’urto che respinge e incenerisce.',
     base: { dmg: 30, cd: 3.5, area: 142 }, g: { dmg: 14, cd: -.22, area: 16 } },
   scheggia: { n: 'Scheggia', el: 'gelo', tag: 'perforante', d: 'Lame di ghiaccio che trapassano più nemici.',
-    base: { dmg: 16, cd: 1.0, spd: 560, count: 1, pierce: 2, size: 6 }, g: { dmg: 6.4, cd: -.055, count: .3, pierce: .45 } },
+    base: { dmg: 18, cd: .95, spd: 560, count: 1, pierce: 3, size: 6 }, g: { dmg: 7.2, cd: -.055, count: .38, pierce: .5 } },
   bruma: { n: 'Bruma', el: 'gelo', tag: 'aura', d: 'Un alone gelido che logora e frena.',
-    base: { dmg: 5.6, cd: .34, area: 100 }, g: { dmg: 2.5, area: 11 } },
+    base: { dmg: 5.0, cd: .34, area: 94 }, g: { dmg: 2.1, area: 9 } },
   cristallo: { n: 'Cristallo', el: 'gelo', tag: 'orbitante', d: 'Schegge che ruotano con il tuo anello.',
-    base: { dmg: 21, cd: .5, count: 1, area: 104, spd: 1.9, size: 12 }, g: { dmg: 8, count: .42, spd: .11, size: .7 } },
-  arco: { n: 'Arco', el: 'fulmine', tag: 'catena', d: 'Una scarica che salta di nemico in nemico.',
-    base: { dmg: 21, cd: 1.5, count: 3, area: 215 }, g: { dmg: 8.2, cd: -.08, count: .55, area: 11 } },
+    base: { dmg: 23, cd: .5, count: 2, area: 112, spd: 1.9, size: 13 }, g: { dmg: 8.6, count: .5, spd: .11, size: .7 } },
+  arco: { n: 'Arco', el: 'fulmine', tag: 'catena', d: 'Una scarica che salta di nemico in nemico senza perdere forza.',
+    base: { dmg: 24, cd: 1.05, count: 6, area: 240 }, g: { dmg: 9.5, cd: -.08, count: 1.5, area: 13 } },
   tempesta: { n: 'Tempesta', el: 'fulmine', tag: 'area', d: 'Saette casuali si abbattono intorno a te.',
     base: { dmg: 33, cd: 1.2, count: 1, area: 330, size: 46 }, g: { dmg: 13.5, cd: -.055, count: .5, size: 3.4 } },
-  filo: { n: 'Filo', el: 'fulmine', tag: 'raggio', d: 'Un filamento elettrico agganciato al bersaglio.',
-    base: { dmg: 6.8, cd: .11, area: 265 }, g: { dmg: 2.9, area: 14 } },
+  filo: { n: 'Filo', el: 'fulmine', tag: 'raggio', d: 'Filamenti elettrici agganciati ai bersagli più vicini.',
+    base: { dmg: 11, cd: .10, area: 280, count: 1 }, g: { dmg: 4.6, area: 14, count: .32 } },
   singolarita: { n: 'Singolarità', el: 'vuoto', tag: 'controllo', d: 'Un pozzo gravitazionale che attira e divora.',
-    base: { dmg: 11, cd: 6.4, area: 112, dur: 3.4 }, g: { dmg: 4.6, cd: -.32, area: 11, dur: .26 } },
+    base: { dmg: 9, cd: 6.4, area: 108, dur: 3.0 }, g: { dmg: 3.4, cd: -.32, area: 10, dur: .22 } },
   falce: { n: 'Falce', el: 'vuoto', tag: 'boomerang', d: 'Una lama spettrale che va e ritorna.',
-    base: { dmg: 31, cd: 2.1, spd: 330, count: 1, size: 17 }, g: { dmg: 13, cd: -.13, count: .3, spd: 11 } },
-  sciame: { n: 'Sciame', el: 'vuoto', tag: 'ventaglio', d: 'Raffica di dardi d’ombra a ventaglio.',
-    base: { dmg: 12, cd: 1.3, count: 3, spd: 400, pierce: 0, size: 6 }, g: { dmg: 5.2, cd: -.06, count: .62, spd: 12 } },
+    base: { dmg: 33, cd: 2.1, spd: 330, count: 1, size: 17 }, g: { dmg: 13.6, cd: -.13, count: .3, spd: 11 } },
+  sciame: { n: 'Sciame', el: 'vuoto', tag: 'ventaglio', d: 'Raffica di dardi d’ombra che trapassano a ventaglio.',
+    base: { dmg: 14, cd: 1.05, count: 4, spd: 440, pierce: 1, size: 7 }, g: { dmg: 6.2, cd: -.05, count: .8, pierce: .22, spd: 12 } },
   raggio: { n: 'Raggio', el: 'luce', tag: 'faro', d: 'Un fascio rotante che incenerisce di continuo.',
     base: { dmg: 4.6, cd: .1, area: 225, spd: .85 }, g: { dmg: 2, area: 14, spd: .04 } },
-  prisma: { n: 'Prisma', el: 'luce', tag: 'frammentante', d: 'Un colpo che si frantuma all’impatto.',
-    base: { dmg: 21, cd: 1.6, spd: 470, count: 3, size: 8 }, g: { dmg: 8, cd: -.08, count: .42 } },
+  prisma: { n: 'Prisma', el: 'luce', tag: 'frammentante', d: 'Un colpo che si frantuma all’impatto in schegge perforanti.',
+    base: { dmg: 26, cd: 1.15, spd: 470, count: 5, size: 9, pierce: 1 }, g: { dmg: 10, cd: -.06, count: .7 } },
   aureola: { n: 'Aureola', el: 'luce', tag: 'pulsazione', d: 'Pulsa luce: ferisce intorno e ti risana.',
     base: { dmg: 22, cd: 2.6, area: 126, heal: 1.6 }, g: { dmg: 9, cd: -.14, area: 12, heal: .5 } },
   iride: { n: 'Iride', el: 'iride', tag: 'jolly', d: 'Si accorda a ogni elemento vicino e ne prende la forza.',
-    base: { dmg: 17, cd: 1.0, spd: 500, count: 1, size: 8 }, g: { dmg: 7.2, cd: -.05, count: .3 } },
+    base: { dmg: 22, cd: .85, spd: 500, count: 2, pierce: 1, size: 9 }, g: { dmg: 9.4, cd: -.05, count: .5, pierce: .3 } },
 
   /* ── trasformazioni ──────────────────────────────────────────
      Non compaiono fra le carte normali: si ottengono solo portando la

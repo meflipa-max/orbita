@@ -15,10 +15,43 @@ Due formati: la **Corsa** da 20 minuti con cinque guardiani, poi modalità senza
 l'**Incursione** da 8 minuti con tre. I **frammenti** restano fra una partita e l'altra e si
 spendono nell'Osservatorio in potenziamenti permanenti, nuclei e reliquie.
 
+### Culmine
+
+Un indicatore che si riempie **uccidendo**. Quando è pieno, `Spazio` (o il tasto in basso a
+destra) e per cinque secondi e mezzo l'anello spara tutto insieme, le ricariche vanno quasi al
+doppio, e **ogni Risveglio acceso sale di un grado**. Non ne accende di nuovi: moltiplica
+quello che hai costruito, e per questo premia chi l'anello l'ha costruito bene. È l'unica cosa
+che fai con le mani oltre a schivare.
+
+### L'anello non è mai congelato
+
+Le rune nuove si offrivano solo con un alloggiamento libero: dopo cinque livelli la
+composizione elementale era decisa per il resto della partita. Misurato su una corsa vera, seme
+2026: al quarto minuto sei elementi diversi, nessun Risveglio, e nel mazzo nemmeno una runa
+nuova. Ora tre carte lo rimettono in gioco anche da pieno — **Dissolvi** libera un
+alloggiamento, **Ritempra** riaccorda una runa all'elemento di una vicina conservandone forma e
+livello, e una runa nuova può **prendere il posto** di una che non regge nessun Risveglio.
+E finché non hai acceso un Risveglio, almeno una delle tre carte può sempre cambiare l'anello.
+Stesso seme: primo Risveglio al secondo 26.
+
+### Chi ti viene addosso
+
+Il **Dissonante** non vuole la tua vita: aggancia un alloggiamento e lo tiene *zitto*. Vedi il
+filo che parte da lui e la runa che si spegne. Tiene le distanze apposta, quindi va inseguito —
+e non può mai zittire più di due rune insieme. Ogni tanto un gruppo arriva con una **forma**: un
+muro si aggira, un accerchiamento va rotto da un lato, un cuneo si schiva di fianco. E dal
+secondo guardiano in poi ognuno porta una **corazza elementale**: quell'elemento fa metà danno.
+
+### La schermata di fine
+
+Dice **chi ti ha ucciso**, **da dove è venuto il danno** — la percentuale runa per runa, che è
+la statistica che fa venire voglia di ricostruire — e una diagnosi presa dai contatori della
+partita: *«Non hai mai acceso un Risveglio: eri arrivato a due rune di Fuoco di fila su tre.»*
+
 ### Trasformazioni
 
 Una runa portata a livello 8 **mentre risuona da entrambi i lati e il suo elemento è
-risvegliato** si trasforma. Non diventa più grande: diventa un'altra cosa. La Cometa lascia
+risvegliato** si trasforma. Ne ha una **ognuna delle sedici rune**. Non diventa più grande: diventa un'altra cosa. La Cometa lascia
 una scia che brucia davvero e si frantuma a ogni uccisione; il Glaciale congela al tocco; il
 Fulgore sdoppia la catena a ogni salto; il Mietitore risucchia i nemici lungo il cammino;
 l'Alba spazza con due fasci opposti. La condizione è **posizionale**: obbliga a progettare

@@ -83,7 +83,7 @@ const FIRE = {
     if (!t) { r.cd = .18; return; }
     G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .16, c: EL.fulmine.c });
     hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
-    chainFrom(t, s.dmg * .78, s.count - 1, s.area, r.id);
+    chainFrom(t, s.dmg, s.count - 1, s.area, r.id);
     AU.play('shoot');
   },
   tempesta(r, s) {
@@ -94,11 +94,16 @@ const FIRE = {
     }
   },
   filo(r, s) {
-    const t = nearest(r.wx, r.wy, s.area);
-    if (!t) { r.st.tgt = null; return; }
-    r.st.tgt = t;
-    G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .11, c: EL.fulmine.c, w: 3 });
-    hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
+    /* piu' filamenti insieme man mano che sale: era una runa a bersaglio
+       singolo che perdeva anche sul bersaglio singolo */
+    const ts = nearestN(r.wx, r.wy, s.area, s.count);
+    if (!ts.length) { r.st.tgt = null; return; }
+    r.st.tgt = ts[0];
+    for (let i = 0; i < ts.length; i++) {
+      const t = ts[i];
+      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .11, c: EL.fulmine.c, w: 3 });
+      hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
+    }
   },
   singolarita(r, s) {
     /* Si agganciava al nemico piu' vicino a TE, che in mezzo alla folla e'
@@ -171,7 +176,7 @@ const FIRE = {
   prisma(r, s) {
     const t = nearest(G.p.x, G.p.y, 940);
     const a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
-    shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'luce', c: EL.luce.c, pierce: 0, kind: 'orb', life: 2.2, split: s.count, trail: 1 });
+    shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'luce', c: EL.luce.c, pierce: s.pierce, kind: 'orb', life: 2.2, split: s.count, splitPierce: 1, trail: 1 });
     AU.play('shoot');
   },
   aureola(r, s) {

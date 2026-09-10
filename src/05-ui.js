@@ -258,7 +258,11 @@ const UI = {
       '<div class="frame clip guide"><div class="inner clip">' +
 
       sec('Comandi',
-        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> per la pausa. Le rune sparano da sole: l’unica cosa che fai con le mani è schivare.')) +
+        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> per la pausa. Le rune sparano da sole: tu schivi, e decidi <b>quando scatenare il Culmine</b>.')) +
+
+      sec('Il Culmine',
+        p('In basso a destra c’è un anello che si riempie <b>uccidendo</b>. Quando è pieno, premi <kbd>Spazio</kbd> (o toccalo) e per cinque secondi e mezzo succede tutto insieme: l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>.') +
+        p('Non accende Risvegli nuovi: moltiplica quelli che hai costruito. Tenerlo in tasca non serve a niente — si ricarica in fretta.')) +
 
       sec('L’anello',
         p('Ogni livello scegli una runa e <em>dove metterla</em>. Due rune vicine dello stesso elemento <em>risuonano</em>: <b>+30% danno a ciascuna</b>. Lontane fra loro, zero. L’anello è <b>circolare</b>: l’ultimo alloggiamento confina col primo.')) +
@@ -275,13 +279,21 @@ const UI = {
         '<li><b>Il numero magico è tre.</b> Due rune danno risonanza ma nessun Risveglio: la terza dello stesso elemento vale più di un potenziamento su una runa che hai già.</li>' +
         '<li><b>Chi sta in mezzo conta.</b> In una catena di tre, solo quella centrale ottiene risonanza da entrambi i lati. Mettici la runa che vuoi trasformare, o quella che picchia di più.</li>' +
         '<li><b>L’Iride dipende da cosa vuoi.</b> Sul confine fra due gruppi accende un secondo Risveglio, utile contro la folla. Dentro il tuo gruppo principale fa più danno puro, meglio contro i guardiani.</li>' +
-        '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento. E la carta <b>Dissolvi</b> ti libera un alloggiamento: non sei legato per sempre alla runa di partenza.</li>' +
+        '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento. È spesso l’unica cosa che manca perché una runa si trasformi: l’anello ti dice <em>in quale alloggiamento spostarla</em>.</li>' +
+        '<li><b>L’anello non è mai congelato.</b> Tre carte lo rimettono in gioco anche quando è pieno: <b>Dissolvi</b> libera un alloggiamento, <b>Ritempra</b> riaccorda una runa all’elemento di una vicina conservandone forma e livello, e una runa nuova può <em>prendere il posto</em> di una che non regge nessun Risveglio.</li>' +
         '<li><b>Non sei obbligato a prendere.</b> Se nessuna delle tre carte ti convince, <b>Rilancia</b> per pescarne altre tre, o <b>Salta</b>: rinunci al potenziamento ma recuperi vita e frammenti. Una runa che non vuoi ti costa un alloggiamento per sempre, quindi saltare spesso è la scelta giusta.</li>' +
         '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune risuonano anche saltando un alloggiamento, quindi alternare funziona. Con Lyra ogni runa conta doppia: due bastano per un Risveglio.</li>' +
         '</ol>') +
 
       sec('Trasformazioni',
-        p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. L’anello ti dice quando è pronta e cosa manca.')) +
+        p('Una runa a <b>livello 8</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. Ne ha una <b>ognuna delle sedici rune</b>, e l’anello dice sempre cosa manca — compreso in quale alloggiamento spostarla.') +
+        p('L’Iride fa eccezione, perché non ha un elemento suo: si trasforma quando fa il mestiere per cui esiste, cioè quando è il <b>ponte fra due Risvegli</b> accesi insieme.')) +
+
+      sec('Chi ti viene addosso',
+        p('Quasi tutti puntano dritti al nucleo. Tre cose no.') +
+        p('Il <b>Dissonante</b> non vuole la tua vita: aggancia un alloggiamento e lo tiene <em>zitto</em>. Vedi il filo che parte da lui e la runa che si spegne. Tiene le distanze apposta: per toglierlo devi smettere di mietere e andarlo a prendere. Non può mai zittire più di due rune insieme.') +
+        p('Ogni tanto un gruppo arriva con una <b>forma</b>: un muro si aggira, un accerchiamento va rotto da un lato, un cuneo si schiva di fianco.') +
+        p('Dal secondo guardiano in poi ognuno porta una <b>corazza elementale</b>, disegnata attorno a lui: i colpi di quell’elemento fanno metà danno. È il momento in cui una seconda catena, o un’Iride, ripaga davvero.')) +
 
       sec('Nodi elementali',
         p('Alcune formazioni sono <b>cristalli sintonizzati su un elemento</b>, sorteggiato a ogni partita. Restando nella loro aura le tue rune di quell’elemento fanno <b>+35% danno</b>, e la catena di quell’elemento <b>conta una runa in più</b>: due rune adiacenti bastano ad accendere il Risveglio finché sei lì.') +
