@@ -766,6 +766,46 @@ function tickBarra(e, dt) {
   }
 }
 
+/* ── la fuga del Corriere ───────────────────────────────────────
+   Scappava lungo il raggio che lo separa da te, e basta. Contro un muro
+   quel vettore punta DENTRO il muro: il clamp dei confini lo appiattisce e
+   lui resta li' a strusciare, e in un angolo lo appiattisce su tutti e due
+   gli assi, cioe' si ferma del tutto. Misurato con un inseguitore che gli
+   va dritto addosso: passava fra il 48% e il 70% della sua vita incollato
+   al bordo, fino al 14% incastrato in un angolo, e veniva preso SEMPRE, a
+   un paio di pixel dal nucleo — l'esatto contrario di quello che la caccia
+   dovrebbe chiedere («in linea retta non lo prendi, tagliagli la strada»).
+   Adesso sceglie invece di subire: guarda sedici direzioni e prende quella
+   che, fatto un passo di mezzo secondo, lo lascia piu' lontano da te. Il
+   passo di prova e' gia' tagliato dai confini, quindi correre nel muro non
+   frutta niente e il massimo diventa scorrere LUNGO il muro; in un angolo
+   diventa uscirne passandoti di fianco. Tre correzioni sopra al punteggio:
+   un premio a chi tiene la direzione di prima (senza, fra due direzioni
+   quasi identiche cambia idea a ogni fotogramma e vibra), una penalita' per
+   chi finisce dentro un asteroide, e una penalita' morbida per chi resta
+   appiccicato al bordo, cosi' usa l'arena invece del suo perimetro. */
+const FUGA_N = 16;
+function fugaCorriere(e, sp) {
+  const passo = sp * 1.1, lim = ARENA - e.r;
+  let best = e.fugaA !== undefined ? e.fugaA : Math.atan2(e.y - G.p.y, e.x - G.p.x), bs = -1e9;
+  for (let k = 0; k < FUGA_N; k++) {
+    const a = k / FUGA_N * TAU;
+    const nx = clamp(e.x + Math.cos(a) * passo, -lim, lim);
+    const ny = clamp(e.y + Math.sin(a) * passo, -lim, lim);
+    let s = Math.hypot(nx - G.p.x, ny - G.p.y);
+    const aria = Math.min(lim - Math.abs(nx), lim - Math.abs(ny));
+    if (aria < 420) s -= (420 - aria) * 1.6;
+    if (dentroRoccia(nx, ny, e.r)) s -= 260;
+    if (e.fugaA !== undefined) {
+      let dd = a - e.fugaA; while (dd > PI) dd -= TAU; while (dd < -PI) dd += TAU;
+      s += (1 - Math.abs(dd) / PI) * 30;
+    }
+    if (s > bs) { bs = s; best = a; }
+  }
+  e.fugaA = best;
+  return best;
+}
+
 /* ── il Dissonante ──────────────────────────────────────────────
    Non punta alla tua vita: aggancia un alloggiamento e lo tiene ZITTO finché
    resta in raggio. Per toglierselo bisogna smettere di mietere e andarlo a
@@ -886,9 +926,13 @@ function updateEnemies(dt) {
          tagliargli la strada sì — che è esattamente quello che il gioco
          dice di fare. E niente tremolio: il suo compito è essere
          raggiungibile con una traiettoria, non imprevedibile. */
-      const verso = e.corriere ? -1 : 1;
-      if (e.corriere) sp = e.spd * (1 - e.slow);
-      e.vx = dx / d * sp * verso; e.vy = dy / d * sp * verso;
+      if (e.corriere) {
+        sp = e.spd * (1 - e.slow);
+        const a = fugaCorriere(e, sp);
+        e.vx = Math.cos(a) * sp; e.vy = Math.sin(a) * sp;
+      } else {
+        e.vx = dx / d * sp; e.vy = dy / d * sp;
+      }
       e.x += e.vx * dt; e.y += e.vy * dt;
     }
 
