@@ -872,6 +872,20 @@ function drawPlayer() {
     ctx.restore();
   }
 
+  /* ── il Culmine e' pronto, e lo dice qui ────────────────────
+     Il pulsante sta nell'angolo, dove arriva il pollice. Ma gli occhi
+     stanno al centro dello schermo, sul nucleo, e da li' non si vede: la
+     cosa piu' grossa che puoi premere restava carica per interi minuti
+     senza che te ne accorgessi. Un anello d'oro che respira attorno al
+     nucleo lo dice dove stai gia' guardando, e non ruba niente al resto:
+     e' l'unico oro nell'arena, ed e' fuori dalla sagoma. */
+  if (G.charge >= 1 && G.culm <= 0 && !G.demo) {
+    const b = .5 + Math.sin(G.t * 3.4) * .5;
+    ctx.strokeStyle = rgba('#ffe9b0', .30 + b * .42);
+    ctx.lineWidth = 1.6 + b * 1.2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 9 + b * 5, 0, TAU); ctx.stroke();
+  }
+
   /* nucleo */
   /* Il nucleo deve restare l'unica cosa bianca e piena dello schermo:
      doppio contorno e centro pieno, così non si perde nella mischia. La

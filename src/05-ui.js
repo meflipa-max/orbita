@@ -91,7 +91,33 @@ const UI = {
        da solo, perché è l'unica cosa che si preme in tutta la partita. */
     if (elCulm) {
       const pieno = G.charge >= 1, att = G.culm > 0;
-      elCulm.className = 'clip on' + (pieno && !att ? ' pronto' : '') + (att ? ' attivo' : '');
+      /* ── i due momenti del Culmine ──────────────────────
+         Il pulsante e' l'unica cosa che PREMI in tutta la partita, e i suoi
+         due istanti — quando si carica e quando parte — non avevano niente
+         addosso: il primo era un suono e un cambio di colore, il secondo
+         proprio nulla. Qui si riconoscono i passaggi di stato e si accende
+         un'animazione sola, che poi si spegne da sola: `className` viene
+         riscritto a ogni fotogramma, quindi una classe CSS non basterebbe a
+         far partire un fotogramma chiave una volta. */
+      const stato = att ? 'attivo' : pieno ? 'pronto' : (G.charge >= .85 ? 'quasi' : 'carica');
+      const ora = performance.now();
+      if (stato !== this._culmSt) {
+        if (stato === 'pronto') {
+          this._culmFx = 'arrivo'; this._culmFxFino = ora + 900;
+          /* La prima volta in assoluto: il Culmine e' l'unica abilita'
+             attiva del gioco e finora si presentava da solo, con un
+             pulsante che cambiava colore in un angolo. */
+          if (!visto('culmine')) {
+            this.primaVolta('culmine');
+            this.toast('CULMINE PRONTO', isCoarse() ? 'Toccalo: l’anello spara tutto insieme' : 'Spazio: l’anello spara tutto insieme', '#ffe9b0');
+          }
+        } else if (stato === 'attivo' && this._culmSt === 'pronto') {
+          this._culmFx = 'scarica'; this._culmFxFino = ora + 620;
+        }
+        this._culmSt = stato;
+      }
+      const fx = this._culmFx && ora < this._culmFxFino ? ' ' + this._culmFx : '';
+      elCulm.className = 'on ' + stato + fx;
       elCulm.style.setProperty('--f', att ? 1 - G.culm / CULM_DUR : clamp(G.charge, 0, 1));
       elCulm.querySelector('.lab').textContent = att ? Math.ceil(G.culm) + 's'
         : (pieno ? (isCoarse() ? 'TOCCA' : 'SPAZIO') : Math.round(G.charge * 100) + '%');
@@ -1572,6 +1598,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.awk = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.awakeVisto = {};
   G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
+  UI._culmSt = null; UI._culmFx = null;   /* niente lampi ereditati dalla corsa di prima */
   G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
   G.dmgSrc = {}; G.killer = null;
   G.dissT = 34; G.dissAtt = 0; G.formT = 52; G.ascesi = 0;

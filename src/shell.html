@@ -273,17 +273,63 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
    del pulsante, dove il taglio dell'angolo le mangiava le lettere */
 #culm .stack{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1}
 #culm .glif{font:400 23px/1 var(--disp);color:rgba(255,233,176,.42);transition:color .2s,transform .2s,text-shadow .2s}
-#culm .lab{font:700 7.5px/1 var(--ui);letter-spacing:.09em;color:var(--faint);white-space:nowrap;
+/* «SPAZIO» ha una lettera piu' di «TOCCA» e a .09em di spaziatura sbordava
+   dal disco libero in mezzo all'anello: la piu' lunga delle due decide */
+#culm .lab{font:700 7.5px/1 var(--ui);letter-spacing:.03em;color:var(--faint);white-space:nowrap;
   transition:color .2s}
-#culm.pronto .glif{color:#fff;transform:scale(1.14);text-shadow:0 0 14px #ffe9b0,0 0 28px rgba(255,233,176,.7)}
+#culm.pronto .glif{color:#fff;text-shadow:0 0 14px #ffe9b0,0 0 28px rgba(255,233,176,.7);
+  animation:culmGlif 7s linear infinite}
 #culm.pronto .lab{color:#fff;text-shadow:0 0 8px rgba(255,233,176,.9)}
 #culm.attivo .glif{color:#fff;text-shadow:0 0 16px #fff}
 #culm.attivo .lab{color:#fff}
 
+/* ── quasi ──────────────────────────────────────────────────────
+   Sopra l'85% il pulsante comincia a scaldarsi. Prima passava da spento a
+   pronto di colpo: la cosa piu' grossa che puoi premere arrivava senza che
+   niente l'avesse annunciata, e chi guardava l'azione se la perdeva. Adesso
+   l'ultimo sesto di barra si vede, e quando scatta te l'aspettavi. */
+#culm.quasi .face{border-color:rgba(255,233,176,.62)}
+#culm.quasi .arc{filter:drop-shadow(0 0 5px rgba(255,233,176,.85))}
+#culm.quasi .core{opacity:.6;animation:culmCuore 1.7s ease-in-out infinite}
+#culm.quasi .glif{color:rgba(255,233,176,.8)}
+
+/* ── le scintille in orbita ─────────────────────────────────────
+   Girano FUORI dal bordo, dove non c'e' niente altro: e' il segnale che si
+   prende con la coda dell'occhio mentre guardi il centro dello schermo. */
+#culm .orbite{position:relative;width:100%;height:100%;opacity:0;pointer-events:none;
+  transition:opacity .3s}
+#culm.pronto .orbite{opacity:1;animation:culmOrbita 3.6s linear infinite}
+#culm .orbite i{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;
+  border-radius:50%;background:#fff;box-shadow:0 0 7px 2px rgba(255,214,122,.95)}
+#culm .orbite i:nth-child(1){transform:rotate(0turn) translateY(-45px)}
+#culm .orbite i:nth-child(2){transform:rotate(.3333turn) translateY(-45px)}
+#culm .orbite i:nth-child(3){transform:rotate(.6666turn) translateY(-45px)}
+
+/* ── i due momenti ──────────────────────────────────────────────
+   Quando si CARICA e quando PARTE. Prima il passaggio a pronto era solo un
+   suono e un cambio di colore, e la partenza non aveva niente sul pulsante:
+   l'unica abilita' attiva del gioco si premeva e il pulsante restava fermo.
+   Sono onde che escono dal bordo — possono farlo solo perche' il taglio
+   degli angoli adesso sta su `.face` e non qui sopra. */
+#culm .onda{width:100%;height:100%;border-radius:50%;opacity:0;pointer-events:none;
+  border:2px solid rgba(255,233,176,.95)}
+#culm.arrivo .onda{animation:culmOnda .9s cubic-bezier(.2,.72,.3,1) both}
+#culm.arrivo .onda.due{animation-delay:.17s}
+#culm.arrivo .face{animation:culmScatto .6s cubic-bezier(.16,1.45,.3,1) both}
+#culm.scarica .onda{border-color:#fff;animation:culmScarica .55s ease-out both}
+#culm.scarica .onda.due{animation-delay:.1s}
+#culm.scarica .face{animation:culmGiu .34s ease-out both}
+#culm.pronto:active .face{transform:scale(.93)}
+
 @keyframes culmAlone{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.28);opacity:1}}
 @keyframes culmGira{to{transform:rotate(1turn)}}
+@keyframes culmOrbita{to{transform:rotate(1turn)}}
+@keyframes culmGlif{from{transform:rotate(0) scale(1.14)}to{transform:rotate(1turn) scale(1.14)}}
 @keyframes culmCuore{0%,100%{transform:scale(.8);opacity:.4}50%{transform:scale(1.06);opacity:.85}}
-@keyframes culmPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,233,176,.42)}50%{box-shadow:0 0 0 9px rgba(255,233,176,0)}}
+@keyframes culmOnda{0%{transform:scale(.7);opacity:0}14%{opacity:1}100%{transform:scale(1.95);opacity:0}}
+@keyframes culmScarica{0%{transform:scale(.96);opacity:1}100%{transform:scale(2.3);opacity:0}}
+@keyframes culmScatto{0%{transform:scale(.84)}44%{transform:scale(1.17)}100%{transform:scale(1)}}
+@keyframes culmGiu{0%{transform:scale(1.12);filter:brightness(2.6)}100%{transform:scale(1);filter:none}}
 
 /* ---------- raffica ----------
    Mietere e' meta' del piacere del genere, e una folla che si disintegrava
@@ -1129,6 +1175,8 @@ ol.tips b{color:#fff;font-weight:600}
 
   <button id="culm" aria-label="Culmine">
     <span class="halo"></span>
+    <span class="onda"></span><span class="onda due"></span>
+    <span class="orbite"><i></i><i></i><i></i></span>
     <span class="face clip">
       <span class="arc"></span><span class="sweep"></span><span class="core"></span>
       <span class="stack"><span class="glif">&#10209;</span><span class="lab">0%</span></span>
