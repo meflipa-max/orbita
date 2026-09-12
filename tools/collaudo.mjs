@@ -98,6 +98,43 @@ gioca(10);
 ok(G.lezioneGemme === 1, 'la vetrina del menu non la consuma');
 G.demo = false;
 
+sez('la diagnosi dice la condizione giusta');
+/* La fine partita accusava sempre la risonanza: con un'Iride a livello 7 fra
+   due vicine — che risuonava benissimo — diceva di riordinare un anello
+   già a posto, e la regola vera (all'Iride servono DUE Risvegli accesi
+   insieme) restava un segreto. Stessa radice nell'anello in pausa, che al
+   jolly chiedeva "il Risveglio null", perché un elemento suo non ce l'ha.
+   Adesso le condizioni stanno scritte in un posto solo, mancaEvo(). */
+{
+  const testo = () => O.UI.diagnosi(true);
+  const anello = () => O.UI.evoLine();
+  const mk = (id, lv, res) => ({ id, el: O.RUNES[id].el, lv, res });
+  S().visti = ['gemme','breccia','marea','caccia','nodo'];
+  O.reset('vega', 4242, 'incursione', false); G.state = 'play';
+  G.slots = 6; G.evoCount = 0; G.culms = 5; G.dmgSrc = { iride: 10 };
+
+  /* lo scenario vero: Iride 7, risuona da entrambi i lati, un Risveglio solo */
+  G.ring = [null, mk('arco',5,1), mk('iride',7,2), mk('sciame',4,2), mk('falce',3,2), mk('nova',2,1)];
+  G.awaken = { fuoco:0, gelo:0, fulmine:0, vuoto:1, luce:0 };
+  ok(!/risuonava/.test(testo()), 'a chi risuonava da entrambi i lati non dice il contrario');
+  ok(/due Risvegli/.test(testo()), 'e all\u2019Iride chiede i due Risvegli che le mancano');
+  ok(!/null|undefined/.test(anello()), 'l\u2019anello non chiede all\u2019Iride "il Risveglio null"');
+
+  /* una runa normale che risuona ma senza il Risveglio del suo elemento */
+  G.ring = [null, mk('arco',6,2), null, null, null, null];
+  ok(/Sovraccarico/.test(testo()) && !/risuonava/.test(testo()), 'nomina il Risveglio spento, non la risonanza');
+
+  /* e quando non risuona davvero, lo dice — col consiglio che costa zero */
+  G.awaken = { fuoco:0, gelo:0, fulmine:1, vuoto:0, luce:0 };
+  G.ring = [mk('arco',6,1), null, null, null, null, null];
+  ok(/risuonava/.test(testo()) && /Riordina/.test(testo()), 'e quando è la risonanza a mancare lo dice');
+
+  /* pronta e mai presa: c'era un "ma" senza niente dietro */
+  G.awaken = { fuoco:0, gelo:0, fulmine:1, vuoto:0, luce:0 };
+  G.ring = [mk('arco',6,2), null, null, null, null, null];
+  ok(/pronta/.test(testo()) && !/ma \./.test(testo()), 'chi era già pronta non si sente dire che le mancava qualcosa');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],

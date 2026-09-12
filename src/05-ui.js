@@ -833,9 +833,10 @@ const UI = {
       if (!r || !EVO[r.id]) continue;
       const nome = RUNES[r.id].n, col = EL[r.el].c;
       if (canEvolve(r)) { parts.push('<b style="color:' + col + '">' + nome + ' può trasformarsi</b>'); continue; }
-      if (r.lv < soglia) continue;
+      const mancano = mancaEvo(r);
+      if (mancano.indexOf('lv') >= 0) continue;
       const manca = [];
-      if (r.res < 2) {
+      if (mancano.indexOf('res') >= 0) {
         /* Dire "manca la risonanza su entrambi i lati" descrive il problema.
            Dire "spostala nell'alloggiamento 3" lo risolve — ed è la differenza
            fra una regola che si capisce e una che non scatta mai. */
@@ -844,7 +845,10 @@ const UI = {
           ? 'risuonare da <b>entrambi</b> i lati — <b>spostala nell’alloggiamento ' + (j + 1) + '</b>'
           : 'rune compatibili su <b>entrambi</b> i lati');
       }
-      if (!G.awaken[r.el]) manca.push('il Risveglio ' + EL[r.el].aw);
+      /* L'Iride non ha un elemento suo: chiederle "il Risveglio null" era la
+         prova che nessuno aveva mai letto questa riga con un jolly nell'anello. */
+      if (mancano.indexOf('iride') >= 0) manca.push('<b>due Risvegli</b> accesi insieme');
+      if (mancano.indexOf('aw') >= 0) manca.push('il Risveglio ' + EL[r.el].aw);
       if (manca.length) parts.push('<span style="color:' + col + '">' + nome + '</span>: manca ' + manca.join(' e '));
     }
     return parts.join('<br>');
@@ -1234,8 +1238,35 @@ const UI = {
     }
     if (!G.evoCount) {
       const soglia = hasRel('crogiolo') ? 5 : 6;
-      const quasi = G.ring.filter(r => r && EVO[r.id] && r.lv >= soglia);
-      if (quasi.length) return 'Nessuna trasformazione: <b>' + RUNES[quasi[0].id].n + '</b> era al livello giusto ma non risuonava da entrambi i lati. Riordina l’anello dalla pausa — è gratis.';
+      /* Accusare sempre la risonanza era la diagnosi sbagliata più comoda da
+         dare: un'Iride a livello 7 fra due vicine risuonava benissimo, e quel
+         che le mancava erano DUE Risvegli accesi insieme. Chi leggeva andava
+         a riordinare dalla pausa un anello che era già a posto, non trovava
+         niente da spostare, e la regola vera restava un segreto.
+         Fra le rune arrivate alla soglia si sceglie quella a cui manca meno:
+         è quella che alla prossima partita si trasforma davvero. */
+      const quasi = G.ring.filter(r => r && EVO[r.id] && r.lv >= soglia)
+        .sort((a, b) => mancaEvo(a).length - mancaEvo(b).length)[0];
+      if (quasi) {
+        const m = mancaEvo(quasi), voci = [];
+        /* Zero condizioni mancanti e nessuna trasformazione vuol dire una cosa
+           sola: la carta era nel mazzo e non e' mai stata presa. Dire "manca"
+           a chi non aveva piu' niente da fare era la diagnosi piu' sbagliata
+           di tutte — e la frase usciva pure monca, senza un motivo da
+           elencare dopo il "ma". */
+        if (!m.length) return '<b style="color:' + EL[quasi.el].c + '">' + RUNES[quasi.id].n +
+          '</b> era pronta a trasformarsi e la sua carta poteva uscire a ogni salita di livello. Quando compare, prendila: è la scelta più forte del mazzo.';
+        if (m.indexOf('res') >= 0) voci.push('non risuonava da <b>entrambi</b> i lati');
+        if (m.indexOf('iride') >= 0) voci.push('le servono <b>due Risvegli</b> accesi insieme (ne avevi ' + acceso + ')');
+        if (m.indexOf('aw') >= 0) voci.push('il <b>' + EL[quasi.el].aw + '</b> non era acceso');
+        /* Il consiglio dev'essere quello che risolve la condizione che manca:
+           l'anello si riordina gratis, un Risveglio no. */
+        const come = m.indexOf('res') >= 0
+          ? ' Riordina l’anello dalla pausa — è gratis.'
+          : ' Serve un’altra catena: <b>' + c0 + ' rune dello stesso elemento</b> una accanto all’altra.';
+        return 'Nessuna trasformazione: <b style="color:' + EL[quasi.el].c + '">' + RUNES[quasi.id].n +
+          '</b> era al livello giusto, ma ' + voci.join(' e ') + '.' + come;
+      }
       return 'Nessuna trasformazione. Serve una runa a <b>livello ' + soglia + '</b> che risuoni da entrambi i lati, con il suo elemento risvegliato.';
     }
     if ((G.culms | 0) < 3) return 'Hai usato il Culmine <b>' + (G.culms | 0) + ' volte</b>. Si ricarica uccidendo: tenerlo in tasca non serve a niente.';

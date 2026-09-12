@@ -318,6 +318,26 @@ function canEvolve(r) {
   return G.awaken[r.el] >= 1;
 }
 
+/* Cosa le manca, nell'ordine in cui canEvolve lo controlla: 'lv', 'res',
+   'iride' (i due Risvegli che servono al jolly) o 'aw'.
+   Esiste perche' chi lo SPIEGA — l'anello in pausa e la diagnosi di fine
+   partita — se lo riscriveva per conto suo, e una seconda copia delle
+   condizioni finisce sempre per raccontare quella sbagliata: la fine partita
+   accusava la risonanza anche quando la runa risuonava benissimo, e
+   l'anello chiedeva all'Iride "il Risveglio null", perche' un elemento suo
+   non ce l'ha. Una regola, un posto dove sta scritta. */
+function mancaEvo(r) {
+  if (!r || !EVO[r.id]) return [];
+  const soglia = hasRel('crogiolo') ? 5 : 6, m = [];
+  if (r.lv < soglia) m.push('lv');
+  if (r.res < 2) m.push('res');
+  if (r.el === 'iride') {
+    let n = 0; for (const e of ELKEYS) if (G.awaken[e]) n++;
+    if (n < 2) m.push('iride');
+  } else if (!G.awaken[r.el]) m.push('aw');
+  return m;
+}
+
 /* ── passivi ────────────────────────────────────────────────── */
 const PASSIVES = {
   vigore:     { n: 'Vigore',     max: 5, d: '+18% Vita massima',                  ico: 'vigore',     c: '#ff3d6e' },
