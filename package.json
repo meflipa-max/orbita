@@ -8,7 +8,8 @@
     "build": "node build.mjs",
     "dev": "node build.mjs && node --eval \"import('node:http').then(async h=>{const {readFile}=await import('node:fs/promises');h.createServer(async(q,s)=>{s.setHeader('content-type','text/html; charset=utf-8');s.end(await readFile('dist/index.html'))}).listen(5173,()=>console.log('http://localhost:5173'))})\"",
     "misura": "node tools/misura.mjs",
-    "collaudo": "node tools/collaudo.mjs"
+    "collaudo": "node tools/collaudo.mjs",
+    "rami": "node tools/rami.mjs --fetch"
   },
   "keywords": [
     "game",

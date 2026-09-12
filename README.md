@@ -743,6 +743,22 @@ sbloccato), `reliquie`, `contratti`, `modo`, `storico` e `giorno`. Un salvataggi
 precedente si apre senza perdere niente: `sanitizeSave` gli assegna le otto rune di partenza e
 tre contratti alla prima apertura.
 
+## Nessun commit resta indietro
+
+Il deploy parte da `main`: finché un commit non è lì, quel lavoro non esiste per chi gioca.
+È già costato due volte — l'ultima, otto commit fermi su un ramo per due giorni mentre il
+gioco in produzione mostrava ancora il tasto vecchio, senza che niente lo segnalasse.
+
+```
+npm run rami
+```
+
+Esce con 1 se esiste anche un solo commit fuori da `main`, elenca quali e dà il comando per
+recuperarli. Non serve ricordarsi di lanciarlo: gira all'avvio di ogni sessione di lavoro
+(`.claude/hooks/session-start.sh`) e su GitHub a ogni push su `main` e una volta al giorno
+(`.github/workflows/rami.yml`), dove pota anche i rami già assorbiti — sei rami fermi sono
+la confusione da cui nasce l'errore.
+
 ## Licenza
 
 MIT — vedi [LICENSE](LICENSE).

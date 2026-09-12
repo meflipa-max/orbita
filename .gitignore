@@ -8,5 +8,10 @@ Thumbs.db
 orbita.html
 dist/
 
-# config locale dell'anteprima
-.claude/
+# config locale dell'anteprima — solo i file di UNA macchina.
+# L'esclusione era su tutto `.claude/`, cioe' anche su settings.json e
+# hooks/, che invece devono stare nel repository: un hook che non viene
+# clonato non gira da nessuna parte, e quello che c'e' dentro (la guardia
+# sui commit fuori da main) e' proprio quello che deve girare ovunque.
+.claude/launch.json
+.claude/settings.local.json

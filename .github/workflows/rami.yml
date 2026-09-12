@@ -1,0 +1,77 @@
+# Nessun commit resta indietro.
+#
+# E' successo due volte. L'ultima, otto commit sono rimasti fermi su un ramo
+# per due giorni mentre il gioco in produzione mostrava ancora il tasto
+# vecchio: nessuna PR, nessun avviso, e per accorgersene bisognava pensare
+# di andare a guardare. Questo workflow toglie il "pensare di guardare".
+#
+# Fa due cose opposte e complementari:
+#   · pota da solo i rami che sono GIA' tutti in main (la confusione da cui
+#     nasce l'errore: sei rami fermi, e nessuno sa piu' quale conta);
+#   · resta ROSSO finche' esiste un commit che in main non c'e', e apre un
+#     issue che lo dice. Il rosso non si spegne mergiando l'issue: si spegne
+#     solo portando quel lavoro in main.
+name: rami
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # per cancellare i rami gia' assorbiti
+  issues: write     # per dire ad alta voce che c'e' lavoro fuori
+
+jobs:
+  rami:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pota i rami gia' assorbiti in main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin --prune
+          ora=$(date +%s)
+          for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin); do
+            case "$ref" in origin/main|origin/HEAD) continue ;; esac
+            b="${ref#origin/}"
+            [ "$(git rev-list --count origin/main.."$ref")" = "0" ] || continue
+            # un ramo toccato nell'ultima ora puo' essere di una sessione viva:
+            # e' gia' tutto in main, ma cancellarlo sotto i piedi confonde
+            ts=$(git log -1 --format=%ct "$ref")
+            if [ $((ora - ts)) -lt 3600 ]; then
+              echo "· $b — tutto in main, ma toccato da meno di un'ora: lo lascio"
+              continue
+            fi
+            echo "· $b — tutto in main, lo poto"
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$b" \
+              || echo "  (non cancellabile: probabilmente protetto)"
+          done
+
+      - name: Il collaudo passa
+        run: npm run collaudo
+
+      - name: Guardia — nessun commit fuori da main
+        id: guardia
+        run: node tools/rami.mjs
+
+      - name: Dillo ad alta voce
+        if: failure() && steps.guardia.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          corpo=$(node tools/rami.mjs || true)
+          titolo="C'e' lavoro committato che non e' in main"
+          n=$(gh issue list --state open --search "$titolo" --json number --jq '.[0].number' || true)
+          if [ -n "$n" ]; then
+            gh issue comment "$n" --body "$(printf 'Ancora fuori da main:\n\n```\n%s\n```' "$corpo")"
+          else
+            gh issue create --title "$titolo" \
+              --body "$(printf 'Il controllo \`npm run rami\` trova commit che non sono in main. Finche\x27 restano fuori, il gioco in produzione non ha quel lavoro.\n\n```\n%s\n```' "$corpo")"
+          fi
