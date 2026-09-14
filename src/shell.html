@@ -100,6 +100,15 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
 .awchip .pips{display:flex;gap:2px}
 .awchip i{width:4px;height:4px;background:currentColor;display:block}
+/* il grado in piu' del Culmine: bianco, l'unico bianco delle targhette */
+.awchip i.su{background:#fff;box-shadow:0 0 7px rgba(255,255,255,.95)}
+.awchip.su{border-color:#ffe9b0;box-shadow:0 0 12px rgba(255,233,176,.35)}
+
+/* a una runa dal Risveglio: tratteggiata, perche' non e' ancora accesa */
+.awchip.verso{border-style:dashed;opacity:.8;background:rgba(12,10,30,.6);
+  animation:versoPulsa 1.5s ease-in-out infinite}
+@keyframes versoPulsa{0%,100%{opacity:.55}50%{opacity:1}}
+
 @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* istruzioni d'avvio: spariscono al primo movimento */

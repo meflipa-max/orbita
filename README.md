@@ -24,6 +24,16 @@ doppio, e **ogni Risveglio acceso sale di un grado**. Non ne accende di nuovi: m
 quello che hai costruito, e per questo premia chi l'anello l'ha costruito bene. È l'unica cosa
 che fai con le mani oltre a schivare.
 
+Si carica con **quello che uccidi**, e un guardiano vale quattordici nemici comuni, un elite
+cinque. Lo diceva il codice e non lo faceva: la riga che aggiunge carica stava dentro al ramo
+che il direttore riserva ai nemici comuni, quindi il `guardiano ? 14 : elite ? 5 : 1` era
+codice morto e abbattere la cosa più grossa della corsa caricava **zero**. Misurato su un elite
+ucciso da solo: 0,000 invece di 0,113.
+
+E il grado in più adesso **si vede**: le targhette in basso a sinistra leggono il Risveglio
+effettivo, non quello di base, quindi durante il Culmine ognuna guadagna una tacca bianca. Era
+l'unico effetto del Culmine di cui non c'era traccia a schermo — cioè quello per cui esiste.
+
 ### L'anello non è mai congelato
 
 Le rune nuove si offrivano solo con un alloggiamento libero: dopo cinque livelli la

@@ -701,6 +701,11 @@ function recalcAwk() {
   const su = G.culm > 0 ? 1 : 0;
   for (const e of ELKEYS) { const b = G.awaken[e]; G.awk[e] = b ? Math.min(3, b + su) : 0; }
   recalc();
+  /* le targhette leggono il grado EFFETTIVO, quindi vanno ridisegnate anche
+     quando cambia solo il Culmine: prima si aggiornavano soltanto da
+     recalcRing, cioe' l'unico effetto del Culmine che il giocatore non
+     poteva vedere era quello per cui esiste */
+  UI.renderAwake();
 }
 
 /* ── anello: risonanze e risvegli ───────────────────────────── */
@@ -1115,13 +1120,22 @@ function killEnemy(e, opt) {
     G.raggio += (d - G.raggio) * .02;
     G.kAcc++;
     G.kb0++;
-    /* Culmine: ogni uccisione carica l'indicatore. È il ponte fra il ciclo
-       del mietere e l'unico momento in cui decidi tu quando succede la cosa
-       grossa — senza, il gioco ha un verbo solo, che è schivare. */
-    if (G.culm <= 0) {
-      G.charge = Math.min(1, G.charge + (e.boss ? 14 : e.elite ? 5 : 1) / culmineCost(G.t));
-      if (G.charge >= 1 && !G.chargeAnn) { G.chargeAnn = 1; AU.play('ready'); }
-    }
+  }
+
+  /* Culmine: ogni uccisione carica l'indicatore. È il ponte fra il ciclo
+     del mietere e l'unico momento in cui decidi tu quando succede la cosa
+     grossa — senza, il gioco ha un verbo solo, che è schivare.
+     Stava DENTRO al ramo del direttore, che esclude guardiani ed elite:
+     il `e.boss ? 14 : e.elite ? 5 : 1` era quindi codice morto e valeva
+     sempre 1, cioè abbattere un guardiano — la cosa più grossa che fai in
+     tutta la corsa — caricava il Culmine esattamente quanto uno sciamante:
+     zero, perché in quel ramo non ci entrava nemmeno. Misurato su un elite
+     ucciso da solo: carica 0,0000 invece di 0,1131.
+     La bomba resta fuori: spazza mezzo campo in un colpo e riempirebbe
+     l'indicatore da sola. */
+  if (G.culm <= 0 && !(opt && opt.spazzata)) {
+    G.charge = Math.min(1, G.charge + (e.boss ? 14 : e.elite ? 5 : 1) / culmineCost(G.t));
+    if (G.charge >= 1 && !G.chargeAnn) { G.chargeAnn = 1; AU.play('ready'); }
   }
 
   const n = e.boss ? 26 : e.elite ? 9 : 1;

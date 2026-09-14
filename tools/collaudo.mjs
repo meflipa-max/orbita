@@ -154,6 +154,23 @@ sez('il pop delle uccisioni percorre la scala');
   ok(visti.size >= 5, 'la pentatonica si percorre tutta (' + visti.size + ' semitoni su 6)');
 }
 
+sez('il Culmine si carica con quello che uccidi');
+/* La carica stava DENTRO al ramo del direttore, che esclude guardiani ed
+   elite: il `e.boss ? 14 : e.elite ? 5 : 1` scritto li' dentro era codice
+   morto e valeva sempre 1. Cioe' abbattere un guardiano — la cosa piu'
+   grossa di tutta la corsa — caricava il Culmine di zero.
+   Rimettendo indietro la correzione questo controllo legge 0,0000.       */
+{
+  O.reset('vega', 42, 'corsa', false); G.state = 'play';
+  gioca(20);
+  const e = G.enemies.find(x => x.hp > 0 && !x.boss);
+  G.enemies.length = 0; G.enemies.push(e);
+  e.elite = true; e.x = G.p.x + 46; e.y = G.p.y; e.hp = 2; e.froze = 0; e.slow = 0;
+  G.charge = 0; G.culm = 0;
+  for (let i = 0; i < 180 && e.hp > 0; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(e.hp <= 0 && G.charge > .05, 'un elite abbattuto carica l’indicatore (' + G.charge.toFixed(3) + ')');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],

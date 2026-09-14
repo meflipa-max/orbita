@@ -158,13 +158,39 @@ const UI = {
     } else elNodo.className = 'clip';
   },
 
+  /* Le targhette dei Risvegli, in basso a sinistra. Leggevano G.awaken, cioe'
+     il grado BASE costruito con l'anello, e non G.awk, cioe' quello che
+     infligge davvero danno: il Culmine ALZA DI UN GRADO ogni Risveglio
+     acceso — e' meta' del suo effetto, ed e' la ragione per cui premia chi
+     l'anello l'ha costruito bene — e a schermo non se ne vedeva traccia da
+     nessuna parte. Adesso il grado in piu' e' una tacca bianca che si
+     accende per i cinque secondi e mezzo in cui c'e'. */
   renderAwake() {
     let h = '';
     for (const e of ELKEYS) {
-      const t = G.awaken[e]; if (!t) continue;
-      h += '<div class="awchip clip" style="color:' + EL[e].c + '">' + EL[e].aw +
-        '<span class="pips">' + '<i></i>'.repeat(t) + '</span></div>';
+      const base = G.awaken[e]; if (!base) continue;
+      const eff = Math.max(base, G.awk[e] | 0);
+      let pips = '';
+      for (let i = 0; i < eff; i++) pips += i < base ? '<i></i>' : '<i class="su"></i>';
+      h += '<div class="awchip clip' + (eff > base ? ' su' : '') + '" style="color:' + EL[e].c + '">' + EL[e].aw +
+        '<span class="pips">' + pips + '</span></div>';
     }
+    /* A una runa dal Risveglio non c'era nessun segnale, ed e' l'informazione
+       piu' azionabile del gioco: «eri a due rune di Fuoco di fila su tre, una
+       in piu' e la partita cambiava» e' quello che la diagnosi dice a fine
+       partita a chi non ci e' mai arrivato — cioe' quando non serve piu'.
+       Stava solo nella schermata delle carte, a gioco fermo. Una targhetta
+       sola e tratteggiata, e solo quando manca davvero una runa: due o tre
+       sarebbero rumore. */
+    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+    let quasi = null, lung = 0;
+    for (const e of ELKEYS) {
+      if (G.awaken[e]) continue;
+      const run = catenaDi(e);
+      if (run >= c0 - 1 && run > lung) { lung = run; quasi = e; }
+    }
+    if (quasi) h += '<div class="awchip verso clip" style="color:' + EL[quasi].c + '">' +
+      EL[quasi].n + ' ' + lung + '/' + c0 + '</div>';
     elAwake.innerHTML = h;
   },
 
