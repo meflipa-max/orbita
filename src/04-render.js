@@ -897,6 +897,23 @@ function drawPlayer() {
       ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(-11, -11); ctx.lineTo(11, 11); ctx.stroke();
     }
+    /* ── la runa pronta a trasformarsi ───────────────────────
+       La trasformazione e' il momento che ripaga tutta la pianificazione
+       dell'anello, e le sue tre condizioni si chiudono spesso per merito
+       di qualcosa che non hai deciso tu: un Risveglio che si accende, un
+       Nodo in cui sei entrato. L'anello in pausa lo dice, ma l'anello in
+       pausa lo guardi quando ti viene in mente. Qui lo dice la runa
+       stessa, dove gli occhi stanno gia': un cerchio d'oro che respira,
+       l'unico oro dell'arena insieme all'indicatore del Culmine, e
+       riservato a una cosa che capita una volta o due per partita.
+       Non nella vetrina del menu: li' il segnale prometterebbe un'azione
+       che non c'e', ed e' la stessa regola dell'anello d'oro del Culmine. */
+    if (!G.demo && !r.mutata && EVO[r.id] && canEvolve(r)) {
+      const b = .5 + Math.sin(G.t * 3.2 + i) * .5;
+      ctx.strokeStyle = rgba('#ffe9b0', .34 + b * .46);
+      ctx.lineWidth = sz(1.4 + b * 1.1);
+      ctx.beginPath(); ctx.arc(0, 0, 19 + b * 3, 0, TAU); ctx.stroke();
+    }
     ctx.scale(.82, .82); ctx.translate(-12, -12);
     ctx.globalAlpha = r.mutata ? .45 : 1;
     ctx.strokeStyle = c; ctx.lineWidth = 1.9; ctx.lineCap = 'round'; ctx.lineJoin = 'round';

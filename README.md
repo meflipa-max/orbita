@@ -736,7 +736,10 @@ altre, e una sola: due o tre sarebbero rumore.
 E il momento in cui una runa diventa **pronta a trasformarsi** passava in silenzio. Lo scoprivi
 solo se la carta usciva, e la carta esce a una salita di livello: magari due minuti dopo, o
 mai. Peggio quando a chiudere la condizione è l'arena — entri in un Nodo, il Risveglio si
-accende, la runa diventa pronta e nessuno te lo dice. Una volta per runa e per partita.
+accende, la runa diventa pronta e nessuno te lo dice. L'avviso è una volta per runa e per
+partita, ma il segnale resta: quella runa porta un **cerchio d'oro che respira** finché non la
+trasformi, addosso all'anello, cioè dove gli occhi stanno già. L'oro è riservato a lei e
+all'indicatore del Culmine, ed è una cosa che capita una o due volte per partita.
 
 ### Leggibilità
 
@@ -765,7 +768,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 76 controlli sul gioco vero, headless
+npm run collaudo       # 83 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
