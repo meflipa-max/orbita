@@ -788,5 +788,43 @@ sez('le congiunzioni fanno quello che dicono');
   ok(q > .20 && q < .26, 'e la Quiete resta circa una corsa su quattro (' + (q * 100).toFixed(1) + '%)');
 }
 
+sez('il record si legge prima di scriverlo');
+/* In un gioco di sopravvivenza il proprio tempo migliore E' il punteggio,
+   e la schermata di fine non lo nominava: SAVE.best veniva aggiornato in
+   payout() PRIMA che UI.end disegnasse, quindi quando la schermata scriveva
+   TEMPO 15:40 il record era gia' 15:40 — non poteva ne' dire «nuovo record»
+   ne' dire quanto ne era mancato, cioe' proprio il motivo per cui si preme
+   Rigioca. E il record era uno solo per due formati che non durano uguale:
+   dopo una sola Corsa diventava irraggiungibile per sempre nell'Incursione,
+   che e' il formato preselezionato a chi apre il gioco la prima volta.    */
+{
+  O.importSave(b64({ shards: 0 }));
+  S().visti = TUTTI_I_BRIEFING();
+  /* prima corsa: primo record */
+  O.reset('vega', 31, 'incursione', false); G.state = 'play';
+  gioca(30);
+  O.endRun(false);
+  ok(S().rec.incursione.t >= 29, 'la prima partita fissa il record del formato (' + S().rec.incursione.t + 's)');
+  ok(/NUOVO RECORD|PRIMO RECORD/.test(O.schermo()), 'e la schermata di fine lo dice');
+  ok(S().rec.corsa.t === 0, 'la Corsa ha il suo, e non l’ha ancora fatto');
+  /* seconda corsa piu' corta: il record resta, e la schermata dice quanto manca */
+  O.reset('vega', 32, 'incursione', false); G.state = 'play';
+  gioca(10);
+  const era = S().rec.incursione.t;
+  O.endRun(false);
+  ok(S().rec.incursione.t === era, 'una partita piu’ corta non lo tocca');
+  const h = O.schermo();
+  ok(/ti sono mancati/.test(h), 'e la schermata dice quanto ne e’ mancato');
+  ok(!/NUOVO RECORD/.test(h), 'senza spacciarla per un record');
+  /* una Corsa lunga non deve rendere imbattibile l'Incursione */
+  O.reset('vega', 33, 'corsa', false); G.state = 'play';
+  gioca(120);
+  O.endRun(false);
+  ok(S().rec.corsa.t >= 119 && S().rec.incursione.t === era, 'la Corsa scrive il suo record e non quello dell’Incursione');
+  /* un salvataggio vecchio ha un solo `best`: va alla Corsa */
+  ok(O.importSave(b64({ shards: 10, best: 900, bestKills: 400 })), 'si apre un salvataggio con un record solo');
+  ok(S().rec.corsa.t === 900 && S().rec.incursione.t === 0, 'quel record diventa quello della Corsa, e l’Incursione riparte');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

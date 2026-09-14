@@ -58,6 +58,14 @@ const SAVEKEY = 'orbita.save.v1';
 const DEFAULT_SAVE = {
   shards: 0, meta: {}, chars: ['vega'], char: 'vega', apertura: 'fuoco', skin: 'nucleo',
   best: 0, bestKills: 0, wins: 0, runs: 0, sfx: 1, mus: 1, seen: 0, asc: 0, ascSel: 0, sfide: [],
+  /* ── il record, un formato per volta ────────────────────────────
+     `best` e' un numero solo, e i due formati non durano uguale:
+     l'Incursione finisce a otto minuti e non ha modalita' senza fine,
+     la Corsa arriva a venti e poi prosegue. Dopo una sola Corsa il
+     record diventava irraggiungibile per sempre nell'Incursione — che
+     e' il formato preselezionato a chi apre il gioco la prima volta.
+     Un record che non si puo' battere non e' un record. */
+  rec: {},
   /* quali rune sono entrate nel mazzo: vedi SBLOCCHI in 01-data */
   runes: RUNE_BASE.slice(),
   /* quali trasformazioni hai gia' visto almeno una volta */
@@ -125,6 +133,20 @@ function sanitizeSave(o) {
   s.reliquie = s.reliquie.filter(id => RELIQUIE.some(r => r.id === id));
   if (!Array.isArray(s.contratti)) s.contratti = [];
   s.contratti = s.contratti.filter(id => CONTRATTI.some(c => c.id === id));
+  /* i record per formato. Un salvataggio vecchio ne ha uno solo, `best`,
+     e non si sa di quale formato fosse: va alla Corsa, che e' il formato
+     in cui quel tempo e' plausibile, e l'Incursione riparte da zero —
+     che e' esattamente quello che serve, perche' li' il record era
+     bloccato su un numero che quel formato non puo' raggiungere. */
+  if (!s.rec || typeof s.rec !== 'object' || Array.isArray(s.rec)) s.rec = {};
+  else s.rec = Object.assign({}, s.rec);
+  for (const m of MODI) {
+    const r = s.rec[m.id];
+    /* numeri, non quello che c'era scritto nel codice di backup */
+    const num = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
+    s.rec[m.id] = (r && typeof r === 'object' && !Array.isArray(r)) ? { t: num(r.t), k: num(r.k) } : { t: 0, k: 0 };
+  }
+  if (!s.rec.corsa.t && (s.best | 0) > 0) s.rec.corsa = { t: s.best | 0, k: s.bestKills | 0 };
   /* ── il formato della PRIMA partita ──────────────────────────
      L'Incursione esiste per una ragione sola, scritta nel suo stesso
      progetto: «la prima conclusione deve stare nella prima sessione»,

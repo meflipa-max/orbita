@@ -682,9 +682,21 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 /* statistiche fine partita */
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
 @media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
-.stat{background:var(--deep);padding:13px 11px;text-align:center}
+.stat{background:var(--deep);padding:13px 11px;text-align:center;position:relative}
 .stat .v{font:800 22px/1 var(--disp);color:#fff}
 .stat .k{font:600 9.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+/* La casella che porta un record. L'oro e' la tinta riservata alle cose
+   che capitano una volta o due per partita — il Culmine pronto, la runa
+   che puo' trasformarsi — e battere il proprio tempo migliore e' di
+   quella famiglia. Non un badge in piu': la casella stessa cambia. */
+.stat.rec{background:linear-gradient(180deg,rgba(255,200,87,.14),rgba(255,200,87,.04))}
+.stat.rec .v{color:#ffe9b0}
+.stat.rec .k{color:#ffc857}
+.stat.rec::after{content:'';position:absolute;inset:0;border:1px solid rgba(255,200,87,.5);pointer-events:none}
+.recline{font:600 11.5px/1.5 var(--ui);letter-spacing:.06em;text-align:center;color:var(--faint);margin-top:9px}
+.recline b{color:var(--dim)}
+.recline.nuovo{color:#ffc857;letter-spacing:.14em;animation:recPulse 1.6s ease-in-out infinite}
+@keyframes recPulse{0%,100%{opacity:.72}50%{opacity:1}}
 .reward{display:flex;align-items:center;justify-content:center;gap:9px;font:700 21px/1 var(--disp);color:var(--gold)}
 .reward svg{width:19px;height:19px}
 

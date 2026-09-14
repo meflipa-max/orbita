@@ -330,7 +330,11 @@ const UI = {
   },
 
   title() {
-    const best = SAVE.best ? fmtTime(SAVE.best) : '—';
+    /* il record del formato scelto: quello assoluto mescolava una Corsa da
+       venti minuti con un'Incursione che ne dura otto, e all'Incursione
+       mostrava un numero che quel formato non puo' raggiungere */
+    const rm = (SAVE.rec && SAVE.rec[SAVE.modo]) || { t: 0 };
+    const best = rm.t ? fmtTime(rm.t) : '—';
     /* Il testo di presentazione è per chi non ha mai giocato. Alla decima
        partita è duecento pixel di cose che sai già, in cima allo schermo,
        fra te e il bottone — e chi torna è esattamente la persona che
@@ -379,7 +383,7 @@ const UI = {
       congiunzioneDi(semeDelGiorno()).c + '">' + congiunzioneDi(semeDelGiorno()).n + '</b>' +
       (giornoFatto() ? '<button data-a="condividi">condividi</button>' : '') + '</div>' +
       '</div>' +
-      '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
+      '<div class="hint">Record ' + best + ' · ' + modoDi(SAVE.modo).n + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
       (STORE_OK ? '' : '<div class="warn clip">Questo browser non concede memoria: i progressi durano solo finché la scheda resta aperta. Nell’Osservatorio trovi il codice di backup.</div>') +
       '</div>'
     );
@@ -1391,13 +1395,30 @@ const UI = {
     return 'Vittoria pulita. Sali di ascensione: ogni livello aggiunge <b>una regola sola</b>, e si sommano.';
   },
 
+  /* Quanto ci e' andata vicino. E' il punteggio del gioco — in un
+     sopravvivenza il proprio tempo migliore E' il punteggio — e la
+     schermata di fine non lo nominava: scriveva TEMPO 15:40 senza dire che
+     il record era 18:02, cioe' senza dare il motivo per cui si preme
+     Rigioca. Il record e' quello del FORMATO: una Corsa da venti minuti e
+     un'Incursione che ne dura otto non si confrontano. */
+  recordLine() {
+    const r = G.rec; if (!r) return '';
+    if (r.nuovoT && r.t) return '<div class="recline nuovo">NUOVO RECORD · superato ' + fmtTime(r.t) + '</div>';
+    if (r.nuovoT) return '<div class="recline nuovo">PRIMO RECORD · ' + fmtTime(G.t) + '</div>';
+    if (!r.t) return '';
+    const manca = Math.max(1, Math.round(r.t - G.t));
+    return '<div class="recline">Record ' + G.modo.n + ' <b>' + fmtTime(r.t) + '</b> · ti sono mancati ' + fmtTime(manca) + '</div>';
+  },
+
   end(win, gained) {
-    const stats = [['TEMPO', fmtTime(G.t)], ['LIVELLO', G.level], ['ELIMINAZIONI', G.kills], ['DANNO', Math.round(G.dmgDone).toLocaleString('it-IT')]];
+    const r = G.rec || { t: 0, k: 0, nuovoT: false, nuovoK: false };
+    const stats = [['TEMPO', fmtTime(G.t), r.nuovoT], ['LIVELLO', G.level], ['ELIMINAZIONI', G.kills, r.nuovoK], ['DANNO', Math.round(G.dmgDone).toLocaleString('it-IT')]];
     this.open('end',
       '<div class="eyebrow">' + (win ? 'Eclissi dissolta' : 'Il nucleo si spegne') + '</div>' +
       '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
       (!win && G.killer ? '<div class="killer">Ucciso da <b>' + G.killer + '</b></div>' : '') +
-      '<div class="stats">' + stats.map(s => '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
+      '<div class="stats">' + stats.map(s => '<div class="stat' + (s[2] ? ' rec' : '') + '"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
+      this.recordLine() +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
       this.dannoLine() +
       '<div class="diag clip">' + this.diagnosi(win) + '</div>' +
@@ -1999,6 +2020,19 @@ function endRun(win) {
     if (G.t > SAVE.giorno.t) { SAVE.giorno.t = Math.floor(G.t); SAVE.giorno.k = G.kills; }
     if (win) SAVE.giorno.w = 1;
   }
+  /* ── il record si batteva in silenzio ────────────────────────
+     SAVE.best veniva aggiornato qui, cioe' PRIMA che UI.end disegnasse la
+     schermata: quando quella schermata scriveva TEMPO 15:40 il record era
+     gia' 15:40, quindi non poteva ne' dire «nuovo record» ne' dire quanto
+     ne era mancato. In un gioco di sopravvivenza il proprio tempo migliore
+     e' il punteggio, e il momento in cui si decide di rigiocare e' proprio
+     questo: il record va letto prima di scriverlo. */
+  const prec = (SAVE.rec && SAVE.rec[G.modo.id]) || { t: 0, k: 0 };
+  G.rec = { t: prec.t | 0, k: prec.k | 0, nuovoT: G.t > (prec.t | 0), nuovoK: G.kills > (prec.k | 0) };
+  if (!SAVE.rec) SAVE.rec = {};
+  if (!SAVE.rec[G.modo.id]) SAVE.rec[G.modo.id] = { t: 0, k: 0 };
+  if (G.rec.nuovoT) SAVE.rec[G.modo.id].t = Math.floor(G.t);
+  if (G.rec.nuovoK) SAVE.rec[G.modo.id].k = G.kills;
   if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t);
   if (G.kills > (SAVE.bestKills || 0)) SAVE.bestKills = G.kills;
   if (win) {

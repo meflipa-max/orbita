@@ -84,6 +84,21 @@ domanda a cui la schermata risponde è *«cosa sta facendo il lavoro»* e «il C
 risposta più utile che ci sia — è la ragione per cui quella catena di Vuoto vale la pena di
 essere tenuta in piedi.
 
+E dice **quanto ci sei andato vicino**. In un gioco di sopravvivenza il proprio tempo migliore
+*è* il punteggio, e questa schermata non lo nominava: scriveva `TEMPO 15:40` senza dire che il
+record era 18:02, cioè senza dare il motivo per cui si preme Rigioca. Il motivo tecnico è che
+`SAVE.best` veniva aggiornato in `payout()` **prima** che la schermata si disegnasse: quando
+arrivava a scrivere 15:40 il record era già 15:40. Adesso il record si legge prima di
+scriverlo, e la schermata dice *«Record Corsa 18:02 · ti sono mancati 02:22»* — oppure **NUOVO
+RECORD**, con le caselle di TEMPO ed ELIMINAZIONI in oro.
+
+Il record è **del formato**. Era uno solo per due formati che non durano uguale: l'Incursione
+finisce a otto minuti e non ha modalità senza fine, la Corsa arriva a venti e poi prosegue.
+Dopo una sola Corsa il record diventava irraggiungibile per sempre nell'Incursione — che è il
+formato preselezionato a chi apre il gioco la prima volta. Un record che non si può battere non
+è un record. Un salvataggio vecchio ha un numero solo e non dice di quale formato fosse: va
+alla Corsa, dove quel tempo è plausibile, e l'Incursione riparte da zero.
+
 L'ultima voce rimasta era la **bomba**, che cancella ogni nemico della mappa: al quindicesimo
 minuto vale la vita di centocinquanta nemici, e da sola era il **68%** del DANNO scritto a fine
 partita — il numero che dovrebbe dire quanto ha reso il tuo anello diceva soprattutto quante
@@ -849,7 +864,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 132 controlli sul gioco vero, headless
+npm run collaudo       # 141 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
