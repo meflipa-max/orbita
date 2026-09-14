@@ -134,7 +134,15 @@ const UI = {
     elHpF.style.transform = 'scaleX(' + f + ')';
     elHpG.style.transform = 'scaleX(' + f + ')';
     elHpT.textContent = Math.ceil(Math.max(0, P.hp)) + ' / ' + Math.round(P.maxHp);
-    elClock.textContent = fmtTime(G.t);
+    /* L'orologio diceva solo da quanto stai giocando. Ma una Corsa e' lunga
+       venti minuti e un'Incursione otto, e quel numero — cioe' «quanto
+       manca alla fine» — durante la partita non stava scritto da nessuna
+       parte: il traguardo si sapeva solo dal menu, prima di partire.
+       Vedere il traguardo e' meta' della ragione per cui si tiene duro
+       nell'ultimo minuto. Nel senza fine sparisce, perche' li' un traguardo
+       non c'e'. */
+    const oro = fmtTime(G.t) + (G.victory || G.t > G.modo.len ? '' : '<i>/' + fmtTime(G.modo.len) + '</i>');
+    if (oro !== this._oro) { this._oro = oro; elClock.innerHTML = oro; }
     elKills.textContent = G.kills + ' ELIMINAZIONI';
     /* il roster della partita, non la tabella globale: l'ordine si rimescola
        e l'Incursione ne salta due, quindi il prossimo nome è quello vero */
