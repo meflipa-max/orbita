@@ -804,13 +804,24 @@ function recalcRing(announce) {
 /* Poche scelte, ma grosse: se i livelli arrivano più di rado,
    ognuno deve pesare di più. Unica manopola per tutta la progressione delle rune. */
 const GROWTH = 1.35;
+/* Chi usa `spd` come velocita' ANGOLARE invece che come velocita' di un
+   proiettile. Erano riconosciuti dal `tag` — 'orbitante' e 'faro' — ma le
+   trasformazioni hanno tutte tag 'trasformazione', quindi il Glaciale non
+   veniva riconosciuto: runeStats gli moltiplicava `spd` per P.projMul e poi
+   updateRunes lo rifaceva, cioe' Vortice gli valeva il quadrato (misurato
+   con Vortice 3: 1,96 volte il Cristallo invece di 1,18). E l'Alba prendeva
+   il bonus che il Raggio, da cui nasce, non prende. Una regola, un posto
+   solo: qui, per identita' e non per etichetta. */
+const ORBITANTI = ['cristallo', 'glaciale'];
+const FARI = ['raggio', 'alba'];
+const angolare = id => ORBITANTI.indexOf(id) >= 0 || FARI.indexOf(id) >= 0;
 function runeStats(r) {
   const d = RUNES[r.id], g = d.g || {}, k = (r.lv - 1) * GROWTH, s = {};
   for (const key in d.base) s[key] = d.base[key] + (g[key] || 0) * k;
   s.dmg *= (1 + .3 * r.res) * P.dmgMul;
   if (s.cd !== undefined) s.cd = Math.max(.07, s.cd * P.cdMul);
   if (s.area !== undefined) s.area *= P.areaMul;
-  if (s.spd !== undefined && d.tag !== 'faro' && d.tag !== 'orbitante') s.spd *= P.projMul;
+  if (s.spd !== undefined && !angolare(r.id)) s.spd *= P.projMul;
   if (s.count !== undefined) s.count = Math.max(1, Math.floor(s.count));
   if (s.pierce !== undefined) s.pierce = Math.floor(s.pierce);
   s.el = d.el;

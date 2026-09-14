@@ -101,6 +101,13 @@ class FakeAudioCtx {
   resume() { return Promise.resolve(); } close() { return Promise.resolve(); }
 }
 
+/* Path2D: i glifi delle rune sono tracciati SVG compilati una volta sola.
+   Senza questo stub `render()` lanciava al primo disegno, quindi il canvas
+   — meta' del gioco — non si poteva collaudare affatto: e' cosi' che una
+   funzione intera (drawEvento) e' rimasta per settimane senza essere mai
+   chiamata, e che il Glaciale faceva danno senza comparire a schermo. */
+class FakePath2D { constructor() { } addPath() { } }
+
 const memoria = new Map();
 const win = {
   document: doc, innerWidth: 1280, innerHeight: 800, devicePixelRatio: 1,
@@ -113,7 +120,7 @@ const win = {
     setItem: (k, v) => memoria.set(k, String(v)),
     removeItem: k => memoria.delete(k), clear: () => memoria.clear()
   },
-  AudioContext: FakeAudioCtx, webkitAudioContext: FakeAudioCtx,
+  AudioContext: FakeAudioCtx, webkitAudioContext: FakeAudioCtx, Path2D: FakePath2D,
   matchMedia: () => ({ matches: false, addEventListener: noop, addListener: noop }),
   navigator: { userAgent: 'node', maxTouchPoints: 0, clipboard: null },
   btoa: s => Buffer.from(s, 'binary').toString('base64'),

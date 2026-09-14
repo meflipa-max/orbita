@@ -205,6 +205,31 @@ sez('la modalità senza fine');
   ok(G.diff > .05, 'oltre la durata del formato la difficoltà sale (' + G.diff.toFixed(3) + ')');
 }
 
+sez('le rune che girano invece di volare');
+/* `spd` per il Cristallo e per il Raggio e' una velocita' ANGOLARE, non di
+   un proiettile, e non deve prendere il moltiplicatore di Vortice due
+   volte. Erano riconosciuti dal `tag`, ma le trasformazioni hanno tutte tag
+   'trasformazione': il Glaciale se lo prendeva in runeStats E in
+   updateRunes, cioe' Vortice gli valeva al quadrato — 1,96 volte il
+   Cristallo invece di 1,18.                                              */
+{
+  const giroPerPasso = (id) => {
+    O.reset('vega', 5, 'corsa', false); G.state = 'play';
+    G.ring.fill(null);
+    G.ring[0] = { id, el: 'gelo', lv: 5, cd: 0, res: 0, slot: 0, st: {} };
+    G.passives = { vortice: 3 }; O.recalc(); O.recalcRing(false);
+    O.step(1 / 60); const a = G.ring[0].st.orb[0].p;
+    O.step(1 / 60); return G.ring[0].st.orb[0].p - a;
+  };
+  const rap = giroPerPasso('glaciale') / giroPerPasso('cristallo');
+  ok(rap > 1.1 && rap < 1.3, 'il Glaciale gira 1,18 volte il Cristallo, non 1,96 (' + rap.toFixed(2) + ')');
+  /* E la stessa lista dice a chi disegnare: il filtro del disegno chiedeva
+     `r.id === 'cristallo'`, quindi il Glaciale — che orbita e fa danno —
+     non veniva disegnato affatto. Un'arma invisibile. */
+  const rnd = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', '04-render.js'), 'utf8');
+  ok(/ORBITANTI/.test(rnd), 'e chi orbita lo disegna la stessa lista che lo fa girare');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],
@@ -213,6 +238,50 @@ for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide
   try { f(); ok(true, n); } catch (e) { ok(false, n + ': ' + e.message); }
 for (const sc of ['partita', 'frammenti', 'obiettivi', 'archivio'])
   try { O.UI.hub(sc); ok(true, 'Osservatorio · ' + sc); } catch (e) { ok(false, sc + ': ' + e.message); }
+
+sez('il campo si disegna');
+/* Il canvas e' meta' del gioco e non era mai passato di qui: nel banco
+   mancava Path2D, quindi render() lanciava alla prima runa disegnata e
+   nessun controllo poteva toccarlo. E' cosi' che una funzione intera
+   (drawEvento) e' rimasta a lungo senza essere mai chiamata — la breccia
+   senza faro, il Corriere senza niente addosso — e che il Glaciale faceva
+   danno restando invisibile.
+   Qui si disegna un fotogramma in ogni situazione che il gioco sa
+   produrre: e' un controllo di non esplosione, ma copre il codice di
+   disegno che nessun altro tocca.                                        */
+{
+  const prova = (n, f) => { try { f(); O.render(); ok(true, n); } catch (e) { ok(false, n + ': ' + e.message); } };
+  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  O.reset('vega', 606, 'corsa', false); G.state = 'play';
+  gioca(40);
+  prova('una partita in corso', () => { });
+  prova('con le rune che orbitano', () => {
+    G.ring[1] = { id: 'cristallo', el: 'gelo', lv: 4, cd: 0, res: 0, slot: 1, st: {} };
+    G.ring[2] = { id: 'glaciale', el: 'gelo', lv: 6, cd: 0, res: 0, slot: 2, st: {} };
+    O.recalcRing(false); gioca(2);
+  });
+  prova('con un guardiano in campo', () => { G.t = 148; gioca(6); });
+  prova('con una breccia aperta', () => { G.ev = { k: 'breccia', x: G.p.x + 900, y: G.p.y, t: 4, dur: 22, r: 74, preso: 0 }; });
+  prova('con una marea in corso', () => { G.ev = { k: 'marea', t: 4, dur: 18, a: 1.1, acc: 0 }; });
+  prova('con il Corriere in fuga', () => {
+    G.ev = null; G.evT = 0; G.t = 130;
+    for (let k = 0; k < 60 && !(G.ev && G.ev.k === 'caccia'); k++) { G.ev = null; G.evT = 0; G.bosses.length = 0; G.boss = null; O.step(1 / 60); }
+  });
+  prova('con una formazione in arrivo', () => { G.form = { k: 'muro', a: .7, mezzo: .4, t: .5, dur: 4.6 }; });
+  prova('con un accerchiamento', () => { G.form = { k: 'accerchiamento', a: null, mezzo: Math.PI, t: .5, dur: 4.6 }; });
+  prova('con i doni a terra', () => {
+    G.drops.push({ x: G.p.x + 60, y: G.p.y, k: 'chest', t: 0 });
+    G.drops.push({ x: G.p.x + 1400, y: G.p.y + 900, k: 'cuore', t: 0 });
+    G.drops.push({ x: G.p.x - 1400, y: G.p.y - 900, k: 'bomba', t: 0 });
+  });
+  prova('con un Nodo da raggiungere', () => {
+    const k = G.rocks.find(r => r.nodo);
+    if (k) { G.elAnello.add(k.nodo); k.x = G.p.x + 1200; k.y = G.p.y; G.nodo = null; }
+  });
+  prova('dentro a un Nodo', () => { const k = G.rocks.find(r => r.nodo); if (k) { G.p.x = k.x; G.p.y = k.y + k.r + 30; O.step(1 / 60); } });
+  prova('durante il Culmine', () => { G.charge = 1; G.culm = 3; O.recalcRing(false); gioca(1); });
+  prova('la vetrina del menu', () => { G.demo = true; G.state = 'menu'; gioca(2); G.demo = false; });
+}
 
 sez('una partita intera');
 for (const modo of ['corsa', 'incursione']) {

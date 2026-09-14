@@ -296,6 +296,13 @@ function drawEnemies() {
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
+    /* Un nemico morto resta in lista fino al passo dopo, e fino ad allora
+       veniva disegnato: chi muore DOPO updateEnemies — la bomba, che li
+       uccide tutti in updateGems — restava a schermo per un fotogramma
+       sopra al proprio guscio bianco. Cioe' l'unico istante in cui la
+       bomba deve far vedere che il campo e' vuoto era l'istante in cui
+       c'erano ancora tutti. */
+    if (e.dead || e.hp <= 0) continue;
     if (Math.abs(e.x - cx) > mw || Math.abs(e.y - cy) > mh) continue;
     /* trecento aloni additivi facevano un muro di luce in cui non si
        distingueva più niente: l'alone resta a chi conta davvero */
@@ -456,6 +463,10 @@ function drawZonesUnder() {
 function drawZonesOver() {
   ctx.globalCompositeOperation = 'lighter';
   for (const z of G.zones) {
+    /* la seconda onda della Supernova nasce gia' in lista e aspetta il suo
+       turno: finche' aspetta non ha ancora un raggio, e disegnarla vuol
+       dire passare `undefined` ad arc() */
+    if (z.wait > 0) continue;
     if (!zonaVisibile(z, Math.max(z.r || 0, z.r1 || 0, 60))) continue;
     const f = z.t / z.dur;
     if (z.k === 'nova' || z.k === 'ring') {
@@ -824,18 +835,35 @@ function drawPlayer() {
     if (rotto) ctx.setLineDash([]);
   }
 
-  /* cristalli orbitanti */
+  /* Cristalli orbitanti. Il filtro era `r.id !== 'cristallo'`, quindi il
+     GLACIALE — la trasformazione del Cristallo, che orbita e congela
+     esattamente allo stesso modo — non veniva disegnato affatto: un'arma
+     invisibile che faceva danno. E la scheggia era fissa a 13 pixel mentre
+     il raggio vero (`size`) cresce col livello, quindi il disegno non
+     diceva nemmeno dove colpisce. */
   for (let i = 0; i < sl; i++) {
     const r = G.ring[i];
-    if (!r || r.id !== 'cristallo' || !r.st.orb) continue;
+    if (!r || ORBITANTI.indexOf(r.id) < 0 || !r.st.orb || r.mutata) continue;
+    const raggio = Math.max(9, runeStats(r).size);
+    const gelido = r.id === 'glaciale';
+    const t = glowTex(EL.gelo.c, 40), gs = raggio * 2.6;
     for (const o of r.st.orb) {
       if (o.x === undefined) continue;
-      const t = glowTex(EL.gelo.c, 40);
-      ctx.globalAlpha = .6; ctx.drawImage(t, o.x - 34, o.y - 34, 68, 68); ctx.globalAlpha = 1;
+      ctx.globalAlpha = gelido ? .75 : .6;
+      ctx.drawImage(t, o.x - gs, o.y - gs, gs * 2, gs * 2); ctx.globalAlpha = 1;
       ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(G.t * 3);
-      ctx.fillStyle = rgba(EL.gelo.c, .55); ctx.strokeStyle = '#dff6ff'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(9, 0); ctx.lineTo(0, 13); ctx.lineTo(-9, 0); ctx.closePath();
-      ctx.fill(); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = rgba(EL.gelo.c, gelido ? .7 : .55);
+      ctx.strokeStyle = '#dff6ff'; ctx.lineWidth = sz(2);
+      ctx.beginPath();
+      ctx.moveTo(0, -raggio); ctx.lineTo(raggio * .7, 0); ctx.lineTo(0, raggio); ctx.lineTo(-raggio * .7, 0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      /* il Glaciale congela al tocco: un cuore bianco lo dice, ed e' la
+         stessa lingua del ghiaccio addosso ai nemici */
+      if (gelido) {
+        ctx.fillStyle = 'rgba(255,255,255,.9)';
+        ctx.beginPath(); ctx.arc(0, 0, raggio * .3, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
     }
   }
 

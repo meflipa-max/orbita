@@ -418,8 +418,8 @@ function updateRunes(dt) {
     const a = G.ringRot + i / sl * TAU;
     r.wa = a; r.wx = G.p.x + Math.cos(a) * RING_R; r.wy = G.p.y + Math.sin(a) * RING_R;
     const s = runeStats(r);
-    if (r.id === 'raggio' || r.id === 'alba') { r.st.a = (r.st.a || 0) + dt * s.spd; }
-    if (r.id === 'cristallo' || r.id === 'glaciale') {
+    if (FARI.indexOf(r.id) >= 0) { r.st.a = (r.st.a || 0) + dt * s.spd; }
+    if (ORBITANTI.indexOf(r.id) >= 0) {
       if (r.mutata) continue;
       const gelido = r.id === 'glaciale';
       RUNA_ORA = r.id;
