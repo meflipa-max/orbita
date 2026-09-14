@@ -954,9 +954,14 @@ function updateEnemies(dt) {
     e.x = clamp(e.x, -lim, lim); e.y = clamp(e.y, -lim, lim);
     if (e.boss) sfondaRocce(e, dt); else scostaDaRocce(e, e.r);
 
-    /* contatto */
+    /* Contatto. Chi non fa danno non lo fa nemmeno «per zero»: hurtPlayer
+       con zero toglieva zero vita ma accendeva tutto il resto — mezzo
+       secondo di invulnerabilita' regalata, il velo rosa a pieno schermo,
+       il suono della ferita e il nome dell'assassino nella schermata di
+       fine. Cioe' toccare il Corriere, che e' esattamente quello che la
+       caccia ti chiede di fare, si vedeva e si sentiva come una botta. */
     const dx = px - e.x, dy = py - e.y, rr = e.r + G.p.r;
-    if (dx * dx + dy * dy < rr * rr) hurtPlayer(e.dmg, e.boss ? e.boss.n : (MOBS[e.type] ? MOBS[e.type].n : 'contatto'));
+    if (e.dmg > 0 && dx * dx + dy * dy < rr * rr) hurtPlayer(e.dmg, e.boss ? e.boss.n : (MOBS[e.type] ? MOBS[e.type].n : 'contatto'));
   }
 }
 
@@ -1306,11 +1311,18 @@ function apriEvento() {
       clamp(G.p.y + Math.sin(a) * d, -ARENA + 60, ARENA - 60),
       { hpMul: 7, xpMul: 8 });
     e.c = '#6ff2c4'; e.corriere = 1;
+    /* «Non ti attacca: scappa» dice il briefing, ma era uno spettro normale
+       e sbatterci contro toglieva vita come qualunque altro — cioe' la
+       caccia puniva proprio il momento in cui lo raggiungi. */
+    e.dmg = 0;
     /* 212 contro i tuoi 196 di partenza: in linea retta non lo prendi, ma
-       basta un po' di Celerità o una traiettoria tagliata. È fissa e non
-       segue la crescita di velocità dei nemici comuni, o a fine partita
-       diventerebbe irraggiungibile per chiunque. */
-    e.spd = 212;
+       basta un po' di Celerità o una traiettoria tagliata. Non segue la
+       crescita di velocità dei nemici comuni — a fine partita diventerebbe
+       irraggiungibile per chiunque — ma la congiunzione sì: la Fuga accelera
+       tutti del 18%, te compreso, e senza questo fattore il Corriere
+       restava l'unica cosa dell'arena più lenta di te, cioè una caccia che
+       si vince correndogli dietro in linea retta. */
+    e.spd = 212 * G.cg.spd;
     G.ev = { k, t: 0, dur: 26, e };
     /* un'onda dal punto di comparsa: dice "e' successo li'" prima ancora
        che tu legga il messaggio */
@@ -1385,7 +1397,10 @@ function updateEventi(dt) {
   }
 
   if (v.t >= v.dur) {
-    if (v.k === 'caccia' && v.e && v.e.hp > 0) { v.e.hp = 0; v.e.dead = true; }
+    /* La breccia che si chiude lo diceva, il Corriere che scappa no: la
+       caccia finiva con lui che spariva e basta, senza che niente chiudesse
+       il cerchio. */
+    if (v.k === 'caccia' && v.e && v.e.hp > 0) { v.e.hp = 0; v.e.dead = true; UI.toast('CORRIERE SPARITO', 'Col suo bottino', '#6a6199'); }
     if (v.k === 'breccia' && !v.preso) UI.toast('BRECCIA CHIUSA', null, '#6a6199');
     G.ev = null;
   }

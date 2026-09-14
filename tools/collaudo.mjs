@@ -297,6 +297,33 @@ sez('uno scrigno si annuncia come uno scrigno');
   ok(/Livello /.test(O.schermo()), 'quella di un livello dice livello');
 }
 
+sez('il Corriere non attacca');
+/* Il briefing dice «Non ti attacca: scappa», ma era uno spettro normale:
+   sbatterci contro toglieva vita, cioe' la caccia puniva esattamente il
+   momento in cui lo raggiungi.                                           */
+{
+  O.reset('vega', 2024, 'corsa', false); G.state = 'play';
+  G.t = 120;
+  let trovato = null;
+  for (let k = 0; k < 60 && !trovato; k++) {
+    G.ev = null; G.evT = 0; G.bosses.length = 0; G.boss = null;
+    O.step(1 / 60);
+    if (G.ev && G.ev.k === 'caccia') trovato = G.ev.e;
+  }
+  ok(!!trovato, 'la caccia si apre');
+  ok(trovato && trovato.dmg === 0, 'e il Corriere non fa danno da contatto');
+  /* hurtPlayer(0) non toglieva vita ma accendeva tutto il resto: mezzo
+     secondo di invulnerabilita' regalata, il velo rosa, il suono della
+     ferita e il nome dell'assassino nella schermata di fine. Toccarlo —
+     che e' quello che la caccia chiede — si vedeva come una botta.       */
+  if (trovato) {
+    G.p.inv = 0; G.killer = null; G.flashT = 0; P.hp = P.maxHp;
+    trovato.x = G.p.x; trovato.y = G.p.y;
+    O.step(1 / 60);
+    ok(G.p.inv <= 0 && !G.killer, 'e toccarlo non si vede come una ferita');
+  }
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],
