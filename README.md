@@ -690,6 +690,15 @@ Un giro di correzioni tutte della stessa famiglia: una regola scritta in due pos
 secondo che racconta quella sbagliata. Nessuna si vedeva leggendo il gioco — si vedono
 misurandolo, ed è per questo che ognuna adesso porta il suo controllo in `collaudo`.
 
+**Il terzo grado non contava quando a farlo era il Culmine.** «Porta un Risveglio al terzo
+grado» è un contratto da 540 frammenti e una sfida da 600, e il contatore leggeva `G.awaken` —
+il grado *costruito con l'anello*. Ma il Culmine alza di un grado ogni Risveglio acceso, che è
+la ragione per cui il Culmine esiste: per cinque secondi e mezzo quel Risveglio infligge danno
+di terzo grado per davvero, e la targhetta in basso a sinistra accende la terza tacca. Quindi
+lo schermo scriveva «Ardore ●●●» e l'obiettivo restava chiuso. Adesso il conto sta in
+`recalcAwk`, che è l'unico posto a sapere quanto vale un Risveglio *in questo istante* — ci si
+passa quando cambia l'anello e quando il Culmine si accende o si spegne.
+
 **L'arpeggio delle uccisioni non scorreva mai.** Il pop di ogni nemico cicla su una pentatonica
 minore apposta: venti suoni identici al secondo l'orecchio li fonde in un ronzio, che è il
 contrario della soddisfazione. L'indice della nota si chiamava però `combo`, lo stesso nome che

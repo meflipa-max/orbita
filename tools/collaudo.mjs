@@ -583,5 +583,31 @@ sez('la trasformazione non costa livelli');
   ok(b && b.id === 'cometa' && b.lv === 8, 'presa al livello 8 resta all’8' + (b ? ' (era ' + b.lv + ')' : ''));
 }
 
+sez('il terzo grado conta anche quando lo fa il Culmine');
+/* «Porta un Risveglio al terzo grado» e' un contratto da 540 frammenti e
+   una sfida da 600. Il contatore leggeva G.awaken — il grado costruito con
+   l'anello — mentre il Culmine alza di un grado ogni Risveglio acceso, che
+   e' la ragione per cui il Culmine esiste. Per cinque secondi e mezzo quel
+   Risveglio faceva danno di terzo grado, la targhetta in basso a sinistra
+   accendeva la terza tacca, e l'obiettivo restava chiuso.                */
+{
+  O.reset('vega', 88, 'corsa', false); G.state = 'play'; G.slots = 6;
+  const mk = id => ({ id, el: O.RUNES[id].el, lv: 3, cd: 0, res: 0, st: {} });
+  /* quattro di Fuoco in fila: secondo grado, non terzo */
+  G.ring = ['scintilla', 'pira', 'nova', 'cometa', null, null].map(x => x && mk(x));
+  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+  G.tier3 = 0; G.culm = 0;
+  O.recalcRing(false);
+  ok(G.awaken.fuoco === 2, 'quattro rune in fila fanno il secondo grado');
+  ok(!G.tier3, 'e da sole non contano come terzo');
+  /* il Culmine lo alza: la targhetta lo dice, e adesso lo dice anche il conto */
+  G.charge = 1;
+  ok(O.attivaCulmine(), 'il Culmine si accende');
+  ok(G.awk.fuoco === 3, 'e porta l’Ardore al terzo grado');
+  ok(!!G.tier3, 'che adesso conta per il contratto');
+  const h = (O.UI.renderAwake(), O.statoPartita());
+  ok(h.tier3 === true, 'e arriva fino allo stato di fine partita');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

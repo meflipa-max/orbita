@@ -733,6 +733,18 @@ function recalc() {
 function recalcAwk() {
   const su = G.culm > 0 ? 1 : 0;
   for (const e of ELKEYS) { const b = G.awaken[e]; G.awk[e] = b ? Math.min(3, b + su) : 0; }
+  /* ── il terzo grado conta anche quando lo fa il Culmine ──────────
+     «Porta un Risveglio al terzo grado» e' un contratto e una sfida, e il
+     contatore leggeva G.awaken, cioe' il grado costruito con l'anello. Ma
+     il Culmine alza di un grado ogni Risveglio acceso — e' la ragione per
+     cui esiste — e per cinque secondi e mezzo quel Risveglio infligge
+     danno di terzo grado per davvero. La targhetta in basso a sinistra lo
+     dice: accende la terza tacca, bianca. Quindi lo schermo scriveva
+     «Ardore ●●●» e l'obiettivo restava chiuso.
+     G.awk e' il grado che fa danno adesso, e questo e' l'unico posto che
+     lo sa: quando cambia l'anello e quando il Culmine si accende o si
+     spegne si passa sempre di qui. */
+  for (const e of ELKEYS) { if (G.awk[e] >= 2) G.tier2 = 1; if (G.awk[e] >= 3) G.tier3 = 1; }
   recalc();
   /* le targhette leggono il grado EFFETTIVO, quindi vanno ridisegnate anche
      quando cambia solo il Culmine: prima si aggiornavano soltanto da
@@ -813,9 +825,11 @@ function recalcRing(announce) {
     const r = R[i];
     if (r && r.el !== 'iride') G.elAnello.add(r.el);
   }
-  /* traccia per le sfide: quanti Risvegli insieme, e se uno ha toccato il terzo grado */
+  /* traccia per le sfide: quanti Risvegli insieme. Il grado massimo
+     toccato lo conta recalcAwk, che e' l'unico posto che sa quanto vale
+     davvero un Risveglio in questo istante. */
   let acc = 0;
-  for (const k of ELKEYS) { if (G.awaken[k]) acc++; if (G.awaken[k] >= 2) G.tier2 = 1; if (G.awaken[k] >= 3) G.tier3 = 1; }
+  for (const k of ELKEYS) if (G.awaken[k]) acc++;
   if (acc > G.awakeMax) G.awakeMax = acc;
   /* il livello più alto toccato da una runa in questa partita: serve a uno
      degli sblocchi, e va letto qui perché una runa dissolta sparisce */
