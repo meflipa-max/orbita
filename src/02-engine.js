@@ -992,7 +992,7 @@ function spawnBoss(def) {
     y: clamp(G.p.y + Math.sin(a) * d, -ARENA + def.r, ARENA - def.r),
     vx: 0, vy: 0, r: def.r, c: def.c, shape: 'boss', ten: 1,
     hp: vita, maxHp: vita, spd: def.spd * G.asc.spd * G.cg.spd * mod.spd, mod,
-    dmg: def.dmg, xp: def.xp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
+    dmg: def.dmg, xp: def.xp * G.cg.bossXp, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0, froze: 0,
     elite: false, boss: def, ph: 0, atk: 1.4, atk2: 5, kb: 0, kbx: 0, kby: 0, charge: 0, cdir: 0,
     /* corazza elementale: dimezza i colpi di UN elemento. Dal secondo
        guardiano in poi, così il primo resta quello che insegna. */
@@ -1240,7 +1240,7 @@ function killEnemy(e, opt) {
      La bomba resta fuori: spazza mezzo campo in un colpo e riempirebbe
      l'indicatore da sola. */
   if (G.culm <= 0 && !(opt && opt.spazzata)) {
-    G.charge = Math.min(1, G.charge + (e.boss ? 14 : e.elite ? 5 : 1) / culmineCost(G.t));
+    G.charge = Math.min(1, G.charge + (e.boss ? 14 : e.elite ? 5 : 1) / (culmineCost(G.t) * G.cg.culmCost));
     if (G.charge >= 1 && !G.chargeAnn) { G.chargeAnn = 1; AU.play('ready'); }
   }
 
@@ -1315,7 +1315,7 @@ function risveglioFx(e, tier) {
 function puoCulmine() { return G.state === 'play' && G.culm <= 0 && G.charge >= 1; }
 function attivaCulmine() {
   if (!puoCulmine()) return false;
-  G.charge = 0; G.chargeAnn = 0; G.culm = CULM_DUR; G.culms++;
+  G.charge = 0; G.chargeAnn = 0; G.culm = CULM_DUR * G.cg.culmDur; G.culms++;
   recalcAwk();
   G.hitstop = Math.max(G.hitstop, .12);
   G.shake = Math.max(G.shake, 14);

@@ -303,7 +303,12 @@ const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
    l'evento che non capitava mai. Adesso la sua riga si scrive da sola con
    questi due, e non puo' piu' invecchiare da sola. */
 const EVO_LV = 6, EVO_LV_CROGIOLO = 5;
-function sogliaEvo() { return hasRel('crogiolo') ? EVO_LV_CROGIOLO : EVO_LV; }
+function sogliaEvo() {
+  /* la Fornace (congiunzione) sposta la soglia come il Crogiolo, e le due
+     si sommano: mai sotto 3, se no la trasformazione arriverebbe prima che
+     l'anello abbia una forma da progettare */
+  return Math.max(3, (hasRel('crogiolo') ? EVO_LV_CROGIOLO : EVO_LV) + (G.cg ? G.cg.evo : 0));
+}
 
 /* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
    elemento risvegliato */
@@ -689,10 +694,13 @@ const modoDi = id => MODI.find(m => m.id === id) || MODI[0];
    congiunzione porta lo stesso principio a tutta l'arena — una regola
    sorteggiata dal seme e DICHIARATA prima di partire, così è una cosa che
    scegli come giocare, non una sorpresa che subisci.
-   La Quiete pesa il doppio delle altre: una corsa su quattro deve restare
-   quella di sempre, o «modificata» smette di voler dire qualcosa.          */
+   La Quiete pesa quanto tre delle altre messe insieme: una corsa su quattro
+   deve restare quella di sempre, o «modificata» smette di voler dire
+   qualcosa. Il peso va tenuto in proporzione al numero delle altre — con
+   sette pesava 6 e usciva il 22%, con dieci a 6 sarebbe scesa al 17%, cioè
+   una su sei; a 9 su 39 torna al 23%.                                      */
 const CONGIUNZIONI = [
-  { id: 'quiete', n: 'Quiete', c: '#9c93c6', w: 6,
+  { id: 'quiete', n: 'Quiete', c: '#9c93c6', w: 9,
     d: 'Nessuna congiunzione: l’arena è quella di sempre.', m: {} },
   /* il direttore ricompensa in parte la vita tolta — è il suo mestiere —
      ma il ritmo di comparsa non lo tocca: la marea si vede lo stesso */
@@ -712,7 +720,25 @@ const CONGIUNZIONI = [
   { id: 'vetro', n: 'Vetro', c: '#ff3d6e', w: 3,
     d: 'Parti con metà vita, ma infliggi il 40% di danno in più.', m: { startHp: .5, dmg: 1.4 } },
   { id: 'fuga', n: 'Fuga', c: '#6ff2c4', w: 3,
-    d: 'Tutti si muovono il 18% più veloci, tu compreso.', m: { spd: 1.18, pspd: 1.18 } }
+    d: 'Tutti si muovono il 18% più veloci, tu compreso.', m: { spd: 1.18, pspd: 1.18 } },
+  /* ── tre dimensioni che nessuna congiunzione toccava ────────────
+     Le sette di prima muovevano quante cose ci sono (Sciame, Cintura,
+     Tempesta), quanto rendono (Carestia), quanto sei fragile (Vetro),
+     quanto si corre (Fuga) e quanto è lunga una catena (Eco). Restavano
+     fuori tre cose che decidono una partita quanto quelle: QUANDO arrivano
+     i guardiani, quanto è grande l'anello, e come si usa l'unico tasto che
+     premi. Una regola che cambia il ritmo si sente più di una che cambia
+     un numero — ed è il motivo per cui la congiunzione è dichiarata prima
+     di partire invece che scoperta al terzo minuto. */
+  { id: 'eclissi', n: 'Eclissi', c: '#b06bff', w: 3,
+    d: 'I guardiani arrivano quaranta secondi prima, ma rendono il doppio di esperienza.',
+    m: { boss: -40, bossXp: 2 } },
+  { id: 'fornace', n: 'Fornace', c: '#ff6a2b', w: 3,
+    d: 'Le rune si trasformano un livello prima, ma l’anello ha un alloggiamento in meno.',
+    m: { evo: -1, slots: -1 } },
+  { id: 'apogeo', n: 'Apogeo', c: '#ffe9b0', w: 3,
+    d: 'Il Culmine dura il doppio, ma si carica il doppio più lentamente.',
+    m: { culmDur: 2, culmCost: 2 } }
 ];
 /* Sorteggiata dal seme e non dal flusso della partita: il seme decide la
    corsa PRIMA che cominci, quindi si può mostrare sotto al bottone che la
@@ -730,7 +756,7 @@ function congiunzioneDi(seed) {
 /* i modificatori attivi, già fusi coi valori neutri: chi li legge non deve
    sapere se c'è una congiunzione o no */
 function congMods(c) {
-  const m = Object.assign({ rate: 1, hp: 1, chain: 0, bossHp: 1, rocce: 1, nodo: 1, ev: 1, startHp: 1, dmg: 1, spd: 1, pspd: 1, shard: 1, noDrops: 0 }, (c && c.m) || {});
+  const m = Object.assign({ rate: 1, hp: 1, chain: 0, bossHp: 1, rocce: 1, nodo: 1, ev: 1, startHp: 1, dmg: 1, spd: 1, pspd: 1, shard: 1, noDrops: 0, boss: 0, bossXp: 1, evo: 0, slots: 0, culmDur: 1, culmCost: 1 }, (c && c.m) || {});
   return m;
 }
 

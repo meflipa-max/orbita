@@ -1738,7 +1738,7 @@ function updateSpawns(dt) {
       UI.toast('ELITE', 'La barra sopra la testa è la sua vita', '#ffc857');
     }
   }
-  if (G.bossIdx < G.roster.length && G.t >= Math.max(45, G.roster[G.bossIdx].t + G.asc.boss)) {
+  if (G.bossIdx < G.roster.length && G.t >= Math.max(45, G.roster[G.bossIdx].t + G.asc.boss + G.cg.boss)) {
     const def = G.roster[G.bossIdx];
     spawnBoss(def);
     /* in coppia dal terzo guardiano: il gemello è più fragile, ma raddoppia

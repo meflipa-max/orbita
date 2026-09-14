@@ -199,9 +199,27 @@ terzo minuto è una sorpresa.
 Sciame (molti più nemici, molto più fragili), Carestia (niente cuori né bombe, frammenti +70%),
 Eco (Risvegli con una runa in meno, guardiani +40% vita), Cintura (asteroidi da 40 a 58 e Nodi
 da 10 a 19), Tempesta (un evento ogni quaranta secondi), Vetro (metà vita, +40% danno), Fuga (tutti
-più veloci del 18%, tu compreso). E **Quiete**, che pesa il doppio delle altre: una corsa su
-quattro deve restare quella di sempre, o «modificata» smette di voler dire qualcosa. Misurato
-su 40.000 semi: Quiete 22,2%, le altre fra 10,8% e 11,3%.
+più veloci del 18%, tu compreso).
+
+Le sette di sopra muovevano *quante cose ci sono*, *quanto rendono*, *quanto sei fragile*,
+*quanto si corre* e *quanto è lunga una catena*. Restavano fuori tre cose che decidono una
+partita quanto quelle, e adesso ognuna ha la sua:
+
+- **Eclissi** — i guardiani arrivano **quaranta secondi prima**, ma rendono il doppio di
+  esperienza. Cambia il *ritmo* della corsa: il primo guardiano al 1:50 invece che al 2:30,
+  quando la build è ancora quella dei primi livelli.
+- **Fornace** — le rune si trasformano **un livello prima**, ma l'anello ha **un alloggiamento
+  in meno**. Meno spazio e una catena più corta da tenere: è la congiunzione che spinge a
+  progettare la trasformazione invece di sperarci.
+- **Apogeo** — il Culmine **dura il doppio** e **si carica il doppio più lentamente**. Tocca
+  l'unico tasto che premi: da quattro o cinque scariche brevi si passa a due lunghe, quindi
+  *quando* lo spendi conta molto di più.
+
+E **Quiete**, che pesa quanto tre delle altre: una corsa su quattro deve restare quella di
+sempre, o «modificata» smette di voler dire qualcosa. Il peso va tenuto in proporzione al
+numero delle altre — con sette pesava 6 e usciva il 22%, con dieci a 6 sarebbe scesa al 17%,
+cioè una su sei. Misurato su 40.000 semi con peso 9: **Quiete 23,2%**, le altre fra 7,5% e
+7,9%.
 
 La sola che poteva rompere la leggibilità era **Tempesta**, perché più eventi vuol dire più
 maree. La prima misura diceva picchi di 260-280 nemici contro un tetto di 160, e per un po'
@@ -831,7 +849,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 119 controlli sul gioco vero, headless
+npm run collaudo       # 132 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna

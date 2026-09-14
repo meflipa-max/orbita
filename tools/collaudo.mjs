@@ -599,32 +599,6 @@ sez('la trasformazione non costa livelli');
   ok(b && b.id === 'cometa' && b.lv === 8, 'presa al livello 8 resta all’8' + (b ? ' (era ' + b.lv + ')' : ''));
 }
 
-sez('il terzo grado conta anche quando lo fa il Culmine');
-/* «Porta un Risveglio al terzo grado» e' un contratto da 540 frammenti e
-   una sfida da 600. Il contatore leggeva G.awaken — il grado costruito con
-   l'anello — mentre il Culmine alza di un grado ogni Risveglio acceso, che
-   e' la ragione per cui il Culmine esiste. Per cinque secondi e mezzo quel
-   Risveglio faceva danno di terzo grado, la targhetta in basso a sinistra
-   accendeva la terza tacca, e l'obiettivo restava chiuso.                */
-{
-  O.reset('vega', 88, 'corsa', false); G.state = 'play'; G.slots = 6;
-  const mk = id => ({ id, el: O.RUNES[id].el, lv: 3, cd: 0, res: 0, st: {} });
-  /* quattro di Fuoco in fila: secondo grado, non terzo */
-  G.ring = ['scintilla', 'pira', 'nova', 'cometa', null, null].map(x => x && mk(x));
-  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
-  G.tier3 = 0; G.culm = 0;
-  O.recalcRing(false);
-  ok(G.awaken.fuoco === 2, 'quattro rune in fila fanno il secondo grado');
-  ok(!G.tier3, 'e da sole non contano come terzo');
-  /* il Culmine lo alza: la targhetta lo dice, e adesso lo dice anche il conto */
-  G.charge = 1;
-  ok(O.attivaCulmine(), 'il Culmine si accende');
-  ok(G.awk.fuoco === 3, 'e porta l’Ardore al terzo grado');
-  ok(!!G.tier3, 'che adesso conta per il contratto');
-  const h = (O.UI.renderAwake(), O.statoPartita());
-  ok(h.tier3 === true, 'e arriva fino allo stato di fine partita');
-}
-
 sez('i cinque eventi d’arena');
 /* Erano tre, con un intervallo di rand(80,105) secondi: una Corsa ne fa
    undici, quindi ognuno tornava quasi quattro volte nella stessa partita e
@@ -714,6 +688,104 @@ sez('la Fermata paga chi resta');
   ok(!G.ev, 'piena, l’evento si chiude');
   ok(scrigno, 'e lascia uno scrigno');
   ok(P.hp > feriti, 'e un po’ di vita (' + Math.round(feriti) + ' → ' + Math.round(P.hp) + ')');
+}
+
+sez('il terzo grado conta anche quando lo fa il Culmine');
+/* «Porta un Risveglio al terzo grado» e' un contratto da 540 frammenti e
+   una sfida da 600. Il contatore leggeva G.awaken — il grado costruito con
+   l'anello — mentre il Culmine alza di un grado ogni Risveglio acceso, che
+   e' la ragione per cui il Culmine esiste. Per cinque secondi e mezzo quel
+   Risveglio faceva danno di terzo grado, la targhetta in basso a sinistra
+   accendeva la terza tacca, e l'obiettivo restava chiuso.                */
+{
+  O.reset('vega', 88, 'corsa', false); G.state = 'play'; G.slots = 6;
+  const mk = id => ({ id, el: O.RUNES[id].el, lv: 3, cd: 0, res: 0, st: {} });
+  /* quattro di Fuoco in fila: secondo grado, non terzo */
+  G.ring = ['scintilla', 'pira', 'nova', 'cometa', null, null].map(x => x && mk(x));
+  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+  G.tier3 = 0; G.culm = 0;
+  O.recalcRing(false);
+  ok(G.awaken.fuoco === 2, 'quattro rune in fila fanno il secondo grado');
+  ok(!G.tier3, 'e da sole non contano come terzo');
+  /* il Culmine lo alza: la targhetta lo dice, e adesso lo dice anche il conto */
+  G.charge = 1;
+  ok(O.attivaCulmine(), 'il Culmine si accende');
+  ok(G.awk.fuoco === 3, 'e porta l’Ardore al terzo grado');
+  ok(!!G.tier3, 'che adesso conta per il contratto');
+  const h = (O.UI.renderAwake(), O.statoPartita());
+  ok(h.tier3 === true, 'e arriva fino allo stato di fine partita');
+}
+
+sez('le congiunzioni fanno quello che dicono');
+/* Una congiunzione e' una regola sorteggiata dal seme e DICHIARATA prima
+   di partire: e' la riga che si legge sotto al bottone Gioca. Se la riga
+   promette e il codice non ha il gancio, la promessa e' scritta e basta —
+   ed e' esattamente cosi' che «l'Inverno non congelava niente». Qui ogni
+   voce della tabella viene messa in una partita vera e le si chiede di
+   dimostrarsi.                                                           */
+{
+  const semeDi = id => { let s = 1; while (O.congiunzioneDi(s).id !== id && s < 200000) s++; return s; };
+  const parti = id => { O.reset('vega', semeDi(id), 'corsa', false); G.state = 'play'; return G.cong.id === id; };
+  /* la Quiete resta il riferimento */
+  parti('quiete');
+  const slotBase = G.slots, sogliaBase = O.RELIQUIE && 6;
+  const bossBase = Math.max(45, G.roster[0].t);
+  ok(G.cong.id === 'quiete', 'la Quiete non cambia niente');
+
+  ok(parti('eclissi'), 'Eclissi si sorteggia');
+  ok(G.cg.boss === -40, 'e sposta il calendario dei guardiani di 40s');
+  {
+    /* il primo guardiano arriva davvero prima, e rende il doppio */
+    let arriva = -1;
+    for (let i = 0; i < 60 * 400 && arriva < 0; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; if (G.bosses.length) arriva = G.t; }
+    const atteso = Math.max(45, G.roster[0].t - 40);
+    ok(arriva > 0 && Math.abs(arriva - atteso) < 3, 'il primo guardiano entra al ' + Math.round(arriva) + 's invece che al ' + bossBase + 's');
+    const b = G.bosses[0];
+    ok(b && Math.abs(b.xp - G.roster[0].xp * 2) < 1, 'e vale il doppio di esperienza (' + (b ? Math.round(b.xp) : '?') + ')');
+  }
+
+  ok(parti('fornace'), 'Fornace si sorteggia');
+  ok(G.slots === slotBase - 1, 'toglie un alloggiamento (' + G.slots + ' invece di ' + slotBase + ')');
+  {
+    /* tre rune in fila, il Risveglio acceso: alla soglia abbassata e' pronta */
+    const mk = id => ({ id, el: O.RUNES[id].el, lv: 5, cd: 0, res: 0, st: {} });
+    G.ring = new Array(G.slots).fill(null);
+    ['pira', 'scintilla', 'nova'].forEach((id, i) => { G.ring[i] = mk(id); G.ring[i].slot = i; });
+    G.evoAnn = {}; O.recalcRing(true);
+    ok(G.evoAnn.scintilla === 1, 'e la trasformazione arriva al livello 5 invece che al 6');
+  }
+
+  ok(parti('apogeo'), 'Apogeo si sorteggia');
+  {
+    G.charge = 1;
+    O.attivaCulmine();
+    ok(Math.abs(G.culm - 11) < .01, 'il Culmine dura il doppio (' + G.culm.toFixed(1) + 's)');
+    /* stesso elite, stesso istante, due congiunzioni: con Apogeo carica
+       la meta'. Serve un campo popolato, quindi venti secondi prima. */
+    const caricaElite = id => {
+      parti(id); G.t = 0;
+      gioca(20);
+      const e = G.enemies.find(x => x.hp > 0 && !x.boss);
+      if (!e) return 0;
+      G.enemies.length = 0; G.enemies.push(e);
+      e.elite = true; e.x = G.p.x + 46; e.y = G.p.y; e.hp = 2; e.froze = 0; e.slow = 0;
+      G.charge = 0; G.culm = 0;
+      for (let i = 0; i < 180 && e.hp > 0; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+      return G.charge;
+    };
+    const conApogeo = caricaElite('apogeo'), quieta = caricaElite('quiete');
+    ok(conApogeo > 0 && quieta > 0 && Math.abs(conApogeo * 2 - quieta) < quieta * .12,
+       'e si carica la meta\u2019 (' + conApogeo.toFixed(3) + ' contro ' + quieta.toFixed(3) + ')');
+  }
+
+  /* la Quiete pesa quanto tre delle altre: una corsa su quattro deve
+     restare quella di sempre, e il peso va tenuto in proporzione al
+     numero delle altre — con dieci a peso 6 sarebbe scesa a una su sei */
+  const conto = {};
+  for (let s = 1; s <= 40000; s++) { const c = O.congiunzioneDi(s); conto[c.id] = (conto[c.id] || 0) + 1; }
+  ok(Object.keys(conto).length === O.CONGIUNZIONI.length, 'tutte e ' + O.CONGIUNZIONI.length + ' escono da qualche seme');
+  const q = conto.quiete / 40000;
+  ok(q > .20 && q < .26, 'e la Quiete resta circa una corsa su quattro (' + (q * 100).toFixed(1) + '%)');
 }
 
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));

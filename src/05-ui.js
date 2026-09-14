@@ -155,7 +155,10 @@ const UI = {
       }
       const fx = this._culmFx && ora < this._culmFxFino ? ' ' + this._culmFx : '';
       elCulm.className = 'on ' + stato + fx;
-      elCulm.style.setProperty('--f', att ? 1 - G.culm / CULM_DUR : clamp(G.charge, 0, 1));
+      /* con Apogeo il Culmine dura il doppio: l'anello che si svuota deve
+         misurare la durata VERA, se no si svuotava a meta' e restava li'
+         mentre l'effetto era ancora acceso */
+      elCulm.style.setProperty('--f', att ? 1 - G.culm / (CULM_DUR * G.cg.culmDur) : clamp(G.charge, 0, 1));
       elCulm.querySelector('.lab').textContent = att ? Math.ceil(G.culm) + 's'
         : (pieno ? (isCoarse() ? 'TOCCA' : 'SPAZIO') : Math.round(G.charge * 100) + '%');
     }
@@ -185,7 +188,7 @@ const UI = {
        e l'Incursione ne salta due, quindi il prossimo nome è quello vero */
     const nb = G.roster[G.bossIdx];
     if (nb && !G.boss) {
-      const left = Math.max(0, Math.max(45, nb.t + G.asc.boss) - G.t);
+      const left = Math.max(0, Math.max(45, nb.t + G.asc.boss + G.cg.boss) - G.t);
       elNext.className = left < 25 ? 'on soon' : 'on';
       elNext.innerHTML = '<i></i>' + nb.n + ' ' + fmtTime(left);
     } else elNext.className = '';
@@ -470,7 +473,7 @@ const UI = {
         '</ul>') +
 
       sec('Congiunzioni',
-        p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, il doppio degli asteroidi, i Risvegli che chiedono una runa in meno. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
+        p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, il doppio degli asteroidi, i Risvegli che chiedono una runa in meno, i guardiani quaranta secondi prima, il Culmine che dura il doppio. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
         p('Non è una difficoltà in più: è una domanda diversa. La stessa semenza dà sempre la stessa congiunzione, quindi «ripeti questa semenza» ripete anche quella.')) +
 
       sec('Il mazzo cresce',
@@ -1765,7 +1768,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.skin = SKINS.find(k => k.id === SAVE.skin) || SKINS[0];
   G.ascLv = Math.min(SAVE.ascSel | 0, SAVE.asc | 0, ASC.length - 1);
   G.asc = ascMods(G.ascLv);
-  G.slots = Math.max(4, 6 + mlv('orbita') + G.asc.slots);
+  G.slots = Math.max(4, 6 + mlv('orbita') + G.asc.slots + G.cg.slots);
   if (c.rule === 'anelloCorto') G.slots = Math.max(3, G.slots - 2);
   G.ring = new Array(G.slots).fill(null);
   G.passives = {};
