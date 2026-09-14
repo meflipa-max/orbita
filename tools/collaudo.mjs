@@ -80,6 +80,25 @@ ok(O.importSave(b64({ shards: 0 })) && S().modo === 'incursione', 'un salvataggi
 ok(O.importSave(b64({ shards: 900, runs: 12, wins: 1 })) && S().modo === 'corsa', 'chi ha gi\u00e0 giocato tiene la Corsa');
 ok(O.importSave(b64({ shards: 0, modo: 'corsa' })) && S().modo === 'corsa', 'e la scelta gi\u00e0 fatta non si tocca');
 
+sez('azzerare e ripristinare buttano via la corsa in sospeso');
+/* La corsa annotata e' costruita sui potenziamenti, sulle reliquie e
+   sull'ascensione del salvataggio che c'era: azzerando i progressi — o
+   ripristinando il codice di backup di un altro dispositivo — il titolo
+   continuava a offrire «Riprendi» su una partita che con quei numeri non
+   esiste piu'.                                                          */
+{
+  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  O.reset('vega', 5150, 'corsa', false); G.state = 'play';
+  gioca(20); O.salvaCorsa();
+  ok(!!O.leggiCorsa(), 'una corsa annotata c’è');
+  O.wipeSave();
+  ok(!O.leggiCorsa(), 'azzerando i progressi non c’è piu’');
+  O.reset('vega', 5151, 'corsa', false); G.state = 'play';
+  gioca(20); O.salvaCorsa();
+  O.importSave(b64({ shards: 700, meta: { orbita: 1 }, chars: ['vega'], wins: 2 }));
+  ok(!O.leggiCorsa(), 'e nemmeno ripristinando un backup');
+}
+
 sez('le spiegazioni si possono chiudere');
 /* «Ho capito» chiamava riprendiGioco(), che una modifica aveva cancellato:
    il gioco restava congelato per sempre sulla carta. node --check non lo

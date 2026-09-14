@@ -195,7 +195,13 @@ function importSave(code) {
        meglio dire "codice non valido" che annunciare un ripristino finto */
     if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
     if (!['shards', 'meta', 'chars', 'best', 'wins'].some(k => k in o)) return false;
-    SAVE = sanitizeSave(o); storeSave(); return true;
+    SAVE = sanitizeSave(o); storeSave();
+    /* la corsa in sospeso e' di un'altra partita: e' stata costruita sui
+       potenziamenti, sulle reliquie e sull'ascensione del salvataggio
+       appena sostituito, e riprenderla vorrebbe dire giocarla con numeri
+       che non sono piu' i suoi */
+    scordaCorsa();
+    return true;
   } catch (e) { return false; }
 }
 /* azzeramento: l'unico modo di ricominciare davvero da capo. Sta sotto al
@@ -206,6 +212,10 @@ function wipeSave() {
   SAVE = sanitizeSave(null);
   SAVE.sfx = sfx; SAVE.mus = mus;
   storeSave();
+  /* «azzera i progressi» deve azzerare anche la corsa in sospeso: senza,
+     il titolo continuava a offrire «Riprendi» su una partita costruita con
+     alloggiamenti, reliquie e vite che quel salvataggio non ha piu'. */
+  scordaCorsa();
 }
 
 /* ── la corsa in sospeso ──────────────────────────────────────
