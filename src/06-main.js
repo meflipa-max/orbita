@@ -244,7 +244,7 @@ function enterMenu() {
   G.demo = true;
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.drops.length = 0; G.floats.length = 0;
-  G.boss = null; G.bosses.length = 0; G.bossIdx = 99; G.pending = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
+  G.boss = null; G.bosses.length = 0; G.bossIdx = 99; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.shake = 0; G.diff = 0;
   G.ev = null; G.evT = 1e9; G.form = null;   /* nessun evento nella vetrina del menu */
   /* la vetrina non eredita la congiunzione dell'ultima partita: dopo uno
      Sciame il menu spawnava al ritmo dello Sciame, che non è quello che il
@@ -313,7 +313,7 @@ function menuStep(dt) {
   flushUccisioni(dt);
 
   /* la vetrina non fa progredire niente */
-  G.pending = 0; G.drops.length = 0; P.hp = P.maxHp; p.inv = 999;
+  G.pending = 0; G.chests = 0; G.drops.length = 0; P.hp = P.maxHp; p.inv = 999;
   G.shake = Math.max(0, G.shake - dt * 42);
 }
 

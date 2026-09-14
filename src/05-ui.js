@@ -998,14 +998,25 @@ const UI = {
   },
 
   /* ── scelta potenziamento ───────────────────────────────── */
-  levelup(chest) {
-    this.chestMode = !!chest;
+  /* `chest` arrivava come parametro e NESSUNO glielo passava mai: le sette
+     righe che distinguono uno scrigno da una salita di livello — titolo,
+     occhiello e la regola che il Ventaglio non vale sugli scrigni — erano
+     codice morto, e uno scrigno raccolto si annunciava come «Livello N».
+     Adesso lo scrigno e' un contatore dello stato (G.chests), che e' l'unico
+     posto da cui si possa sapere da dove viene la carta in cima alla pila.
+     `riusa` tiene le stesse tre carte invece di ripescarle: tornando
+     dall'anello si ripescava, cioe' «Riordina l'anello → Fatto» era un
+     Rilancio gratis e infinito accanto a un bottone Rilancia che ne
+     concede due per partita. */
+  levelup(riusa) {
+    const chest = Math.min(G.chests | 0, G.pending | 0) > 0;
+    this.chestMode = chest;
     /* Ventaglio: quattro carte invece di tre, ma solo nei primi tre livelli.
        È lì che la scelta conta di più — decide le prime due catene — ed è lì
        che un pescato brutto costa una partita intera. Dopo tornano tre: una
        quarta carta sempre attaccherebbe la varietà, non la fondazione. */
     const quattro = mlv('ventaglio') && !chest && G.level <= 3;
-    const ch = rollChoices(quattro ? 4 : 3);
+    const ch = (riusa && manoValida(this.choices)) ? this.choices : rollChoices(quattro ? 4 : 3);
     this.choices = ch;
     const cards = ch.map((c, i) => this.cardHTML(c, i)).join('');
     this.open('level',
@@ -1604,6 +1615,35 @@ function applyChoice(c) {
   return true; /* rnew → richiede collocazione */
 }
 
+/* Le tre carte tenute da parte valgono ancora? Tenerle e' giusto — se no
+   «Riordina l'anello → Fatto» sarebbe un Rilancio gratis e infinito — ma
+   riordinare cambia l'anello sotto di loro, e due carte hanno bisogno che
+   l'anello sia in un certo stato per poter essere applicate: una runa
+   nuova vuole un alloggiamento libero o una runa sacrificabile, la
+   Ritempra vuole almeno una runa che riaccordata allunghi una catena.
+   Senza questo controllo bastava riordinare fino a rendere ogni runa
+   portante — sei rune, due catene da tre — per ritrovarsi con una carta
+   che apre l'anello e nessun alloggiamento che la accetti: quella
+   schermata non ha il bottone «Fatto», quindi la partita restava li'.  */
+function manoValida(ch) {
+  if (!ch || !ch.length) return false;
+  if (ch.some(c => c.t === 'rnew')) {
+    let posti = 0;
+    for (let i = 0; i < G.slots; i++) if (!G.ring[i] || sacrificabile(i)) posti++;
+    if (!posti) return false;
+  }
+  if (ch.some(c => c.t === 'ritempra') && !bersagliRitempra().length) return false;
+  return true;
+}
+
+/* Una carta consumata: la pila scende, e con lei la quota di carte che
+   veniva da uno scrigno. Sono due contatori perche' G.pending non sa da
+   dove arriva quello che contiene. */
+function consumaCarta() {
+  G.pending--;
+  if ((G.chests | 0) > 0) G.chests--;
+}
+
 function placeRune(id, slot) {
   G.dissolto = 0;
   G.ring[slot] = { id, el: RUNES[id].el, lv: 1, cd: rand(.3), res: 0, slot, st: {} };
@@ -1640,7 +1680,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
-  G.dmgDone = 0; G.pending = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
+  G.dmgDone = 0; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.form = null; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
@@ -1959,7 +1999,7 @@ SCR.addEventListener('click', ev => {
     case 'endless': G.victory = true; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
     case 'ringedit': UI.ringEdit(null); break;
     case 'ringedit2': UI.ringEdit(null); break;
-    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(); else riprendiGioco(); break;
+    case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(true); else riprendiGioco(); break;
     case 'char': {
       const c = CHARS.find(x => x.id === b.dataset.id);
       if (SAVE.chars.indexOf(c.id) >= 0) { SAVE.char = c.id; storeSave(); UI.hub(); }
@@ -2051,14 +2091,14 @@ SCR.addEventListener('click', ev => {
       G.shards += fram;
       UI.toast('SALTATO', '+' + cura + ' vita · +' + fram + ' frammenti', '#6ff2c4');
       AU.play('buy');
-      G.pending--;
+      consumaCarta();
       if (G.pending > 0) UI.levelup(); else riprendiGioco();
       break;
     }
     case 'pick': {
       const c = UI.choices[+b.dataset.i];
       const needsPlace = applyChoice(c);
-      G.pending--;
+      consumaCarta();
       if (needsPlace === 'diss') UI.ringEdit(null, true);
       else if (needsPlace === 'ritempra') UI.ringEdit(null, false, true);
       else if (needsPlace) UI.ringEdit(c.id);

@@ -1064,7 +1064,7 @@ function updateGems(dt) {
     const dx = px - d0.x, dy = py - d0.y;
     if (dx * dx + dy * dy < 40 * 40) {
       D.splice(i, 1);
-      if (d0.k === 'chest') { G.pending++; UI.toast('SCRIGNO', 'Potenziamento in arrivo', '#ffc857'); }
+      if (d0.k === 'chest') { G.pending++; G.chests = (G.chests | 0) + 1; UI.toast('SCRIGNO', 'Potenziamento in arrivo', '#ffc857'); }
       else if (d0.k === 'cuore') { P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .3); addFloat(px, py - 30, '+VITA', '#6ff2c4', true); }
       else if (d0.k === 'bomba') {
         /* La bomba uccide OGNI nemico della mappa, guardiani esclusi. Si

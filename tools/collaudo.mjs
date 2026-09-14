@@ -246,6 +246,57 @@ sez('il gelo che tocca');
   ok(e.froze > 0, 'l’Inverno congela chi tocca');
 }
 
+sez('le carte non si ripescano di nascosto');
+/* «Riordina l'anello» dalla schermata delle carte e poi «Fatto» tornava a
+   levelup(), che ripesca: era un Rilancio gratis e infinito accanto a un
+   bottone Rilancia che ne concede due per partita — e il contratto «senza
+   rilanciare una carta» restava vero lo stesso.                          */
+{
+  O.reset('vega', 33, 'corsa', false); G.state = 'play';
+  gioca(20);
+  G.pending = 1; O.UI.levelup();
+  const prima = O.UI.choices.map(c => c.t + ':' + (c.id || '')).join(',');
+  O.UI.ringEdit(null);
+  O.UI.levelup(true);
+  const dopo = O.UI.choices.map(c => c.t + ':' + (c.id || '')).join(',');
+  ok(prima === dopo, 'tornando dall’anello le tre carte sono le stesse');
+  const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', '05-ui.js'), 'utf8');
+  ok(/case 'ringdone':[^\n]*levelup\(true\)/.test(ui), 'ed è così che ci torna il bottone Fatto');
+}
+
+sez('una carta che non si può giocare non resta in mano');
+/* Tenere le tre carte tornando dall'anello e' giusto, ma riordinare cambia
+   l'anello sotto di loro: con sei rune in due catene da tre nessuna e'
+   sacrificabile e nessun alloggiamento e' libero, quindi una runa NUOVA
+   non si potrebbe collocare da nessuna parte — e la schermata di
+   collocazione non ha il bottone «Fatto». La partita resterebbe li'.    */
+{
+  O.reset('vega', 55, 'corsa', false); G.state = 'play';
+  G.slots = 6;
+  const mk = (id) => ({ id, el: O.RUNES[id].el, lv: 3, cd: 0, res: 0, st: {} });
+  G.ring = ['scintilla', 'pira', 'nova', 'scheggia', 'bruma', 'cristallo'].map(mk);
+  for (let i = 0; i < 6; i++) G.ring[i].slot = i;
+  O.recalcRing(false);
+  ok(G.awaken.fuoco >= 1 && G.awaken.gelo >= 1, 'due catene accese, anello pieno');
+  O.UI.choices = [{ t: 'rnew', id: 'arco' }, { t: 'ascesi' }, { t: 'gold' }];
+  G.pending = 1; G.chests = 0;
+  O.UI.levelup(true);
+  ok(!O.UI.choices.some(c => c.t === 'rnew'), 'la runa nuova senza posto viene ripescata');
+}
+
+sez('uno scrigno si annuncia come uno scrigno');
+/* `levelup(chest)` prendeva un parametro che NESSUNO le passava mai: le
+   righe che distinguono uno scrigno da una salita di livello — titolo,
+   occhiello, e la regola che il Ventaglio non vale sugli scrigni — erano
+   codice morto, e uno scrigno raccolto diceva «Livello N».               */
+{
+  O.reset('vega', 8, 'corsa', false); G.state = 'play';
+  G.pending = 1; G.chests = 1; O.UI.levelup();
+  ok(/Scrigno stellare/.test(O.schermo()), 'la carta di uno scrigno dice scrigno');
+  G.chests = 0; O.UI.levelup();
+  ok(/Livello /.test(O.schermo()), 'quella di un livello dice livello');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],

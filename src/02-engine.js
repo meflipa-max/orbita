@@ -596,12 +596,12 @@ const G = {
   passives: {}, char: CHARS[0], skin: SKINS[0],
   enemies: [], bullets: [], ebul: [], gems: [], zones: [], parts: [], floats: [], drops: [],
   cam: { x: 0, y: 0 }, shake: 0,
-  level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0,
+  level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0, chests: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   /* awk = Risvegli EFFETTIVI (base + il grado in più del Culmine): è questo
      che legge tutto ciò che infligge danno. */
   awk: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
-  awakeVisto: {},
+  awakeVisto: {}, evoAnn: {},
   charge: 0, culm: 0, culms: 0, chargeAnn: 0, ascesi: 0,
   /* raffica: uccisioni nell'ultimo secondo, in due secchielli da mezzo */
   combo: 0, comboMax: 0, comboLv: 0, kb0: 0, kb1: 0, kbT: .5,
