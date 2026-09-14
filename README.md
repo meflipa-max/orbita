@@ -654,6 +654,90 @@ In partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 seco
 gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti uccisioni al
 secondo lo schermo non si fermerebbe più.
 
+### Quello che il codice diceva e non faceva
+
+Un giro di correzioni tutte della stessa famiglia: una regola scritta in due posti, e il
+secondo che racconta quella sbagliata. Nessuna si vedeva leggendo il gioco — si vedono
+misurandolo, ed è per questo che ognuna adesso porta il suo controllo in `collaudo`.
+
+**L'arpeggio delle uccisioni non scorreva mai.** Il pop di ogni nemico cicla su una pentatonica
+minore apposta: venti suoni identici al secondo l'orecchio li fonde in un ronzio, che è il
+contrario della soddisfazione. L'indice della nota si chiamava però `combo`, lo stesso nome che
+il contatore del ritmo di uccisione riscrive a ogni fotogramma: l'altezza non era un contatore
+che avanza, era il numero di uccisioni al secondo — a ritmo costante, una nota sola. Misurato:
+su 154 pop il semitono usciva 0 o 1 nel **75%** dei casi; adesso la scala si percorre tutta. Lo
+stesso scontro faceva dire al contatore a schermo un'uccisione in più di quelle vere.
+
+**Il Glaciale faceva danno senza farsi vedere.** L'anello di schegge che congela al tocco è la
+trasformazione del Cristallo e si comporta come lui, ma il disegno filtrava per
+`id === 'cristallo'`: un'arma invisibile che colpiva. E il suo `spd` — che è una velocità
+*angolare*, non di un proiettile — prendeva il moltiplicatore di Vortice due volte, perché
+l'esclusione guardava il `tag` e le trasformazioni hanno tutte tag `trasformazione`: misurato
+con Vortice 3, girava **1,96 volte** il Cristallo invece di 1,18. Adesso chi gira e chi spazza
+stanno in due elenchi soli, letti sia da chi calcola sia da chi disegna.
+
+**L'Inverno non congelava niente.** «L'alone diventa una stagione: congela al tocco» — e il
+congelamento arrivava alla funzione del danno dentro un campo che nessuno leggeva. Il gelo
+portato da un colpo era scritto in due posti e mancava nel terzo: ora sta in uno.
+
+**La modalità senza fine non cresceva.** Il bottone promette che la difficoltà sale; la
+condizione che la fa salire chiedeva `!G.victory`, e nel senza fine la vittoria c'è per
+definizione — ci si entra dopo aver vinto. Misurato: sessanta secondi con il contatore fermo a
+zero.
+
+**«Riordina l'anello» era un Rilancio gratis e infinito.** Dalla schermata delle carte si può
+andare a riordinare e tornare: tornando si ripescava. Accanto a un bottone *Rilancia* che ne
+concede due per partita, e a un contratto che chiede di arrivare all'ottavo minuto senza
+rilanciare. Ora le tre carte restano quelle — tranne quando riordinare le ha rese
+impossibili da giocare: sei rune in due catene da tre non lasciano un alloggiamento
+sacrificabile, e la schermata di collocazione non ha un bottone per uscire.
+
+**Riprendere una corsa la cambiava.** L'Ascesi è il potenziamento ripetibile senza limite, cioè
+danno, vita e area accumulati per tutta la partita: non veniva annotata, e riprendere la
+azzerava — misurato, sei Ascesi e il 30% di danno spariti. Le carte in attesa nemmeno, e chi ha
+la reliquia Semenza ne riceveva una **nuova a ogni ripresa**: un potenziamento gratis per ogni
+volta che usciva dal gioco.
+
+**Uno scrigno si annunciava come una salita di livello.** La schermata delle carte sa dire
+«Scrigno stellare» e sa che il Ventaglio non vale sugli scrigni, ma il parametro che glielo
+dice non le veniva passato da nessuno: sette righe di codice morto.
+
+**Il Corriere che non ti attacca ti attaccava.** Il briefing dice «non ti attacca: scappa», ed
+era uno spettro normale: sbatterci contro toglieva vita, cioè la caccia puniva esattamente il
+momento in cui lo raggiungi. E anche a danno zero la ferita si accendeva lo stesso — mezzo
+secondo di invulnerabilità regalata, il velo rosa, il suono, e il suo nome nella schermata di
+fine come assassino.
+
+**La guida raccontava le soglie di due versioni fa**: «a cinque rune il secondo grado, a sette
+il terzo», cioè sette rune in fila su un anello che ne tiene sei. Adesso i tre numeri escono
+dalla stessa costante che li decide in partita.
+
+E una che non era un difetto del gioco ma del banco: **il canvas non era mai stato collaudato**.
+Nello stub headless mancava `Path2D`, quindi `render()` esplodeva alla prima runa disegnata e
+nessun controllo poteva toccarlo — ed è così che una funzione intera era rimasta a lungo senza
+essere mai chiamata, e che il Glaciale è stato invisibile per un pezzo. Adesso si disegna un
+fotogramma in tredici situazioni diverse: con un guardiano, con ogni evento d'arena, con le
+formazioni, con i doni a terra, dentro e fuori da un Nodo, durante il Culmine, nella vetrina
+del menu.
+
+### Tre cose che il gioco sa e non diceva
+
+L'orologio diceva da quanto stai giocando, mai **quanto manca**: una Corsa dura venti minuti e
+un'Incursione otto, e quel numero si sapeva solo dal menu, prima di partire. Vedere il
+traguardo è metà della ragione per cui si stringe i denti nell'ultimo minuto. Nel senza fine
+sparisce, perché lì un traguardo non c'è.
+
+A **una runa dal Risveglio** non c'era nessun segnale. È l'informazione più azionabile del
+gioco — è la stessa cosa che la diagnosi di fine partita dice a chi non ci è mai arrivato, «eri
+a due rune di Fuoco di fila su tre, una in più e la partita cambiava» — e stava solo nella
+schermata delle carte, cioè a gioco fermo. Adesso c'è una targhetta tratteggiata accanto alle
+altre, e una sola: due o tre sarebbero rumore.
+
+E il momento in cui una runa diventa **pronta a trasformarsi** passava in silenzio. Lo scoprivi
+solo se la carta usciva, e la carta esce a una salita di livello: magari due minuti dopo, o
+mai. Peggio quando a chiudere la condizione è l'arena — entri in un Nodo, il Risveglio si
+accende, la runa diventa pronta e nessuno te lo dice. Una volta per runa e per partita.
+
 ### Leggibilità
 
 Regola unica: **ciò che ti può uccidere è la cosa più visibile dello schermo**. Le tue
@@ -681,7 +765,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 34 controlli sul gioco vero, headless
+npm run collaudo       # 76 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
