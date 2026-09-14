@@ -115,6 +115,18 @@ irrobustiscono 1,65 volte più in fretta, tu sali di livello 1,85 volte più in 
 guardiani hanno una vita loro invece di quella del loro slot — perché a parità di minuti la
 tua build è più debole di quanto sarebbe nella Corsa.
 
+E il calendario del contenuto vale per **tutto** il contenuto. Ondate, tetto di nemici ed elite
+lo seguivano già; **formazioni e Dissonante** erano rimasti sull'orologio da polso, e il
+Dissonante entra in campo dopo il quarto minuto: in una partita da otto, su un seme misurato,
+**non compariva affatto**. Cioè il nemico che attacca la build — la cosa che nessun altro gioco
+del genere può avere — mancava dalla metà delle partite giocate, perché la corsa del giorno è
+un'Incursione.
+
+Per la stessa ragione l'Incursione è il formato **preselezionato alla prima apertura**. Tutta
+la coda lunga sta dietro alla prima vittoria, e chiedere venti minuti a chi ha appena aperto il
+gioco è esattamente la decisione che questo formato è stato costruito per non dover chiedere.
+Chi ha già una partita alle spalle tiene la Corsa.
+
 Vincere un'Incursione sblocca l'ascensione come vincere una Corsa: è il punto — la prima
 conclusione deve stare nella prima sessione. La domanda era quindi una sola: **l'Incursione è
 una scorciatoia per scalare la scala di difficoltà?** Misurato col banco headless e un bot che
@@ -122,8 +134,15 @@ ogni mezzo secondo schiva scegliendo fra ventiquattro direzioni, quattro semi pe
 
 | | asc 0 | asc 4 | asc 8 | asc 12 |
 |---|---|---|---|---|
-| Corsa | 4/4 | 3/4 | 0/4 | 0/4 |
-| Incursione | 4/4 | 2/4 | 1/4 | 0/4 |
+| Corsa | 4/4 | 4/4 | 1/4 | 0/4 |
+| Incursione | 4/4 | 4/4 | 3/4 | 0/4 |
+
+Rimisurata dopo che il Culmine ha ricominciato a caricarsi con i guardiani e gli elite —
+prima erano 4/4, 3/4, 0/4, 0/4 e 4/4, 2/4, 1/4, 0/4. La riga si è alzata di un gradino, e
+nell'Incursione un po' di più: la carica costa `42 + t·0,085`, quindi un guardiano abbattuto
+al terzo minuto vale un quinto dell'indicatore mentre al quindicesimo ne vale un decimo, e
+l'Incursione ha tre guardiani in otto minuti contro cinque in venti. È la conseguenza di una
+riga che adesso fa quello che dice, non una manopola girata.
 
 No: le due colonne si muovono insieme, quindi il formato si sceglie per il tempo che hai, non
 per scavalcare un'ascensione. E al finale il divario di potenza è quello previsto — livello

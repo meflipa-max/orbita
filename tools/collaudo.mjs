@@ -70,6 +70,16 @@ ok(O.importSave(b64({ shards: 9, visti: ['gemme', 'breccia'] })) && S().visti.in
    'un salvataggio senza numero di versione perde il flag messo per sbaglio dalla vetrina');
 ok(S().visti.indexOf('breccia') >= 0, '...ma tiene quelli messi dal gioco vero');
 
+sez('la prima partita dura otto minuti');
+/* L'Incursione esiste perche' «la prima conclusione deve stare nella prima
+   sessione»: le tredici ascensioni stanno tutte dietro alla prima vittoria.
+   Ma il formato preselezionato era la Corsa, cioe' a chi apriva il gioco
+   per la prima volta venivano chiesti venti minuti — la decisione che
+   l'Incursione e' stata costruita per non dover chiedere.               */
+ok(O.importSave(b64({ shards: 0 })) && S().modo === 'incursione', 'un salvataggio nuovo parte dall\u2019Incursione');
+ok(O.importSave(b64({ shards: 900, runs: 12, wins: 1 })) && S().modo === 'corsa', 'chi ha gi\u00e0 giocato tiene la Corsa');
+ok(O.importSave(b64({ shards: 0, modo: 'corsa' })) && S().modo === 'corsa', 'e la scelta gi\u00e0 fatta non si tocca');
+
 sez('le spiegazioni si possono chiudere');
 /* «Ho capito» chiamava riprendiGioco(), che una modifica aveva cancellato:
    il gioco restava congelato per sempre sulla carta. node --check non lo
@@ -367,6 +377,30 @@ for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide
   try { f(); ok(true, n); } catch (e) { ok(false, n + ': ' + e.message); }
 for (const sc of ['partita', 'frammenti', 'obiettivi', 'archivio'])
   try { O.UI.hub(sc); ok(true, 'Osservatorio · ' + sc); } catch (e) { ok(false, sc + ': ' + e.message); }
+
+sez('l’Incursione contiene tutto il gioco');
+/* Otto minuti che devono contenere «una partita intera, vittoria compresa»:
+   il calendario del contenuto scorre 2,15 volte piu' in fretta, e ondate,
+   tetto di nemici ed elite lo seguono gia'. Formazioni e Dissonante no:
+   erano rimasti sull'orologio da polso, quindi il Dissonante — il nemico
+   che attacca la BUILD, la cosa che nessun altro gioco del genere ha —
+   entrava in campo solo dopo il quarto minuto di otto.                   */
+{
+  const quando = (modo) => {
+    S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+    O.reset('vega', 3131, modo, false); G.state = 'play';
+    let t = -1;
+    for (let i = 0; i < 60 * G.modo.len && t < 0; i++) {
+      O.step(1 / 60); P.hp = P.maxHp; G.pending = 0;
+      if (G.enemies.some(e => e.type === 'dissonante')) t = G.t;
+    }
+    return t;
+  };
+  const inc = quando('incursione');
+  ok(inc > 0 && inc < 260, 'nell’Incursione il Dissonante arriva nella prima metà (' + (inc < 0 ? 'mai' : inc.toFixed(0) + 's') + ')');
+  const cor = quando('corsa');
+  ok(cor > 250, 'nella Corsa resta dov’era (' + (cor < 0 ? 'mai' : cor.toFixed(0) + 's') + ')');
+}
 
 sez('il campo si disegna');
 /* Il canvas e' meta' del gioco e non era mai passato di qui: nel banco

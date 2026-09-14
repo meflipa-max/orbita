@@ -125,7 +125,20 @@ function sanitizeSave(o) {
   s.reliquie = s.reliquie.filter(id => RELIQUIE.some(r => r.id === id));
   if (!Array.isArray(s.contratti)) s.contratti = [];
   s.contratti = s.contratti.filter(id => CONTRATTI.some(c => c.id === id));
-  if (!MODI.some(m => m.id === s.modo)) s.modo = 'corsa';
+  /* ── il formato della PRIMA partita ──────────────────────────
+     L'Incursione esiste per una ragione sola, scritta nel suo stesso
+     progetto: «la prima conclusione deve stare nella prima sessione»,
+     perche' tutta la coda lunga del gioco — le tredici ascensioni — sta
+     dietro alla prima vittoria, e chi non ha mai visto un finale non ha
+     nessun motivo per tornare. Ma il formato preselezionato era la Corsa,
+     cioe' chi apriva il gioco per la prima volta si trovava davanti venti
+     minuti: esattamente la decisione che l'Incursione e' stata costruita
+     per non dover chiedere. Vale solo per un salvataggio che non ha ancora
+     una partita alle spalle — chi ha gia' giocato tiene la Corsa, che e'
+     il formato pieno — e resta un tocco cambiarlo, sulla carta sopra al
+     bottone che fa partire la corsa. */
+  const modoScelto = o && MODI.some(m => m.id === o.modo) ? o.modo : null;
+  s.modo = modoScelto || ((o && (o.runs | 0) > 0) ? 'corsa' : 'incursione');
   if (!Array.isArray(s.visti)) s.visti = [];
   s.visti = s.visti.filter(id => PRIMEVOLTE.indexOf(id) >= 0);
   /* Riparazione una tantum. Per una versione la vetrina del menu — dove

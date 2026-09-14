@@ -1474,10 +1474,13 @@ function segnaFormazione(k, a, mezzo) {
 
 function apriFormazione() {
   const k = pick(FORMAZIONI), pool = currentPool();
+  /* quanto e' avanti il CONTENUTO, non l'orologio: nell'Incursione scorre
+     2,15 volte piu' in fretta, come le ondate e il ritmo di comparsa */
+  const tc = tempoContenuto();
   const dist = Math.max(600, Math.hypot(G.vw, G.vh) * .58);
   const dentro = (x, y) => ({ x: clamp(x, -ARENA + 40, ARENA - 40), y: clamp(y, -ARENA + 40, ARENA - 40) });
   if (k === 'accerchiamento') {
-    const n = 14 + Math.min(12, (G.t / 100) | 0), off = rand(TAU);
+    const n = 14 + Math.min(12, (tc / 100) | 0), off = rand(TAU);
     for (let i = 0; i < n; i++) {
       const a = off + i / n * TAU;
       const p = dentro(G.p.x + Math.cos(a) * dist * .82, G.p.y + Math.sin(a) * dist * .82);
@@ -1486,7 +1489,7 @@ function apriFormazione() {
     UI.toast('ACCERCHIAMENTO', 'Rompilo da un lato', '#ff8a5c');
     segnaFormazione(k, null, PI);
   } else if (k === 'muro') {
-    const a = rand(TAU), n = 11 + Math.min(9, (G.t / 130) | 0);
+    const a = rand(TAU), n = 11 + Math.min(9, (tc / 130) | 0);
     const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
     for (let i = 0; i < n; i++) {
       const off = (i - (n - 1) / 2) * 72;
@@ -1498,7 +1501,7 @@ function apriFormazione() {
        misura: si vede subito da che parte finisce */
     segnaFormazione(k, a, Math.atan2((n - 1) * 72 / 2, dist));
   } else {
-    const a = rand(TAU), n = 9 + Math.min(11, (G.t / 110) | 0);
+    const a = rand(TAU), n = 9 + Math.min(11, (tc / 110) | 0);
     const px = Math.cos(a + PI / 2), py = Math.sin(a + PI / 2);
     for (let i = 0; i < n; i++) {
       const fila = (i / 3) | 0, lato = (i % 3) - 1;
@@ -1515,20 +1518,27 @@ function apriFormazione() {
 function updateSpawns(dt) {
   direttore(dt);
   /* ── formazioni: ogni tanto il campo ha una forma ─────────── */
-  if (G.t > 110 && !G.bosses.length) {
+  /* Formazioni e Dissonante sono contenuto, quindi seguono l'orologio del
+     CONTENUTO come le ondate e il tetto di nemici — non quello da polso.
+     Sull'orologio da polso l'Incursione, che dura otto minuti e vuole
+     essere «una partita intera nel tempo di un caffe'», faceva entrare il
+     Dissonante — il nemico che attacca la BUILD, cioe' la cosa che nessun
+     altro gioco del genere ha — solo dopo il quarto minuto: nella meta'
+     finale di una partita su due non lo si vedeva affatto. */
+  if (tempoContenuto() > 110 && !G.bosses.length) {
     G.formT = (G.formT === undefined ? 52 : G.formT) - dt;
     if (G.formT <= 0) { G.formT = rand(78, 52); apriFormazione(); }
   }
   if (G.form) { G.form.t += dt; if (G.form.t >= G.form.dur) G.form = null; }
   /* ── il Dissonante arriva da solo, annunciato ─────────────── */
-  if (G.t > 250 && !G.bosses.length) {
+  if (tempoContenuto() > 250 && !G.bosses.length) {
     G.dissT = (G.dissT === undefined ? 34 : G.dissT) - dt;
     if (G.dissT <= 0) {
       G.dissT = rand(74, 46);
       let vivi = 0;
       for (let i = 0; i < G.enemies.length; i++) if (G.enemies[i].type === 'dissonante' && G.enemies[i].hp > 0) vivi++;
       if (vivi < DISS_MAX) {
-        const e = spawnRing('dissonante', { hpMul: 1 + G.t / 900 });
+        const e = spawnRing('dissonante', { hpMul: 1 + tempoContenuto() / 900 });
         if (e) UI.toast('DISSONANTE', 'Ti sta zittendo una runa', '#e0d0ff');
       }
     }
