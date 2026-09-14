@@ -569,7 +569,7 @@ function posaScia(b) {
     if (z.t > tv) { tv = z.t; iv = i; }
   }
   if (vive >= SCIA_MAX && iv >= 0) Z.splice(iv, 1);   /* tetto: muore la più vecchia */
-  Z.push({ k: 'pool', scia: 1, x: b.x, y: b.y, r, t: 0, dur, dps, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
+  Z.push({ src: b.src, k: 'pool', scia: 1, x: b.x, y: b.y, r, t: 0, dur, dps, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
 }
 
 /* ── zone ed effetti persistenti ────────────────────────────── */
@@ -859,7 +859,15 @@ function updateEnemies(dt) {
     if (e.burnT > 0) {
       e.burnT -= dt; e.burnAcc = (e.burnAcc || 0) + dt;
       if (e.burnAcc > .3) {
-        e.burnAcc = 0; G.dmgDone += Math.max(0, Math.min(e.burn * .3, e.hp)); e.hp -= e.burn * .3;
+        e.burnAcc = 0;
+        const utile = Math.max(0, Math.min(e.burn * .3, e.hp));
+        G.dmgDone += utile;
+        /* l'incendio non lo fa nessuna runa: lo fa l'Ardore, ed e' li' che
+           va contato — il conto della fine partita sommava questa riga al
+           totale e non la dava a nessuno */
+        const chi = e.burnSrc || 'aw:fuoco';
+        G.dmgSrc[chi] = (G.dmgSrc[chi] || 0) + utile;
+        e.hp -= e.burn * .3;
         addPart(e.x + rand(10, -10), e.y, 0, -40, .4, 2.4, EL.fuoco.c);
         if (e.hp <= 0) { killEnemy(e); continue; }
       }

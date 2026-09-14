@@ -67,9 +67,30 @@ hai già visto, e da quale runa nascono quelle che ti mancano.
 
 ### La schermata di fine
 
-Dice **chi ti ha ucciso**, **da dove è venuto il danno** — la percentuale runa per runa, che è
+Dice **chi ti ha ucciso**, **da dove è venuto il danno** — la percentuale riga per riga, che è
 la statistica che fa venire voglia di ricostruire — e una diagnosi presa dai contatori della
 partita: *«Non hai mai acceso un Risveglio: eri arrivato a due rune di Fuoco di fila su tre.»*
+
+E adesso quell'elenco contiene **tutto** il danno. Tre Risvegli fanno danno — l'incendio
+dell'Ardore, la catena del Sovraccarico, l'implosione del Collasso — e nessuno dei tre lo
+attribuiva a niente: finiva nel totale e spariva dall'elenco. Così la scia della Cometa, che è
+il 19% di quello che fa la Cometa, e la Nova del contraccolpo di Antares, che per chi gioca
+Antares è metà della build. Misurato col bot su quattro corse intere, **dal 55% all'82%** del
+danno fatto non compariva in nessuna riga: le percentuali mostrate erano quelle del pezzo
+rimasto, cioè la forma sbagliata della build.
+
+I Risvegli hanno una riga loro e non vengono cuciti addosso alla runa che ha colpito, perché la
+domanda a cui la schermata risponde è *«cosa sta facendo il lavoro»* e «il Collasso 34%» è la
+risposta più utile che ci sia — è la ragione per cui quella catena di Vuoto vale la pena di
+essere tenuta in piedi.
+
+L'ultima voce rimasta era la **bomba**, che cancella ogni nemico della mappa: al quindicesimo
+minuto vale la vita di centocinquanta nemici, e da sola era il **68%** del DANNO scritto a fine
+partita — il numero che dovrebbe dire quanto ha reso il tuo anello diceva soprattutto quante
+losanghe avevi raccolto camminando. Il codice la escludeva già dal raggio di mira del direttore
+e dalla carica del Culmine per la stessa ragione; il contatore del danno era l'ultimo posto in
+cui contava. Adesso vale un'invariante: **ogni punto di DANNO ha la sua riga**, misurato a zero
+su quattro corse da venti minuti.
 
 ### Trasformazioni
 

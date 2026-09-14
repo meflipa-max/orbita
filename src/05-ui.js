@@ -1306,12 +1306,18 @@ const UI = {
   dannoLine() {
     const tot = Object.values(G.dmgSrc).reduce((a, b) => a + b, 0);
     if (tot < 1) return '';
-    const righe = Object.entries(G.dmgSrc).sort((a, b) => b[1] - a[1]).slice(0, 5).map(function (kv) {
+    /* Sei righe e non cinque: da quando i Risvegli hanno la loro, un anello
+       con due catene accese ne occupa due, e con cinque righe le rune
+       scivolavano fuori proprio dalla schermata che serve a leggerle. */
+    const righe = Object.entries(G.dmgSrc).sort((a, b) => b[1] - a[1]).slice(0, 6).map(function (kv) {
       const k = kv[0], v = kv[1];
-      const el = RUNES[k] ? RUNES[k].el : 'iride';
-      const nome = RUNES[k] ? RUNES[k].n : k;
+      /* `aw:elemento` e' il danno del Risveglio: porta il nome del Risveglio
+         (Ardore, Sovraccarico, Collasso) e il colore del suo elemento. */
+      const risv = k.slice(0, 3) === 'aw:' ? k.slice(3) : null;
+      const el = risv ? risv : RUNES[k] ? RUNES[k].el : 'iride';
+      const nome = risv ? EL[risv].aw : k === 'nucleo' ? G.char.n : RUNES[k] ? RUNES[k].n : k;
       const pct = v / tot * 100;
-      return '<div class="dmgrow" style="--c:' + EL[el].c + '">' +
+      return '<div class="dmgrow" style="--c:' + (k === 'nucleo' ? G.char.c : EL[el].c) + '">' +
         '<span class="dn">' + nome + '</span>' +
         '<span class="db"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
         '<span class="dp">' + (pct < 1 ? '<1' : Math.round(pct)) + '%</span></div>';

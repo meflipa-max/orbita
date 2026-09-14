@@ -1026,8 +1026,22 @@ function _hit(e, amount, opt) {
   const chi = opt.src || RUNA_ORA;
   /* la statistica conta il danno utile, non l'eccesso (una bomba fa 99999 a testa) */
   const utile = Math.max(0, Math.min(dmg, e.hp));
-  G.dmgDone += utile;
-  if (chi) G.dmgSrc[chi] = (G.dmgSrc[chi] || 0) + utile;
+  /* ── la bomba non e' la tua build ──────────────────────────────
+     Una spazzata — la bomba a terra, la Rinascita — cancella ogni nemico
+     della mappa, guardiani esclusi, e vale quindi la somma della vita di
+     tutti: al quindicesimo minuto sono centocinquanta nemici da migliaia
+     di punti l'uno. Misurato col bot su due corse intere, la spazzata era
+     il 68% del DANNO scritto nella schermata di fine: il numero che
+     dovrebbe dire quanto ha reso il tuo anello diceva soprattutto quante
+     losanghe avevi raccolto camminando.
+     Il codice la escludeva gia' da tutte le altre misure per la stessa
+     ragione — il raggio di mira del direttore e la carica del Culmine —
+     e questa era l'unica rimasta. Escludendola resta un'invariante utile:
+     ogni punto di DANNO ha la sua riga nell'elenco. */
+  if (!opt.spazzata) {
+    G.dmgDone += utile;
+    if (chi) G.dmgSrc[chi] = (G.dmgSrc[chi] || 0) + utile;
+  }
   e.hp -= dmg;
   /* Il lampo di "colpito" durava 0.13s. Con otto rune che sparano da sole
      un nemico viene colpito molto piu' spesso di così, quindi restava
@@ -1086,9 +1100,21 @@ function _hit(e, amount, opt) {
      congelava niente. Una regola, un posto solo: qui. */
   if (opt.gela && !e.boss && e.hp > 0) e.froze = Math.max(e.froze, opt.gela);
 
-  /* risvegli: regole globali del run */
+  /* risvegli: regole globali del run.
+     Tre di loro fanno DANNO — l'incendio dell'Ardore, la catena del
+     Sovraccarico, l'implosione del Collasso — e nessuno dei tre lo
+     attribuiva a niente: finivano nel totale e sparivano dal conto runa per
+     runa. Non e' un dettaglio contabile, perche' in una corsa vera sono la
+     maggioranza del danno: misurato sul banco, quattro corse da venti
+     minuti perdevano fra il 55% e l'82% del danno fatto. La schermata di
+     fine mostrava quindi le percentuali del quarto rimasto, cioe' la forma
+     sbagliata della build.
+     Vanno al Risveglio e non alla runa che ha colpito: la domanda a cui
+     quella schermata risponde e' «cosa sta facendo il lavoro», e la
+     risposta «il Collasso» e' la piu' utile che ci sia — e' la ragione per
+     cui la catena di Vuoto vale la pena di essere tenuta in piedi. */
   const aw = G.awk;
-  if (aw.fuoco && !opt.noStatus) { e.burn = Math.max(e.burn, [0, 5, 11, 24][aw.fuoco] * P.dmgMul); e.burnT = 3.2; }
+  if (aw.fuoco && !opt.noStatus) { e.burn = Math.max(e.burn, [0, 5, 11, 24][aw.fuoco] * P.dmgMul); e.burnT = 3.2; e.burnSrc = 'aw:fuoco'; }
   if (aw.gelo && !opt.noStatus) {
     e.slow = Math.max(e.slow, [0, .26, .42, .56][aw.gelo]); e.slowT = 2.2;
     const fc = [0, 0, .1, .2][aw.gelo];
@@ -1098,7 +1124,7 @@ function _hit(e, amount, opt) {
     const ch = [0, .2, .34, .5][aw.fulmine];
     if (chance(ch)) {
       const jumps = [0, 1, 2, 4][aw.fulmine];
-      chainFrom(e, dmg * .5, jumps, 250);
+      chainFrom(e, dmg * .5, jumps, 250, 'aw:fulmine');
     }
   }
 
@@ -1170,7 +1196,7 @@ function killEnemy(e, opt) {
     const near = GRID.near(e.x, e.y, rr, []);
     for (let i = 0; i < near.length; i++) {
       const o = near[i]; if (o === e || o.hp <= 0) continue;
-      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, implosione: 1, noStatus: G.awk.vuoto < 3 });
+      if ((o.x - e.x) * (o.x - e.x) + (o.y - e.y) * (o.y - e.y) < rr * rr) hitEnemy(o, dm, { color: '#b06bff', noCrit: true, noChain: true, implosione: 1, src: 'aw:vuoto', noStatus: G.awk.vuoto < 3 });
     }
   }
 
@@ -1350,8 +1376,10 @@ function hurtPlayer(amount, fonte) {
     UI.toast('RESPIRO', 'Tre secondi per uscire', '#6ff2c4');
     AU.play('awake');
   }
+  /* La Nova del contraccolpo e' danno del NUCLEO, non di una runa: ha la
+     sua riga, perche' per chi gioca Antares e' meta' della build. */
   if (G.char.rule === 'contraccolpo')
-    G.zones.push({ k: 'nova', x: G.p.x, y: G.p.y, r0: 14, r1: 210 * P.areaMul, t: 0, dur: .45, dmg: 45 * P.dmgMul, hit: new Set(), c: EL.fuoco.c, kb: 320 });
+    G.zones.push({ src: 'nucleo', k: 'nova', x: G.p.x, y: G.p.y, r0: 14, r1: 210 * P.areaMul, t: 0, dur: .45, dmg: 45 * P.dmgMul, hit: new Set(), c: EL.fuoco.c, kb: 320 });
   G.shake = Math.max(G.shake, 8); G.flashT = .16; G.flashC = HPC;
   AU.play('hurt');
   burstPart(G.p.x, G.p.y, 10, '#ff3d6e', 200, 3.4, .5);

@@ -473,6 +473,63 @@ for (const modo of ['corsa', 'incursione']) {
      modo + ': gira, e ha ' + G.roster.length + ' guardiani in calendario');
 }
 
+sez('il conto del danno tiene tutto il danno');
+/* «Da dove è venuto il danno» è la statistica che fa venire voglia di
+   ricostruire, e contava un quarto del danno. Tre Risvegli fanno danno —
+   l'incendio dell'Ardore, la catena del Sovraccarico, l'implosione del
+   Collasso — e nessuno dei tre lo attribuiva a niente; la scia della
+   Cometa nemmeno, e la scia è il 19% di quello che fa la Cometa. Misurato
+   su quattro corse da venti minuti col bot: dal 55% all'82% del danno
+   finiva nel totale e spariva dall'elenco, quindi le percentuali mostrate
+   erano quelle del pezzo rimasto — cioè la forma sbagliata della build. */
+{
+  const perso = (setup, sec) => {
+    O.reset('vega', 321, 'corsa', false); G.state = 'play';
+    G.ring.fill(null); setup();
+    O.recalcRing(false);
+    G.t = 200; G.dmgDone = 0; G.dmgSrc = {};
+    gioca(sec);
+    const attr = Object.values(G.dmgSrc).reduce((a, b) => a + b, 0);
+    return { perso: 1 - attr / G.dmgDone, src: G.dmgSrc };
+  };
+  /* un anello di Fuoco: l'Ardore è acceso, e l'incendio paga */
+  const fuoco = perso(() => {
+    ['scintilla', 'pira', 'nova'].forEach((id, i) => O.place(id, i));
+    G.ring.forEach(r => { if (r) r.lv = 6; });
+  }, 30);
+  ok(fuoco.perso < .03, 'con l’Ardore acceso non si perde danno per strada (' + Math.round(fuoco.perso * 100) + '%)');
+  ok((fuoco.src['aw:fuoco'] || 0) > 0, 'e l’incendio ha la sua riga');
+  /* un anello di Vuoto: il Collasso è la parte grossa, e non aveva riga */
+  const vuoto = perso(() => {
+    ['sciame', 'falce', 'singolarita'].forEach((id, i) => O.place(id, i));
+    G.ring.forEach(r => { if (r) r.lv = 6; });
+  }, 30);
+  ok(vuoto.perso < .03, 'con il Collasso acceso nemmeno (' + Math.round(vuoto.perso * 100) + '%)');
+  ok((vuoto.src['aw:vuoto'] || 0) > 0, 'e l’implosione ha la sua riga');
+  /* la scia della Cometa brucia davvero: va contata alla Cometa */
+  const cometa = perso(() => { O.place('cometa', 0); G.ring[0].lv = 6; }, 25);
+  ok(cometa.perso < .02, 'la scia della Cometa è della Cometa (' + Math.round(cometa.perso * 100) + '%)');
+  /* e il Risveglio si legge col suo nome, non con la chiave interna */
+  G.dmgSrc = { 'aw:vuoto': 900, scintilla: 100 };
+  O.UI.end(false, 0);
+  const h = O.schermo();
+  ok(/Collasso/.test(h) && !/aw:vuoto/.test(h), 'la schermata di fine lo chiama Collasso');
+
+  /* La bomba a terra cancella ogni nemico della mappa: al quindicesimo
+     minuto vale la vita di centocinquanta nemici, e misurata col bot era
+     il 68% del DANNO scritto a fine partita. Il codice la escludeva gia'
+     dal raggio del direttore e dalla carica del Culmine per la stessa
+     ragione; il contatore del danno era l'ultimo posto in cui contava. */
+  O.reset('vega', 99, 'corsa', false); G.state = 'play';
+  gioca(40);
+  const primaD = G.dmgDone, vivi = G.enemies.filter(e => !e.boss).length;
+  G.drops.push({ x: G.p.x, y: G.p.y, k: 'bomba', t: 0 });
+  O.step(1 / 60);
+  const rimasti = G.enemies.filter(e => !e.boss && e.hp > 0).length;
+  ok(vivi > 12 && rimasti === 0, 'la bomba spazza il campo (' + vivi + ' nemici, ne restano ' + rimasti + ')');
+  ok(G.dmgDone - primaD < 1, 'e non la conta come danno della tua build');
+}
+
 sez('il Crogiolo dice la soglia che il gioco usa');
 /* La reliquia costa 2600 frammenti e prometteva «il livello 7 invece che
    l'8»: i numeri di due versioni fa, di quando la trasformazione arrivava
