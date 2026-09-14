@@ -1579,5 +1579,11 @@ function updateSpawns(dt) {
     }
     G.bossIdx++;
   }
-  if (G.t > G.modo.len && !G.victory) { G.diff += dt * .006; }
+  /* Oltre la durata del formato si e' nella modalita' senza fine, e li' la
+     difficolta' deve salire: era la promessa scritta sul bottone («la
+     difficolta' cresce»). La condizione chiedeva pero' anche `!G.victory`,
+     e `G.victory` e' vero esattamente in quel caso — si entra nel senza
+     fine dopo aver vinto. Misurato: sessanta secondi di senza fine con
+     G.diff fermo a 0. */
+  if (G.t > G.modo.len) { G.diff += dt * .006; }
 }

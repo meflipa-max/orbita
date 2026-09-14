@@ -193,6 +193,18 @@ sez('riprendere una corsa non cambia la corsa');
   S().reliquie = [];
 }
 
+sez('la modalità senza fine');
+/* «Continua senza fine» promette sul bottone che la difficolta' cresce. La
+   condizione che la faceva crescere chiedeva pero' anche `!G.victory`, e
+   nel senza fine G.victory e' vero per definizione: si entra li' DOPO aver
+   vinto. Misurato: sessanta secondi con G.diff fermo a zero.             */
+{
+  O.reset('vega', 7, 'corsa', false); G.state = 'play';
+  G.t = G.modo.len + 40; G.victory = true;
+  gioca(20);
+  ok(G.diff > .05, 'oltre la durata del formato la difficoltà sale (' + G.diff.toFixed(3) + ')');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],
