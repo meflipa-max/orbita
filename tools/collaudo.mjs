@@ -246,6 +246,28 @@ sez('il gelo che tocca');
   ok(e.froze > 0, 'l’Inverno congela chi tocca');
 }
 
+sez('la runa pronta a trasformarsi lo dice');
+/* La trasformazione e' la cosa che il gioco chiede di progettare dal primo
+   minuto, e l'istante in cui le tre condizioni si chiudono non aveva
+   nessun annuncio: lo scoprivi solo se la carta usciva, cioe' alla salita
+   di livello dopo — magari due minuti piu' tardi, o mai. Peggio quando a
+   chiudere la condizione e' l'arena: entri in un Nodo, il Risveglio si
+   accende, la runa diventa pronta, e nessuno te lo dice.               */
+{
+  O.reset('vega', 17, 'corsa', false); G.state = 'play';
+  G.slots = 6;
+  const mk = (id, lv) => ({ id, el: O.RUNES[id].el, lv, cd: 0, res: 0, st: {} });
+  G.ring = [mk('pira', 6), mk('scintilla', 6), mk('nova', 6), null, null, null];
+  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+  G.evoAnn = {};
+  O.recalcRing(true);
+  ok(G.evoAnn.scintilla === 1, 'quella in mezzo alla catena viene annunciata');
+  ok(!G.evoAnn.pira && !G.evoAnn.nova, 'quelle ai lati, che risuonano da una parte sola, no');
+  const quante = Object.keys(G.evoAnn).length;
+  O.recalcRing(true); O.recalcRing(true);
+  ok(Object.keys(G.evoAnn).length === quante, 'e una volta sola per partita');
+}
+
 sez('le carte non si ripescano di nascosto');
 /* «Riordina l'anello» dalla schermata delle carte e poi «Fatto» tornava a
    levelup(), che ripesca: era un Rilancio gratis e infinito accanto a un

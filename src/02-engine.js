@@ -797,8 +797,24 @@ function recalcRing(announce) {
   /* il livello più alto toccato da una runa in questa partita: serve a uno
      degli sblocchi, e va letto qui perché una runa dissolta sparisce */
   for (let i = 0; i < n; i++) if (R[i] && R[i].lv > G.maxLv) G.maxLv = R[i].lv;
+  /* ── «adesso puoi» ──────────────────────────────────────────
+     La trasformazione è la cosa che il gioco chiede di progettare dal primo
+     minuto, e il momento in cui le tre condizioni si chiudono non aveva
+     nessun annuncio: lo scoprivi solo se la carta usciva, e la carta esce a
+     una salita di livello — cioè magari due minuti dopo, o mai. Peggio
+     ancora quando a chiudere la condizione è l'arena: entri in un Nodo, il
+     Risveglio si accende, la runa diventa pronta, e nessuno te lo dice.
+     Una volta per runa e per partita: da lì in poi è l'anello a dirlo. */
+  if (announce && !G.demo) {
+    for (let i = 0; i < n; i++) {
+      const r = R[i];
+      if (!r || !EVO[r.id] || G.evoAnn[r.id] || !canEvolve(r)) continue;
+      G.evoAnn[r.id] = 1;
+      UI.toast('PRONTA A TRASFORMARSI', RUNES[r.id].n + ' → ' + RUNES[EVO[r.id]].n, EL[r.el].c);
+      AU.play('buy');
+    }
+  }
   recalcAwk();
-  UI.renderAwake();
 }
 
 /* Poche scelte, ma grosse: se i livelli arrivano più di rado,

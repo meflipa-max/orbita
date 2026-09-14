@@ -1704,7 +1704,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.popIdx = 0; G.popT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.awk = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
-  G.awakeVisto = {};
+  G.awakeVisto = {}; G.evoAnn = {};
   G.charge = 0; G.culm = 0; G.culms = 0; G.chargeAnn = 0;
   UI._culmSt = null; UI._culmFx = null;   /* niente lampi ereditati dalla corsa di prima */
   G.combo = 0; G.comboMax = 0; G.comboLv = 0; G.kb0 = 0; G.kb1 = 0; G.kbT = .5;
