@@ -42,6 +42,43 @@ function shardIcon() { return svg('frammento'); }
 /* la corsa del giorno di OGGI è già stata giocata? Il record di ieri non
    conta: il seme è cambiato, quindi non è più lo stesso confronto. */
 function giornoFatto() { return SAVE.giorno && SAVE.giorno.d === dataOggi() && SAVE.giorno.t > 0; }
+/* Copiare un testo senza un campo gia' nella pagina: serve al risultato
+   della corsa del giorno, che e' una riga sola e non un pannello. Prima il
+   ripiego con execCommand, poi l'API moderna, perche' su iOS in un gesto
+   utente il primo funziona e la seconda a volte no. */
+function copiaTesto(t, okMsg) {
+  let fatto = false;
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, 99999);
+    fatto = !!(document.execCommand && document.execCommand('copy'));
+    document.body.removeChild(ta);
+  } catch (e) { }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(
+      () => UI.toast('COPIATO', okMsg, '#6ff2c4'),
+      () => { if (!fatto) UI.toast('NON COPIATO', 'Il browser non lo permette', '#ffc857'); }
+    );
+    return true;
+  }
+  UI.toast(fatto ? 'COPIATO' : 'NON COPIATO', fatto ? okMsg : 'Il browser non lo permette', fatto ? '#6ff2c4' : '#ffc857');
+  return fatto;
+}
+/* La riga da incollare a qualcuno. La corsa del giorno esiste per essere
+   confrontata — stessa data, stesso seme, stessa arena, stessa
+   congiunzione per chiunque la giochi — e non c'era un solo modo di
+   passare il proprio risultato a un altro: l'unico punteggio comparabile
+   del gioco moriva dentro al salvataggio di chi l'aveva fatto. */
+function testoGiorno() {
+  const g = SAVE.giorno || {};
+  const c = congiunzioneDi(semeDelGiorno());
+  return 'ORBITA · corsa del giorno ' + (g.d || dataOggi()) + '\n' +
+    modoDi('incursione').n + ' · ' + c.n + '\n' +
+    fmtTime(g.t | 0) + ' · ' + (g.k | 0) + ' eliminazioni' + (g.w ? ' · vinta' : '');
+}
 const ARC = (r, a1, a2) => {
   const x1 = 50 + Math.cos(a1) * r, y1 = 50 + Math.sin(a1) * r;
   const x2 = 50 + Math.cos(a2) * r, y2 = 50 + Math.sin(a2) * r;
@@ -336,7 +373,8 @@ const UI = {
          «niente cuori». Una riga sola: la corsa del giorno è un formato
          fisso, non ha bisogno di una seconda carta intera. */
       '<div class="giornoline">Del giorno · ' + modoDi('incursione').n + ' · <b style="--c:' +
-      congiunzioneDi(semeDelGiorno()).c + '">' + congiunzioneDi(semeDelGiorno()).n + '</b></div>' +
+      congiunzioneDi(semeDelGiorno()).c + '">' + congiunzioneDi(semeDelGiorno()).n + '</b>' +
+      (giornoFatto() ? '<button data-a="condividi">condividi</button>' : '') + '</div>' +
       '</div>' +
       '<div class="hint">Record ' + best + ' · ' + (SAVE.wins || 0) + ' vittorie · <b style="color:#ffc857">' + SAVE.shards + '</b> frammenti</div>' +
       (STORE_OK ? '' : '<div class="warn clip">Questo browser non concede memoria: i progressi durano solo finché la scheda resta aperta. Nell’Osservatorio trovi il codice di backup.</div>') +
@@ -1380,6 +1418,7 @@ const UI = {
       this.congHTML(this.prossimoSeme()) +
       '<button class="btn ' + (win && G.modo.id === 'corsa' ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
       '<button class="btn ghost clip" data-a="replay"><span class="face">Ripeti questa semenza</span></button>' +
+      (G.giornaliera ? '<button class="btn ghost clip" data-a="condividi"><span class="face">Copia il risultato di oggi</span></button>' : '') +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="hub"><span class="face">Osservatorio</span></button>' +
       '<button class="btn ghost clip" data-a="title"><span class="face">Menu</span></button>' +
@@ -1981,6 +2020,7 @@ SCR.addEventListener('click', ev => {
       UI.toast('CORSA IN SOSPESO', 'La riprendi dal menu quando vuoi', '#6ff2c4');
       break;
     }
+    case 'condividi': copiaTesto(testoGiorno(), 'Incollalo a chi gioca la stessa data'); break;
     case 'scheda': UI.hub(b.dataset.id); break;
     case 'briefdone': UI.chiudiBriefing(); break;
     case 'modo': {

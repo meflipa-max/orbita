@@ -250,6 +250,11 @@ Stessa data, stesso seme, quindi stessa arena, stesse carte e stessa congiunzion
 la giochi: in un gioco senza rete è l'unico punteggio che si possa confrontare con qualcuno. È
 un'**Incursione**, così è una cosa che si fa davvero ogni giorno.
 
+«Si può confrontare» però era un modo di dire: non c'era **nessun modo** di passare il proprio
+risultato a un altro — l'unico punteggio comparabile del gioco moriva dentro al salvataggio di
+chi l'aveva fatto. Ora dal titolo e dalla schermata di fine si copia una riga di tre righe —
+data, congiunzione, tempo ed eliminazioni — e si incolla dove si vuole.
+
 Lo **storico** tiene le ultime venti partite — durata, formato, ascensione, nucleo,
 eliminazioni, guardiani abbattuti, congiunzione. È anche l'unica telemetria possibile: con
 dieci amici e una settimana si vede *dove* si smette invece di dedurlo. Il salvataggio non
