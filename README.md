@@ -101,6 +101,15 @@ Fulgore sdoppia la catena a ogni salto; il Mietitore risucchia i nemici lungo il
 l'Alba spazza con due fasci opposti. La condizione è **posizionale**: obbliga a progettare
 l'anello dal primo minuto.
 
+La runa **si tiene il livello**. Il numero era scritto a mano — 5 — ed era quello giusto quando
+la soglia per trasformarsi era 8: si scendeva di tre gradini e in cambio si compravano i numeri
+della forma evoluta. Poi la soglia è scesa a 6, e quel 5 è rimasto: chi ci arrivava al 6
+perdeva un livello, chi ci arrivava all'8 ne perdeva tre, e chi aveva comprato il Crogiolo non
+ne perdeva nessuno. Cioè più avevi investito nella runa — proprio quella su cui il gioco chiede
+di investire dal primo minuto — più ti costava trasformarla. Il salto di potenza sta già tutto
+nei numeri della forma evoluta: misurato a parità di livello, fra il **+7%** (Inverno) e il
+**+124%** (Mietitore) sulla runa di partenza.
+
 ### Ascensioni
 
 Vinci e sblocchi un livello di difficoltà. Ognuno aggiunge **una regola sola**, e le regole si

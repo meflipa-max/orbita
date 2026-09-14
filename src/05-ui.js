@@ -1648,7 +1648,22 @@ function applyChoice(c) {
     const i = G.ring.findIndex(x => x && x.id === c.id);
     if (i >= 0) {
       const el = RUNES[c.to].el;
-      G.ring[i] = { id: c.to, el, lv: 5, cd: 0, res: 0, slot: i, st: {} };
+      /* ── la trasformazione non costa livelli ────────────────────
+         Il livello della runa nuova era scritto a mano: 5. Era il numero
+         giusto quando la soglia per trasformarsi era 8 — si scendeva di
+         tre gradini e si compravano in cambio i numeri della forma
+         evoluta. Poi la soglia e' scesa a 6 (5 col Crogiolo) e questo 5 e'
+         rimasto li', e la regola che ne usciva non la si puo' scrivere:
+         chi ci arriva al 6 perde un livello, chi ci arriva all'8 ne perde
+         tre, e chi ha comprato il Crogiolo non ne perde nessuno. Cioe'
+         piu' avevi investito nella runa, piu' ti costava trasformarla —
+         proprio la runa su cui il gioco ti chiede di investire dal primo
+         minuto — e una reliquia da 2600 frammenti aveva un secondo effetto
+         che non dichiarava.
+         Il livello se lo tiene. Il salto di potenza sta gia' tutto nei
+         numeri della forma evoluta: misurato a parita' di livello, fra il
+         +7% e il +124% sulla runa di partenza. */
+      G.ring[i] = { id: c.to, el, lv: G.ring[i].lv, cd: 0, res: 0, slot: i, st: {} };
       G.evoCount++;
       if (SAVE.evoVisti.indexOf(c.to) < 0) { SAVE.evoVisti.push(c.to); storeSave(); }
       recalcRing(true);

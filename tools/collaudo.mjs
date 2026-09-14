@@ -559,5 +559,29 @@ sez('il Crogiolo dice la soglia che il gioco usa');
   S().reliquie = [];
 }
 
+sez('la trasformazione non costa livelli');
+/* Il livello della forma evoluta era scritto a mano: 5. Giusto quando la
+   soglia per trasformarsi era 8 — si scendevano tre gradini in cambio dei
+   numeri nuovi — ma la soglia e' scesa a 6 (5 col Crogiolo) e il 5 e'
+   rimasto. La regola che ne usciva era impossibile da scrivere: chi arriva
+   al 6 perde un livello, chi arriva all'8 ne perde tre, chi ha il Crogiolo
+   non ne perde nessuno. Cioe' piu' avevi investito nella runa su cui il
+   gioco ti chiede di investire dal primo minuto, piu' ti costava
+   trasformarla.                                                           */
+{
+  const trasforma = lv => {
+    O.reset('vega', 7, 'corsa', false); G.state = 'play'; G.slots = 6;
+    const mk = id => ({ id, el: O.RUNES[id].el, lv, cd: 0, res: 0, st: {} });
+    G.ring = ['pira', 'scintilla', 'nova', null, null, null].map(x => x && mk(x));
+    for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+    O.recalcRing(false);
+    O.apply({ t: 'evo', id: 'scintilla', to: 'cometa' });
+    return G.ring[1];
+  };
+  const a = trasforma(6), b = trasforma(8);
+  ok(a && a.id === 'cometa' && a.lv === 6, 'presa al livello 6 resta al 6' + (a ? ' (era ' + a.lv + ')' : ''));
+  ok(b && b.id === 'cometa' && b.lv === 8, 'presa al livello 8 resta all’8' + (b ? ' (era ' + b.lv + ')' : ''));
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
