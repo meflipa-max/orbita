@@ -346,7 +346,7 @@ function boot() {
   bCulm.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); AU.init(); attivaCulmine(); });
   bCulm.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, attivaCulmine, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave,
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, congMods, rosterGuardiani, metaCost, contrattoPremio, statoPartita, semeDelGiorno, tettoNemici, attivaCulmine, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave,
     /* cosa c'e' davvero scritto sullo schermo: serve al collaudo, che
        altrimenti puo' solo verificare che una schermata non lanci —
        non che dica la cosa giusta */

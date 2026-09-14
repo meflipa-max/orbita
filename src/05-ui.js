@@ -1801,6 +1801,9 @@ function resetRun(charId, seed, modoId, giorno) {
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.bossKills = 0; G.maxLv = 1; G.tier2 = 0; G.rerollUsati = 0; G.respiro = 0;
+  /* il confronto col record lo scrive payout(): finche' non c'e' non deve
+     restare quello della partita prima */
+  G.rec = null;
   /* quanto e' gia' stato pagato per QUESTA corsa, e se ha gia' una riga
      nello storico: servono a «Continua senza fine», che chiude la partita
      una volta e poi la fa finire una seconda */

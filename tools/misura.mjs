@@ -99,6 +99,22 @@ export function partita(opt = {}) {
      aggiungendo un evento d'arena il bot non si ferma sulla spiegazione */
   S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
   O.reset(opt.char || 'vega', opt.seed || 12345, S.modo, false);
+  /* ── la scala delle ascensioni si misura in Quiete ───────────────
+     La congiunzione esce dal seme, quindi quattro semi fissi portano
+     dentro anche la regola che quel seme sorteggia — e basta aggiungere
+     una riga a CONGIUNZIONI perche' il peso totale cambi e TUTTI i semi
+     rimappino su congiunzioni diverse. E' successo aggiungendone tre: i
+     quattro semi storici sono passati da (Tempesta, Quiete, …) a (Fuga,
+     Quiete, Vetro, Fuga) e la riga «corsa asc 12» e' crollata da 354
+     secondi medi a 45, perche' il Vetro dimezza la vita su un'ascensione
+     che la dimezza gia'. Sembrava che il gioco fosse diventato
+     impossibile: era la misura a essere cambiata sotto i piedi.
+     Un banco che misura una cosa deve tenere ferme le altre. La
+     congiunzione ha il suo, di banco. */
+  if (opt.quiete) {
+    G.cong = O.CONGIUNZIONI.find(c => c.id === 'quiete');
+    G.cg = O.congMods(null);
+  }
   G.state = 'play';
   const dt = 1 / 60, max = Math.round((opt.secondi || G.modo.len + 90) / dt);
   for (let i = 0; i < max; i++) {
@@ -135,7 +151,7 @@ function bancoAsc() {
   console.log('formato      asc  vinte  tempo medio  livello medio  guardiani');
   for (const modo of ['corsa', 'incursione'])
     for (const asc of [0, 4, 8, 12]) {
-      const r = semi.map(s => partita({ modo, seed: s, asc, mazzoPieno: true }));
+      const r = semi.map(s => partita({ modo, seed: s, asc, mazzoPieno: true, quiete: true }));
       console.log(modo.padEnd(12), String(asc).padEnd(4),
         (r.filter(x => x.vinta).length + '/' + r.length).padEnd(6),
         String(media(r, x => x.t)).padEnd(12), String(media(r, x => x.lv)).padEnd(14),

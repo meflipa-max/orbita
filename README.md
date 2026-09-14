@@ -175,21 +175,45 @@ Chi ha già una partita alle spalle tiene la Corsa.
 Vincere un'Incursione sblocca l'ascensione come vincere una Corsa: è il punto — la prima
 conclusione deve stare nella prima sessione. La domanda era quindi una sola: **l'Incursione è
 una scorciatoia per scalare la scala di difficoltà?** Misurato col banco headless e un bot che
-ogni mezzo secondo schiva scegliendo fra ventiquattro direzioni, quattro semi per riga:
+ogni mezzo secondo schiva scegliendo fra ventiquattro direzioni, quattro semi per riga, **in
+Quiete**:
 
 | | asc 0 | asc 4 | asc 8 | asc 12 |
 |---|---|---|---|---|
-| Corsa | 4/4 | 4/4 | 1/4 | 0/4 |
-| Incursione | 4/4 | 4/4 | 3/4 | 0/4 |
+| Corsa | 4/4 | 4/4 | 0/4 | 0/4 |
+| Incursione | 4/4 | 4/4 | 2/4 | 0/4 |
 
-Rimisurata dopo che il Culmine ha ricominciato a caricarsi con i guardiani e gli elite —
-prima erano 4/4, 3/4, 0/4, 0/4 e 4/4, 2/4, 1/4, 0/4. La riga si è alzata di un gradino, e
-nell'Incursione un po' di più: la carica costa `42 + t·0,085`, quindi un guardiano abbattuto
-al terzo minuto vale un quinto dell'indicatore mentre al quindicesimo ne vale un decimo, e
-l'Incursione ha tre guardiani in otto minuti contro cinque in venti. È la conseguenza di una
-riga che adesso fa quello che dice, non una manopola girata.
+«In Quiete» non è un dettaglio: è la riparazione di una misura che mentiva. La congiunzione
+esce dal **seme**, quindi quattro semi fissi si portavano dentro anche la regola che quel seme
+sorteggia — e basta aggiungere una riga a `CONGIUNZIONI` perché il peso totale cambi e *tutti*
+i semi rimappino. Aggiungendone tre, i quattro semi storici sono passati da (Tempesta, Quiete,
+…) a (Fuga, Quiete, Vetro, Fuga) e la riga «corsa asc 12» è crollata da 354 secondi medi a 45,
+perché il Vetro dimezza la vita su un'ascensione che la dimezza già. Sembrava che il gioco
+fosse diventato impossibile: era la misura a essere cambiata sotto i piedi. Adesso `partita()`
+accetta `quiete: true` e il banco delle ascensioni misura **una** cosa sola; la congiunzione ha
+il suo banco.
 
-No: le due colonne si muovono insieme, quindi il formato si sceglie per il tempo che hai, non
+Lo stesso banco sul gioco di prima dei due eventi d'arena nuovi dà 4/4, 3/4, 0/4, 0/4 e 4/4,
+4/4, 0/4, 0/4: la curva è la stessa. A quattro semi però una singola cella **non si può
+leggere** — la differenza fra 3/4 e 4/4 è una partita — quindi la riga più mossa è stata
+rimisurata su otto semi prima e dopo: `corsa asc 4` dà **5/8 in entrambi i casi**, tempo medio
+1235 contro 1212 secondi, 4,6 guardiani in entrambi. La tabella va guardata per la *forma* — le
+due colonne che si muovono insieme — non cella per cella.
+
+I due eventi nuovi sono **neutri sul numero di nemici**, per costruzione. La Fermata segue la
+regola della marea (*«l'evento non è più nemici, è da dove arrivano»*): mentre è aperta il
+flusso normale scende della quota che le sue comparse rimettono dentro. L'Allineamento non
+pianta nessun nemico — la breccia ne pianta tre perché custodiscono uno scrigno fermo in un
+punto, qui i punti sono tre e ci si passa sopra di corsa. Misurato su otto semi ad ascensione 8,
+un bot che li gioca e uno che li ignora sopravvivono uguale (977 contro 971 secondi): la
+ricompensa si paga andandosela a prendere, e non andarci non costa niente.
+
+Quello che resta — 977 contro i 1290 di prima — è che due degli undici eventi di una corsa
+adesso pagano solo se li giochi, e il bot li gioca male: insegue un sigillo a ottocento pixel
+con metà vita perché la sua unica abilità è schivare. È lo stesso limite scritto sopra, e va
+letto così: **misura la coerenza della curva, non la difficoltà percepita**.
+
+Le due colonne si muovono insieme, quindi il formato si sceglie per il tempo che hai, non
 per scavalcare un'ascensione. E al finale il divario di potenza è quello previsto — livello
 20–29 nell'Incursione contro 29–38 nella Corsa, misurato a parte con giocatore invulnerabile
 per leggere la curva invece della bravura — ed è per questo che i tre guardiani dell'Incursione
@@ -934,10 +958,13 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `rincorsa` | `03-systems.js` → `bossAI` | elastico del boss: accelera quanto più resta indietro |
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
 | `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
-| `CONGIUNZIONI` | `01-data.js` | le regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa il doppio |
+| `CONGIUNZIONI` | `01-data.js` | le undici regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa quanto tre delle altre |
+| `EVENTI` | `03-systems.js` | i cinque eventi d'arena, e il ritmo con cui si aprono (`G.evT`) |
+| `EVO_LV` | `01-data.js` | la soglia della trasformazione, e il gradino che il Crogiolo le toglie |
 | `SBLOCCHI` | `01-data.js` | quale runa entra nel mazzo per quale traguardo, in ordine |
 | `CONTRATTI` | `01-data.js` | i ventuno obiettivi che si rinnovano, e il loro premio base |
 | `RELIQUIE` | `01-data.js` | le otto regole comprabili, col prezzo |
+| `CULM_DUR` / `culmineCost()` | `01-data.js` | quanto dura il Culmine e quanto costa caricarlo |
 | `G.tenacia` | `03-systems.js` → `direttore` | quanto il direttore ha indurito i nemici in questo momento (1 = non è intervenuto) |
 | `G.chiarezza` | `06-main.js` → `step` | quanto spazio visivo resta ai tuoi effetti: 1 quando il campo è vuoto, .42 quando è pieno |
 | `AREA_RIF` | `02-engine.js` → `calcolaZoom` | l'area di schermo di riferimento: da qui esce `G.zoom`, cioè quanto mondo vedi |
@@ -945,8 +972,8 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 In console è esposto `window.ORBITA` con `G` (stato), `P` (statistiche derivate), `step()`,
 `start()`, `reset()`, `endRun()`, `payout()`, `roll()`, `apply()`, `place()`, `recalc()`,
 `recalcRing()`, più le tabelle nuove (`MODI`, `CONGIUNZIONI`, `SBLOCCHI`, `CONTRATTI`,
-`RELIQUIE`) e `congiunzioneDi()`, `rosterGuardiani()`, `metaCost()`, `contrattoPremio()`,
-`statoPartita()`, `semeDelGiorno()`. Serve a far girare partite simulate senza renderizzare,
+`RELIQUIE`) e `congiunzioneDi()`, `congMods()`, `rosterGuardiani()`, `metaCost()`, `contrattoPremio()`,
+`statoPartita()`, `semeDelGiorno()`, `attivaCulmine()`. Serve a far girare partite simulate senza renderizzare,
 che è come sono state misurate e bilanciate le rune, i formati e le congiunzioni.
 
 `reset(nucleo, seme, formato)` prepara una partita senza avviare l'interfaccia, quindi si può

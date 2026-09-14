@@ -1152,6 +1152,11 @@ function tettoNemici() {
    reggerla. Un numero assoluto non scala con niente: era una valanga
    presto e niente del tutto tardi, esattamente al contrario. */
 const MAREA_TETTO = 1.3;
+/* Quanto del flusso normale la Fermata si prende. Le sue comparse valgono
+   1,7 al secondo, il flusso normale sta fra 1,8 e 13: togliendone questa
+   quota il totale resta quello di un minuto qualunque, e cambia solo DA
+   DOVE arrivano — che e' tutto il punto dell'evento. */
+const FERMATA_QUOTA = .55;
 function currentPool() {
   const tc = tempoContenuto();
   let p = WAVES[0].pool;
@@ -1354,8 +1359,12 @@ function apriEvento() {
       const p0 = postoEvento(430, 820, 90, a0 + i * (TAU / 3) + rand(.5, -.5));
       sig.push({ x: p0.x, y: p0.y, dur: 11 + i * 6, preso: 0, morto: 0 });
     }
+    /* Nessun nemico messo li' apposta. La breccia ne pianta tre perche'
+       custodiscono uno scrigno fermo in un punto; qui i punti sono tre e
+       ci si passa sopra di corsa, quindi sarebbero nove nemici in piu' per
+       evento — e un evento non deve spostare quanti nemici ci sono, solo
+       dove devi andare. Contestato lo e' gia' da quello che c'e' intorno. */
     G.ev = { k, t: 0, dur: 23, r: 72, sig, presi: 0 };
-    for (const g of sig) spawnEnemy(pick(currentPool()), g.x + rand(130, -130), g.y + rand(130, -130), {});
     UI.toast('ALLINEAMENTO', 'Tre sigilli, e si spengono a turno', '#ff7de3');
   } else if (k === 'fermata') {
     /* ── Fermata ────────────────────────────────────────────────
@@ -1717,9 +1726,23 @@ function updateSpawns(dt) {
      secondi. Adesso la marea È il flusso, e a nove al secondo invece di
      tre si sente come una marea invece che come un minuto qualunque. */
   const marea = !!(G.ev && G.ev.k === 'marea');
+  /* La Fermata segue la stessa regola della marea, per la stessa ragione:
+     non e' «piu' nemici», e' «i nemici convergono sul cerchio che stai
+     tenendo». Lasciando acceso anche il flusso normale i due si sommavano,
+     e la somma non restava dentro l'evento: misurato col bot a otto semi,
+     la Corsa ad ascensione 8 passava da 1290 secondi medi di sopravvivenza
+     a 823 — cioe' un evento che dura ventun secondi spostava la scala
+     della difficolta' di tutta la partita. Qui il flusso normale non si
+     ferma del tutto — la Fermata dura piu' del doppio di una marea e
+     ventun secondi di campo vuoto intorno sarebbero una pausa, non una
+     prova — ma scende alla frazione che le comparse dell'evento rimettono
+     dentro. */
+  const fermata = !!(G.ev && G.ev.k === 'fermata');
   while (G.spawnAcc >= 1) {
     G.spawnAcc -= 1;
-    if (!marea && G.enemies.length < maxE) spawnRing(pick(pool));
+    if (marea) continue;
+    if (fermata && nextRand() < FERMATA_QUOTA) continue;
+    if (G.enemies.length < maxE) spawnRing(pick(pool));
   }
   G.eliteT -= dt;
   if (G.eliteT <= 0) {
