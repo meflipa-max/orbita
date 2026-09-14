@@ -719,7 +719,7 @@ const UI = {
     return '<div class="eyebrow" style="text-align:left;margin-top:4px">Forme scoperte · ' +
       SAVE.evoVisti.length + ' di ' + RUNEIDS.length + '</div>' +
       '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello ' +
-      (hasRel('crogiolo') ? 5 : 6) + ', risonanza da entrambi i lati, elemento risvegliato.</div>' +
+      sogliaEvo() + ', risonanza da entrambi i lati, elemento risvegliato.</div>' +
       '<div class="formelist">' + righe + '</div>';
   },
 
@@ -910,7 +910,7 @@ const UI = {
      un segreto e la trasformazione non capita mai. */
   evoLine() {
     const parts = [];
-    const soglia = hasRel('crogiolo') ? 5 : 6;
+    const soglia = sogliaEvo();
     for (let i = 0; i < G.slots; i++) {
       const r = G.ring[i];
       if (!r || !EVO[r.id]) continue;
@@ -1331,7 +1331,7 @@ const UI = {
         : 'Non hai mai acceso un Risveglio. Servono <b>' + c0 + ' rune dello stesso elemento una accanto all’altra</b>.';
     }
     if (!G.evoCount) {
-      const soglia = hasRel('crogiolo') ? 5 : 6;
+      const soglia = sogliaEvo();
       /* Accusare sempre la risonanza era la diagnosi sbagliata più comoda da
          dare: un'Iride a livello 7 fra due vicine risuonava benissimo, e quel
          che le mancava erano DUE Risvegli accesi insieme. Chi leggeva andava

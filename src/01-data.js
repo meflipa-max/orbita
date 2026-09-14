@@ -294,6 +294,17 @@ const EVO = {
 };
 const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
 
+/* ── la soglia della trasformazione ─────────────────────────────
+   Il numero sta scritto qui e in nessun altro posto. Lo raccontavano in
+   cinque — canEvolve, mancaEvo, l'anello in pausa, la diagnosi di fine
+   partita e la scheda del Crogiolo — e il quinto era rimasto indietro di
+   due versioni: la reliquia costa 2600 frammenti e prometteva «il livello
+   7 invece che l'8», cioe' i numeri di quando la trasformazione era
+   l'evento che non capitava mai. Adesso la sua riga si scrive da sola con
+   questi due, e non puo' piu' invecchiare da sola. */
+const EVO_LV = 6, EVO_LV_CROGIOLO = 5;
+function sogliaEvo() { return hasRel('crogiolo') ? EVO_LV_CROGIOLO : EVO_LV; }
+
 /* una runa può trasformarsi? livello massimo, risonanza da entrambi i lati,
    elemento risvegliato */
 function canEvolve(r) {
@@ -306,7 +317,7 @@ function canEvolve(r) {
      la condizione POSIZIONALE — risuonare da entrambi i lati, elemento
      risvegliato — resta intatta: è quella a rendere la trasformazione un
      progetto invece di un premio a tempo. */
-  const soglia = hasRel('crogiolo') ? 5 : 6;
+  const soglia = sogliaEvo();
   if (!r || !EVO[r.id] || r.lv < soglia || r.res < 2) return false;
   /* L'Iride non ha un elemento suo, quindi non può avere un Risveglio suo:
      si trasforma quando fa davvero il mestiere per cui esiste, cioè quando è
@@ -328,7 +339,7 @@ function canEvolve(r) {
    non ce l'ha. Una regola, un posto dove sta scritta. */
 function mancaEvo(r) {
   if (!r || !EVO[r.id]) return [];
-  const soglia = hasRel('crogiolo') ? 5 : 6, m = [];
+  const soglia = sogliaEvo(), m = [];
   if (r.lv < soglia) m.push('lv');
   if (r.res < 2) m.push('res');
   if (r.el === 'iride') {
@@ -790,7 +801,7 @@ const RELIQUIE = [
   { id: 'richiamo',  n: 'Richiamo',       c: 1800, ico: 'orbita',    d: 'Gli eventi d’arena arrivano il 35% più spesso.' },
   { id: 'avanzo',    n: 'Avanzo',         c: 1900, ico: 'linfa',     d: 'Saltare una carta cura il doppio e dà 120 frammenti.' },
   { id: 'bussola',   n: 'Bussola',        c: 2300, ico: 'magnete',   d: 'Un Nodo dell’arena è sempre sintonizzato sulla tua apertura.' },
-  { id: 'crogiolo',  n: 'Crogiolo',       c: 2600, ico: 'cometa',    d: 'Le trasformazioni arrivano al livello 7 invece che all’8.' },
+  { id: 'crogiolo',  n: 'Crogiolo',       c: 2600, ico: 'cometa',    d: 'Le trasformazioni arrivano al livello ' + EVO_LV_CROGIOLO + ' invece che al ' + EVO_LV + '.' },
   { id: 'coro',      n: 'Coro di stelle', c: 3000, ico: 'vortice',   d: 'Ogni Risveglio acceso dà +7% danno a tutte le rune.' },
   { id: 'respiro',   n: 'Respiro',        c: 3400, ico: 'rinascita', d: 'Una volta per partita, scendere sotto un quarto di vita ti cura del 30% e ti rende intoccabile per tre secondi.' }
 ];

@@ -473,5 +473,34 @@ for (const modo of ['corsa', 'incursione']) {
      modo + ': gira, e ha ' + G.roster.length + ' guardiani in calendario');
 }
 
+sez('il Crogiolo dice la soglia che il gioco usa');
+/* La reliquia costa 2600 frammenti e prometteva «il livello 7 invece che
+   l'8»: i numeri di due versioni fa, di quando la trasformazione arrivava
+   nell'ultimo minuto della corsa e non arrivava mai. La soglia vera era
+   6, e 5 col Crogiolo. Adesso la riga si scrive dalle due costanti che la
+   decidono, e questo controllo verifica che il gioco si comporti davvero
+   come la riga dice.                                                     */
+{
+  const rel = O.RELIQUIE.find(r => r.id === 'crogiolo');
+  const n = rel.d.match(/(\d+)[^\d]+(\d+)/);
+  ok(!!n, 'la scheda del Crogiolo nomina due livelli: ' + rel.d);
+  /* pronta = la catena la annuncia. Tre rune di Fuoco in fila: quella in
+     mezzo risuona da entrambi i lati e il Risveglio è acceso, quindi le
+     manca solo il livello. */
+  const pronta = (lv, crogiolo) => {
+    S().reliquie = crogiolo ? ['crogiolo'] : [];
+    O.reset('vega', 17, 'corsa', false); G.state = 'play'; G.slots = 6;
+    const mk = (id) => ({ id, el: O.RUNES[id].el, lv, cd: 0, res: 0, st: {} });
+    G.ring = ['pira', 'scintilla', 'nova', null, null, null].map(x => x && mk(x));
+    for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+    G.evoAnn = {}; O.recalcRing(true);
+    return G.evoAnn.scintilla === 1;
+  };
+  const conCrog = +n[1], senza = +n[2];
+  ok(pronta(conCrog, true) && !pronta(conCrog - 1, true), 'col Crogiolo si trasforma al ' + conCrog + ', non prima');
+  ok(pronta(senza, false) && !pronta(senza - 1, false), 'senza, al ' + senza + ' e non prima');
+  S().reliquie = [];
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

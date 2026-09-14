@@ -227,7 +227,7 @@ Il capitolo caro dell'Osservatorio, e l'unico dove ogni voce è **una regola inv
 percentuale**: Semenza (inizi con un livello già preso), Mercante (dissolvere rende il doppio),
 Richiamo (eventi il 35% più spessi), Avanzo (saltare cura il doppio e dà 120 frammenti),
 Bussola (un Nodo è sempre sintonizzato sulla tua apertura), Crogiolo (trasformazioni al livello
-7), Coro di stelle (+7% danno per ogni Risveglio acceso), Respiro (una volta per partita,
+5 invece che al 6), Coro di stelle (+7% danno per ogni Risveglio acceso), Respiro (una volta per partita,
 scendere sotto un quarto di vita ti cura e ti rende intoccabile per tre secondi).
 
 E **Dominio**, che è il pozzo senza fondo: quaranta livelli a passo 1,14, cioè 536.811
