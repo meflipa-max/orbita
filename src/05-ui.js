@@ -1624,7 +1624,7 @@ function resetRun(charId, seed, modoId, giorno) {
      una volta e poi la fa finire una seconda */
   G.saldato = 0; G.registrata = 0; G.lezioneGemme = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
-  G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.combo = 0; G.comboT = 0; G.raffFin = 0; G.raffCd = 0;
+  G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.popIdx = 0; G.popT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.awk = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
   G.awakeVisto = {};

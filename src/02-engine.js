@@ -607,7 +607,14 @@ const G = {
   /* vedi calcolaZoom: quanto mondo entra nello schermo di questo dispositivo */
   zoom: 1, vw: 1280, vh: 800,
   /* il colpo di grazia: vedi flushUccisioni in 06-main */
-  raffN: 0, raffX: 0, raffY: 0, raffR: 0, raffC: '#ffffff', combo: 0, comboT: 0, raffFin: 0, raffCd: 0,
+  /* `popIdx` e' l'indice della nota del pop, e si chiamava `combo`: lo stesso
+     nome che updateCombo riscrive a ogni fotogramma col ritmo di uccisione.
+     Cioe' l'arpeggio non scorreva mai — l'altezza era il numero di uccisioni
+     al secondo, che a ritmo costante e' costante: esattamente il ronzio di
+     note identiche che AU.pop dice di aver tolto (misurato: su 154 pop, il
+     semitono usciva 0 o 1 nel 75% dei casi). E il contatore a schermo
+     leggeva il valore gia' incrementato, quindi diceva uno in piu'. */
+  raffN: 0, raffX: 0, raffY: 0, raffR: 0, raffC: '#ffffff', popIdx: 0, popT: 0, raffFin: 0, raffCd: 0,
   /* che partita è questa: il modo dice quanto dura e con quanti guardiani,
      la congiunzione è la regola sorteggiata dal seme (vedi 01-data). `cong`
      è la carta, `cg` sono i suoi modificatori già fusi coi valori neutri,

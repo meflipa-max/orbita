@@ -145,8 +145,8 @@ function flushUccisioni(dt) {
   G.raffFin *= Math.exp(-dt / .13);
 
   if (G.raffN > 0) {
-    AU.pop(G.raffN, G.combo);
-    G.combo++; G.comboT = .55;
+    AU.pop(G.raffN, G.popIdx);
+    G.popIdx++; G.popT = .55;
     G.raffFin += G.raffN;
     /* Cinque in un decimo di secondo non capita falciando: capita quando
        una Nova apre un buco o quando una cascata di implosioni si porta
@@ -163,9 +163,9 @@ function flushUccisioni(dt) {
       G.raffFin = 0;
     }
     G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0;
-  } else if (G.comboT > 0) {
-    G.comboT -= dt;
-    if (G.comboT <= 0) G.combo = 0;     /* la scala riparte dal basso */
+  } else if (G.popT > 0) {
+    G.popT -= dt;
+    if (G.popT <= 0) G.popIdx = 0;      /* la scala riparte dal basso */
   }
 }
 

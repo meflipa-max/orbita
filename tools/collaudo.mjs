@@ -135,6 +135,25 @@ sez('la diagnosi dice la condizione giusta');
   ok(/pronta/.test(testo()) && !/ma \./.test(testo()), 'chi era già pronta non si sente dire che le mancava qualcosa');
 }
 
+sez('il pop delle uccisioni percorre la scala');
+/* L'altezza del pop cicla su una pentatonica minore apposta: venti suoni
+   identici al secondo l'orecchio li fonde in un ronzio, che e' il contrario
+   della soddisfazione. L'indice della nota si chiamava pero' `combo`, lo
+   stesso nome che updateCombo riscrive a ogni fotogramma col ritmo di
+   uccisione: non era un contatore che avanza, era il numero di uccisioni al
+   secondo — a ritmo costante, una nota sola. Misurato prima: su 154 pop il
+   semitono usciva 0 o 1 nel 75% dei casi e non superava mai il 3.        */
+{
+  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  O.reset('vega', 777, 'corsa', false); G.state = 'play';
+  const visti = new Set();
+  const vero = O.AU.pop.bind(O.AU);
+  O.AU.pop = (n, i) => { visti.add(i % 6); };
+  gioca(120);
+  O.AU.pop = vero;
+  ok(visti.size >= 5, 'la pentatonica si percorre tutta (' + visti.size + ' semitoni su 6)');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],
