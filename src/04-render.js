@@ -619,7 +619,7 @@ function bersaglio(e, rest) {
 /* Freccia a bordo schermo verso un punto fuori campo. Con etichetta:
    la sola direzione non basta a trovare una breccia a ottocento pixel,
    serve sapere quanto manca e quanto tempo resta. */
-function bussola(x, y, col, size, etichetta, pulsa) {
+function bussola(x, y, col, size, etichetta, pulsa, scia) {
   const sx = (x - G.cam.x) * G.zoom + W / 2, sy = (y - G.cam.y) * G.zoom + H / 2;
   if (sx > 26 && sx < W - 26 && sy > 26 && sy < H - 26) return;
   const a = Math.atan2(y - G.cam.y, x - G.cam.x);
@@ -627,9 +627,13 @@ function bussola(x, y, col, size, etichetta, pulsa) {
   const rad = Math.min(W, H) * .40;
   const ix = W / 2 + Math.cos(a) * rad, iy = H / 2 + Math.sin(a) * rad;
 
-  if (etichetta) {
-    /* scia tratteggiata dal nucleo verso la freccia: dice "di là" senza
-       tracciare una linea su tutto lo schermo */
+  if (scia) {
+    /* Scia tratteggiata dal nucleo verso la freccia: dice "di là" senza
+       tracciare una linea su tutto lo schermo. La portano solo le cose che
+       scadono — la breccia, il Corriere — perche' sono quelle per cui vale
+       la pena piantare tutto e correre. Il Nodo no: e' terreno, sta li' e
+       aspetta, e una linea permanente in mezzo allo schermo diventerebbe
+       un guinzaglio. */
     ctx.save();
     ctx.strokeStyle = col; ctx.globalAlpha = .34; ctx.lineWidth = 2;
     ctx.setLineDash([9, 12]); ctx.lineDashOffset = -G.t * 40;
@@ -1048,16 +1052,39 @@ function drawScreenUI() {
   }
   if (vCuore) bussola(vCuore.x, vCuore.y, 'rgba(255,61,110,.9)', 8);
   if (vBomba) bussola(vBomba.x, vBomba.y, 'rgba(255,255,255,.85)', 8);
+  /* ── il Nodo utile piu' vicino ────────────────────────────────
+     Il Nodo e' l'unico posto dell'arena che cambia le regole della tua
+     build: +35% all'elemento e una runa in piu' alla catena, cioe' un
+     Risveglio con due rune invece di tre. Ma un cristallo e' terreno
+     fermo: se non ce l'hai sullo schermo non sai che esiste, e in
+     un'arena di 3400 pixel per lato con lo schermo che ne mostra 1700 se
+     ne vede uno alla volta per caso. Ogni ALTRA cosa lontana del gioco ha
+     la sua freccia — scrigni, cuori, bombe, breccia, Corriere — e proprio
+     quella che chiede di andare a piantarti da qualche parte non l'aveva.
+     Solo il piu' vicino, solo se serve DAVVERO all'anello che hai adesso,
+     solo se non ci sei gia' dentro e solo entro un viaggio ragionevole:
+     una freccia perenne verso l'altro capo della mappa sarebbe un compito,
+     non un invito. */
+  if (!G.nodo && G.rocks.length) {
+    let vn = null, vnd = 1600 * 1600;
+    for (let i = 0; i < G.rocks.length; i++) {
+      const k = G.rocks[i];
+      if (!k.nodo || !G.elAnello.has(k.nodo)) continue;
+      const q = (k.x - G.p.x) * (k.x - G.p.x) + (k.y - G.p.y) * (k.y - G.p.y);
+      if (q < vnd) { vnd = q; vn = k; }
+    }
+    if (vn) bussola(vn.x, vn.y, rgba(EL[vn.nodo].c, .9), 10, 'NODO DI ' + EL[vn.nodo].n.toUpperCase());
+  }
   if (G.ev) {
     if (G.ev.k === 'breccia' && !G.ev.preso) {
       const d = Math.round(Math.hypot(G.ev.x - G.p.x, G.ev.y - G.p.y));
       const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
-      bussola(G.ev.x, G.ev.y, 'rgba(190,130,255,.98)', 15, d + '  ·  ' + s + 's', s <= 8);
+      bussola(G.ev.x, G.ev.y, 'rgba(190,130,255,.98)', 15, d + '  ·  ' + s + 's', s <= 8, true);
     }
     if (G.ev.k === 'caccia' && G.ev.e && G.ev.e.hp > 0) {
       const d = Math.round(Math.hypot(G.ev.e.x - G.p.x, G.ev.e.y - G.p.y));
       const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
-      bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 15, d + '  ·  ' + s + 's', s <= 8);
+      bussola(G.ev.e.x, G.ev.e.y, 'rgba(111,242,196,.98)', 15, d + '  ·  ' + s + 's', s <= 8, true);
     }
     /* La marea non ha un posto dove andare, quindi non ha una freccia: ha
        un LATO. Un arco sul bordo dello schermo dice da dove arrivano, e il

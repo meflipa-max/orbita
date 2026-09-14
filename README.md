@@ -301,6 +301,14 @@ finché resti lì. Il cuore resta solido, quindi ci orbiti intorno: tenere la po
 molto, ma restare fermi in mezzo alla mischia si paga. È l'arena stessa a favorire build
 diverse a ogni corsa.
 
+E adesso si trovano. Ogni altra cosa lontana ha la sua freccia a bordo schermo — scrigni,
+cuori, bombe, breccia, Corriere — e proprio quella che chiede di andare a piantarti da qualche
+parte non l'aveva: in un'arena di 3400 pixel per lato, con lo schermo che ne mostra 1700, un
+cristallo si incontrava per caso. La freccia c'è solo per il Nodo **utile** più vicino, solo se
+non ci sei già dentro e solo entro milleseicento pixel, e non porta la scia tratteggiata che
+hanno breccia e Corriere: quelle scadono, il Nodo no — una linea permanente in mezzo allo
+schermo sarebbe un guinzaglio invece di un invito.
+
 ### Eventi d'arena
 
 Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima
