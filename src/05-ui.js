@@ -456,6 +456,19 @@ const UI = {
         p('La <b>Corsa</b> dura venti minuti e ha cinque guardiani, poi continua senza fine. L’<b>Incursione</b> ne dura otto e ne ha tre — non è la Corsa tagliata: sali di livello quasi il doppio più in fretta, le ondate scorrono più veloci e i guardiani hanno una vita loro. Vincere vale ugualmente per l’ascensione.') +
         p('Il formato si sceglie dal menu, sopra al bottone Gioca.')) +
 
+      /* I cinque eventi stanno nel briefing che si apre la prima volta che
+         ognuno compare, ma il briefing passa: la guida e' il posto in cui
+         si torna a cercare una regola, e qui non c'erano. */
+      sec('Eventi d’arena',
+        p('Ogni novanta secondi succede qualcosa che <b>ha un luogo</b>, e non capita mai due volte di fila la stessa cosa.') +
+        '<ul class="lista">' +
+        '<li><b>Breccia</b> — un varco da raggiungere prima che si chiuda. Dentro c’è uno scrigno.</li>' +
+        '<li><b>Marea</b> — i nemici arrivano tutti da una parte sola. Il lato opposto resta sgombro.</li>' +
+        '<li><b>Corriere</b> — un nemico turchese carico di bottino che <em>scappa</em>, un filo più veloce di te: tagliagli la strada.</li>' +
+        '<li><b>Allineamento</b> — tre sigilli che si spengono <b>a turno</b>: il più vicino non è quasi mai il primo da prendere. Tre su tre valgono uno scrigno.</li>' +
+        '<li><b>Fermata</b> — un cerchio da tenere mentre arrivano da tutte le parti. Uscire non azzera, mette in pausa.</li>' +
+        '</ul>') +
+
       sec('Congiunzioni',
         p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, il doppio degli asteroidi, i Risvegli che chiedono una runa in meno. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
         p('Non è una difficoltà in più: è una domanda diversa. La stessa semenza dà sempre la stessa congiunzione, quindi «ripeti questa semenza» ripete anche quella.')) +
@@ -1760,7 +1773,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
   G.dmgDone = 0; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
-  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.form = null; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
+  G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.evUltimo = null; G.form = null; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
   G.bossKills = 0; G.maxLv = 1; G.tier2 = 0; G.rerollUsati = 0; G.respiro = 0;

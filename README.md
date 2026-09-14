@@ -346,9 +346,33 @@ schermo sarebbe un guinzaglio invece di un invito.
 
 ### Eventi d'arena
 
-Ogni novanta secondi succede qualcosa che **ha un luogo**: una breccia da raggiungere prima
-che si chiuda, una marea di nemici da una sola direzione, un Corriere da abbattere prima che
-sparisca.
+Ogni novanta secondi succede qualcosa che **ha un luogo**. Sono **cinque**: una breccia da
+raggiungere prima che si chiuda, una marea di nemici da una sola direzione, un Corriere da
+abbattere prima che sparisca, un **Allineamento** di tre sigilli che si spengono a turno, e
+una **Fermata** da tenere.
+
+Erano tre, e l'intervallo fra due eventi è `rand(80,105)` secondi: una Corsa ne fa undici,
+quindi ognuno dei tre tornava **quasi quattro volte nella stessa partita**, e una volta su tre
+tornava *subito dopo se stesso* — due brecce di fila, due maree di fila. Un evento che si
+ripete non è più «succede qualcosa»: è il fondale. Adesso sono cinque e non si ripetono mai di
+fila.
+
+I due nuovi chiedono col corpo qualcosa che gli altri tre non chiedevano mai.
+
+L'**Allineamento** accende tre sigilli intorno a te e li spegne **a turno**, a sei secondi di
+distanza l'uno dall'altro: il più vicino non è quasi mai il primo da prendere, quindi la
+domanda non è «dove vado» ma **in che ordine**. È il solo evento che chieda di pianificare un
+giro invece di un viaggio, e l'unico la cui ricompensa cresce con quanto bene l'hai fatto — due
+su tre pagano in schegge, tre su tre valgono uno scrigno. Un tratteggio unisce quelli ancora
+accesi, così il giro si legge come figura invece che come tre punti sparsi.
+
+La **Fermata** è la nota tenuta: un cerchio turchese che si riempie **finché ci stai dentro**,
+mentre i nemici arrivano da tutte le parti. È l'unico momento in cui il gioco chiede di *non*
+muoversi — tutto il resto, schivare, raccogliere, inseguire, premia chi non si ferma mai,
+quindi «resta» è la sola richiesta che questo gioco non aveva ancora fatto. Uscire non azzera:
+**mette in pausa**, perché azzerare farebbe smettere di provarci chi è stato spinto fuori da un
+contraccolpo. Il cerchio è largo 168 pixel, cioè abbastanza per girarci dentro: non chiede di
+stare fermo, chiede di restare. Piena vale uno scrigno e il 20% di vita.
 
 Due difetti nella marea e nel Corriere, trovati misurando.
 
@@ -807,7 +831,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 83 controlli sul gioco vero, headless
+npm run collaudo       # 119 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna

@@ -1291,10 +1291,39 @@ function dentroRoccia(x, y, raggio) {
    Ogni novanta secondi succede qualcosa che HA UN LUOGO. Senza, i minuti
    centrali sono una salita monotona in uno spazio identico ovunque: non
    c'è mai un posto dove valga la pena andare.                          */
-const EVENTI = ['breccia', 'marea', 'caccia'];
+/* Erano tre, e l'intervallo fra due eventi e' rand(80,105) secondi: una
+   Corsa ne fa undici, quindi ognuno dei tre tornava quasi quattro volte
+   nella stessa partita, e una volta su tre tornava SUBITO — due brecce di
+   fila, due maree di fila. Un evento che si ripete non e' piu' «succede
+   qualcosa»: e' il fondale.
+   Adesso sono cinque, e i due nuovi chiedono col corpo qualcosa che gli
+   altri tre non chiedevano mai: l'Allineamento un giro che tocchi tre
+   punti prima che scadano uno alla volta, la Fermata di RESTARE — che in
+   un gioco il cui unico verbo e' schivare e' l'unica cosa davvero
+   difficile da chiedere. */
+const EVENTI = ['breccia', 'marea', 'caccia', 'allineamento', 'fermata'];
+
+/* Un posto lontano abbastanza da essere una scelta, mai dentro un
+   asteroide — li' sarebbe irraggiungibile — e mai fuori dall'arena. */
+function postoEvento(dmin, dmax, margine, ang) {
+  const a = ang === undefined ? rand(TAU) : ang, d = rand(dmax, dmin);
+  let x = clamp(G.p.x + Math.cos(a) * d, -ARENA + 160, ARENA - 160);
+  let y = clamp(G.p.y + Math.sin(a) * d, -ARENA + 160, ARENA - 160);
+  const roc = dentroRoccia(x, y, margine);
+  if (roc) {
+    const a2 = Math.atan2(y - roc.y, x - roc.x);
+    x = roc.x + Math.cos(a2) * (roc.r + margine + 40);
+    y = roc.y + Math.sin(a2) * (roc.r + margine + 40);
+  }
+  return { x: clamp(x, -ARENA + 90, ARENA - 90), y: clamp(y, -ARENA + 90, ARENA - 90) };
+}
 
 function apriEvento() {
-  const k = pick(EVENTI);
+  /* Mai due volte di fila: con tre eventi capitava una volta su tre, ed e'
+     il caso in cui la varieta' si sente mancare di piu'. */
+  let k = pick(EVENTI);
+  if (k === G.evUltimo) k = pick(EVENTI.filter(x => x !== G.evUltimo));
+  G.evUltimo = k;
   if (k === 'breccia') {
     /* lontano abbastanza da essere una scelta, non un passo */
     const a = rand(TAU), d = rand(860, 520);   /* un viaggio, non una spedizione */
@@ -1310,6 +1339,36 @@ function apriEvento() {
   } else if (k === 'marea') {
     G.ev = { k, t: 0, dur: 18, a: rand(TAU), acc: 0 };
     UI.toast('MAREA', 'Ondata da una sola direzione', '#45d7ff');
+  } else if (k === 'allineamento') {
+    /* ── Allineamento ───────────────────────────────────────────
+       Tre sigilli, e scadono uno alla volta a sei secondi di distanza:
+       il piu' vicino non e' quasi mai il primo a spegnersi, quindi la
+       domanda non e' «dove vado» ma «in che ordine». E' il solo evento
+       che chieda di pianificare un giro invece di un viaggio, e l'unico
+       la cui ricompensa cresce con quanto bene l'hai fatto. */
+    const a0 = rand(TAU);
+    const sig = [];
+    for (let i = 0; i < 3; i++) {
+      /* sparsi, ma non ai tre vertici esatti: un triangolo perfetto si
+         percorre sempre nello stesso modo */
+      const p0 = postoEvento(430, 820, 90, a0 + i * (TAU / 3) + rand(.5, -.5));
+      sig.push({ x: p0.x, y: p0.y, dur: 11 + i * 6, preso: 0, morto: 0 });
+    }
+    G.ev = { k, t: 0, dur: 23, r: 72, sig, presi: 0 };
+    for (const g of sig) spawnEnemy(pick(currentPool()), g.x + rand(130, -130), g.y + rand(130, -130), {});
+    UI.toast('ALLINEAMENTO', 'Tre sigilli, e si spengono a turno', '#ff7de3');
+  } else if (k === 'fermata') {
+    /* ── Fermata ────────────────────────────────────────────────
+       In musica la fermata e' la nota tenuta. Qui e' l'unico momento in
+       cui il gioco chiede di NON muoversi: tutto il resto — schivare,
+       raccogliere, inseguire — premia chi non si ferma mai, quindi
+       «resta» e' la sola richiesta che questo gioco non aveva ancora
+       fatto. Il cerchio e' largo abbastanza da girarci dentro: non chiede
+       di stare fermi, chiede di restare. */
+    const p0 = postoEvento(240, 430, 190);
+    G.ev = { k, x: p0.x, y: p0.y, t: 0, dur: 21, r: 168, carica: 0, acc: 0 };
+    G.zones.push({ k: 'ring', x: p0.x, y: p0.y, r0: 20, r1: 560, t: 0, dur: .8, c: '#6ff2c4' });
+    UI.toast('FERMATA', 'Resta nel cerchio mentre arrivano', '#6ff2c4');
   } else {
     /* Nasceva a quattrocento pixel: dentro lo schermo, dove la freccia di
        bordo non compare, e quindi senza nessuna indicazione di dove fosse.
@@ -1373,6 +1432,75 @@ function updateEventi(dt) {
       AU.play('buy'); G.shake = Math.max(G.shake, 10);
       G.ev = null; return;
     }
+  } else if (v.k === 'allineamento') {
+    for (let i = 0; i < v.sig.length; i++) {
+      const g = v.sig[i];
+      if (g.preso || g.morto) continue;
+      const dx = G.p.x - g.x, dy = G.p.y - g.y;
+      if (dx * dx + dy * dy < v.r * v.r) {
+        g.preso = 1; v.presi++;
+        addGem(g.x, g.y, 150, 1);
+        G.zones.push({ k: 'ring', x: g.x, y: g.y, r0: 10, r1: 300, t: 0, dur: .5, c: '#ff7de3' });
+        AU.play('buy'); G.shake = Math.max(G.shake, 7);
+        addFloat(g.x, g.y - 30, v.presi + '/3', '#ff7de3', true);
+      } else if (v.t >= g.dur) {
+        /* si spegne: lo dice, se no l'ordine sbagliato non si impara */
+        g.morto = 1;
+        G.zones.push({ k: 'ring', x: g.x, y: g.y, r0: 60, r1: 10, t: 0, dur: .4, c: 'rgba(120,110,150,1)' });
+      }
+    }
+    if (v.presi >= 3) {
+      /* tutti e tre: lo scrigno. Due su tre pagano comunque in schegge,
+         perche' un evento che da' zero a chi ci e' quasi riuscito insegna
+         solo a non provarci. */
+      if (!G.asc.noChest) G.drops.push({ x: G.p.x, y: G.p.y, k: 'chest', t: 0 });
+      else addGem(G.p.x, G.p.y, 220, 1);
+      addGem(G.p.x, G.p.y, 240, 1);
+      G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 520, t: 0, dur: .8, c: '#ff7de3' });
+      UI.toast('ALLINEAMENTO COMPLETO', 'Tre su tre', '#ff7de3');
+      AU.play('buy'); G.shake = Math.max(G.shake, 12);
+      G.ev = null; return;
+    }
+    if (v.sig.every(g => g.preso || g.morto)) {
+      /* la breccia che si chiude lo dice, e questa anche: un evento che
+         finisce in silenzio non insegna quanto ci si e' andati vicino */
+      UI.toast('ALLINEAMENTO', v.presi ? v.presi + ' sigilli su 3' : 'Nessun sigillo', v.presi ? '#ff7de3' : '#6a6199');
+      G.ev = null; return;
+    }
+  } else if (v.k === 'fermata') {
+    const dx = G.p.x - v.x, dy = G.p.y - v.y;
+    const dentro = dx * dx + dy * dy < v.r * v.r;
+    /* dodici secondi dentro su ventuno: si puo' uscire a riprendere fiato
+       due volte, non tre. Uscire non azzera — azzerare farebbe smettere di
+       provarci chi e' stato spinto fuori da un contraccolpo */
+    if (dentro) v.carica = Math.min(1, v.carica + dt / 12);
+    /* mentre tieni, arrivano: e' il prezzo del restare. Non e' una marea
+       — quella ne manda nove al secondo tutti da una parte, e da una parte
+       si scappa — qui arrivano da tutte, quindi il ritmo va tenuto basso o
+       l'evento smette di essere una scelta e diventa una condanna:
+       misurato col bot, a 2,6 al secondo la Corsa perdeva una vittoria per
+       riga della scala delle ascensioni. */
+    v.acc += dt * 1.7;
+    while (v.acc >= 1) {
+      v.acc -= 1;
+      if (G.enemies.length < tettoNemici() * MAREA_TETTO) {
+        const a = rand(TAU), d = Math.max(600, Math.hypot(G.vw, G.vh) * .55);
+        spawnEnemy(pick(currentPool()),
+          clamp(v.x + Math.cos(a) * d, -ARENA, ARENA),
+          clamp(v.y + Math.sin(a) * d, -ARENA, ARENA), { spdMul: 1.1 });
+      }
+    }
+    if (v.carica >= 1) {
+      if (!G.asc.noChest) G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
+      else addGem(v.x, v.y, 220, 1);
+      addGem(v.x, v.y, 260, 1);
+      P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .2);
+      addFloat(G.p.x, G.p.y - 34, '+VITA', '#6ff2c4', true);
+      G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 620, t: 0, dur: .9, c: '#6ff2c4' });
+      UI.toast('FERMATA TENUTA', 'Scrigno e respiro', '#6ff2c4');
+      AU.play('buy'); G.shake = Math.max(G.shake, 12);
+      G.ev = null; return;
+    }
   } else if (v.k === 'marea') {
     v.acc += dt * 9;
     while (v.acc >= 1) {
@@ -1413,6 +1541,13 @@ function updateEventi(dt) {
        il cerchio. */
     if (v.k === 'caccia' && v.e && v.e.hp > 0) { v.e.hp = 0; v.e.dead = true; UI.toast('CORRIERE SPARITO', 'Col suo bottino', '#6a6199'); }
     if (v.k === 'breccia' && !v.preso) UI.toast('BRECCIA CHIUSA', null, '#6a6199');
+    /* Come l'Allineamento: chi c'e' quasi riuscito non prende zero, se no
+       la prossima volta non ci prova. Ma senza scrigno — quello si paga
+       tenendola tutta. */
+    if (v.k === 'fermata') {
+      if (v.carica > .25) { addGem(v.x, v.y, Math.round(260 * v.carica), 1); UI.toast('FERMATA', Math.round(v.carica * 100) + '% tenuto', '#6a6199'); }
+      else UI.toast('FERMATA SVANITA', null, '#6a6199');
+    }
     G.ev = null;
   }
 }

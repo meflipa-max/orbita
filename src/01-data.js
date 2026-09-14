@@ -859,6 +859,16 @@ const BRIEFING = {
     p: ['Le schegge che lasciano i nemici sono <b>esperienza</b>. Passaci sopra per raccoglierle: riempiono la barra in cima allo schermo.',
         'Ogni barra piena è un <b>livello</b>, cioè una carta da scegliere. È così che la tua build cresce — senza raccoglierle non cresce.']
   },
+  allineamento: {
+    n: 'Allineamento', k: 'Evento d’arena', ico: 'congiunzione', c: '#ff7de3',
+    p: ['Tre <b>sigilli</b> si accendono intorno a te. Passaci sopra per prenderli: il tratteggio li unisce, le tre frecce sul bordo dicono dove sono.',
+        'Non si spengono insieme: <b>a turno</b>, e l’arco di ciascuno dice quanto gli resta. Il più vicino non è quasi mai il primo da prendere — <b>tre su tre</b> valgono uno scrigno.']
+  },
+  fermata: {
+    n: 'Fermata', k: 'Evento d’arena', ico: 'presagio', c: '#6ff2c4',
+    p: ['Un cerchio turchese. Finché ci <b>stai dentro</b> si riempie, e mentre si riempie i nemici arrivano <b>da tutte le parti</b>.',
+        'Uscire non azzera: <b>mette in pausa</b>. Il cerchio è largo abbastanza per girarci dentro — non chiede di stare fermo, chiede di restare. Pieno vale uno scrigno e un po’ di vita.']
+  },
   nodo: {
     n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',
     p: ['Dentro quest’aura le tue rune del suo elemento fanno <b>+35% danno</b>, e ne bastano <b>due vicine</b> per accendere il Risveglio invece di tre.',

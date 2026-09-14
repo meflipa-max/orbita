@@ -574,6 +574,85 @@ function drawEvento() {
     ctx.globalCompositeOperation = 'source-over';
   } else if (v.k === 'caccia' && v.e && v.e.hp > 0) {
     bersaglio(v.e, 1 - v.t / v.dur);
+  } else if (v.k === 'allineamento') {
+    /* Stessa grammatica della breccia — alone, anelli che girano, arco che
+       si consuma — perche' e' la stessa promessa: «vieni qui». Cambia il
+       colore e cambia che sono tre, e che l'arco di ognuno corre a una
+       velocita' diversa: e' quello a dire in che ordine si spengono. */
+    const col = '#ff7de3';
+    for (let i = 0; i < v.sig.length; i++) {
+      const g = v.sig[i];
+      if (g.preso || g.morto) continue;
+      const rest = clamp(1 - v.t / g.dur, 0, 1);
+      const pul = 1 + Math.sin(G.t * 4 + i) * .07;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = (.3 + rest * .24) * pul;
+      ctx.drawImage(glowTex(col, 64), g.x - 130, g.y - 130, 260, 260);
+      ctx.globalAlpha = 1;
+      for (let j = 0; j < 2; j++) {
+        const rr = v.r * (.6 + j * .34) * pul, a = G.t * (1.4 - j * .5) + i * 2 + j;
+        ctx.strokeStyle = rgba(col, .8 - j * .26); ctx.lineWidth = 3 - j * .8;
+        ctx.beginPath(); ctx.arc(g.x, g.y, rr, a, a + 3.4); ctx.stroke();
+      }
+      /* quanto resta a QUESTO: l'arco corto e' quello che sta per spegnersi */
+      ctx.strokeStyle = rest < .3 ? 'rgba(255,255,255,.95)' : rgba(col, .9);
+      ctx.lineWidth = 3.4;
+      ctx.beginPath(); ctx.arc(g.x, g.y, v.r + 15, -PI / 2, -PI / 2 + TAU * rest); ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    /* la riga che unisce quelli ancora accesi: e' un allineamento, e il
+       giro da fare si vede come figura invece che come tre punti sparsi */
+    const vivi = v.sig.filter(g => !g.preso && !g.morto);
+    if (vivi.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = rgba(col, .26); ctx.lineWidth = 2;
+      ctx.setLineDash([10, 14]); ctx.lineDashOffset = -G.t * 34;
+      ctx.beginPath();
+      ctx.moveTo(vivi[0].x, vivi[0].y);
+      for (let i = 1; i < vivi.length; i++) ctx.lineTo(vivi[i].x, vivi[i].y);
+      ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    }
+  } else if (v.k === 'fermata') {
+    /* Un cerchio che si riempie da dentro. Il bordo dice dov'e' il confine,
+       il disco dice quanto hai tenuto: due informazioni sulla stessa forma,
+       perche' sono la stessa domanda. */
+    const col = '#6ff2c4';
+    const dx = G.p.x - v.x, dy = G.p.y - v.y;
+    const dentro = dx * dx + dy * dy < v.r * v.r;
+    const pul = .5 + Math.sin(G.t * (dentro ? 5 : 2.4)) * .5;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .10 + v.carica * .12 + (dentro ? .05 * pul : 0);
+    ctx.drawImage(glowTex(col, 64), v.x - v.r * 1.5, v.y - v.r * 1.5, v.r * 3, v.r * 3);
+    ctx.globalAlpha = 1;
+    /* il disco che cresce col riempimento */
+    ctx.fillStyle = rgba(col, .06 + v.carica * .1);
+    ctx.beginPath(); ctx.arc(v.x, v.y, v.r * (.2 + v.carica * .8), 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    /* il confine: netto quando sei dentro, tenue quando sei fuori */
+    ctx.strokeStyle = rgba(col, dentro ? .55 + .25 * pul : .34);
+    ctx.lineWidth = dentro ? 3.4 : 2.2;
+    ctx.setLineDash([16, 12]); ctx.lineDashOffset = -G.t * 26;
+    ctx.beginPath(); ctx.arc(v.x, v.y, v.r, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    /* l'arco pieno: quanto hai tenuto. Non torna indietro se esci — si
+       ferma, e si vede che si e' fermato perche' smette di crescere.
+       Sta staccato dal bordo tratteggiato: appiccicati diventavano un
+       anello doppio invece di due informazioni diverse. */
+    const ra = v.r + 24, car = clamp(v.carica, 0, 1);
+    ctx.strokeStyle = rgba(col, .18); ctx.lineWidth = 3.6;
+    ctx.beginPath(); ctx.arc(v.x, v.y, ra, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 3.6;
+    ctx.beginPath(); ctx.arc(v.x, v.y, ra, -PI / 2, -PI / 2 + TAU * car); ctx.stroke();
+    /* Il nome e la percentuale, sotto al cerchio: la marea ha la sua riga,
+       il Corriere ha la sua, e senza questa la Fermata dopo il messaggio
+       iniziale era un cerchio che si riempiva senza dire di cosa. */
+    ctx.font = '700 ' + sz(12).toFixed(1) + 'px "Chakra Petch",system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const et = 'FERMATA · ' + Math.round(car * 100) + '%';
+    ctx.lineWidth = sz(4); ctx.strokeStyle = 'rgba(4,2,12,.92)';
+    ctx.strokeText(et, v.x, v.y + ra + sz(16));
+    ctx.fillStyle = dentro ? '#ffffff' : col;
+    ctx.fillText(et, v.x, v.y + ra + sz(16));
   }
 }
 
@@ -1110,6 +1189,23 @@ function drawScreenUI() {
        servono a decidere da che parte scansarsi. Senza, dopo il messaggio
        iniziale l'evento diventava invisibile: nemici più fitti e basta. */
     if (G.ev.k === 'marea') maree(G.ev);
+    /* Tre frecce invece di una: i sigilli sono tre e il giro si decide
+       guardandoli insieme. L'etichetta porta i secondi di QUEL sigillo,
+       che e' l'unica cosa che li distingue. */
+    if (G.ev.k === 'allineamento') {
+      for (const g of G.ev.sig) {
+        if (g.preso || g.morto) continue;
+        const s = Math.max(0, Math.ceil(g.dur - G.ev.t));
+        bussola(g.x, g.y, 'rgba(255,125,227,.98)', 13, s + 's', s <= 5, false);
+      }
+    }
+    /* La Fermata ha un posto e chiede di restarci, quindi la scia
+       tratteggiata ci sta: e' esattamente «pianta tutto e vai li'». */
+    if (G.ev.k === 'fermata') {
+      const d = Math.round(Math.hypot(G.ev.x - G.p.x, G.ev.y - G.p.y));
+      const s = Math.max(0, Math.ceil(G.ev.dur - G.ev.t));
+      bussola(G.ev.x, G.ev.y, 'rgba(111,242,196,.98)', 15, d + '  ·  ' + s + 's', s <= 8, true);
+    }
   }
   if (G.form) formazione(G.form);
 }

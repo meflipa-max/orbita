@@ -37,6 +37,25 @@ function bot(dt) {
       if (d < 260) s -= (260 - d) * (e.boss ? 4 : 1);
     }
     for (const g of G.gems) { const d = Math.hypot(g.x - px, g.y - py); if (d < 340) s += (340 - d) * .35; }
+    /* Gli eventi d'arena si giocano: un bot che li ignora ne paga il prezzo
+       — i nemici che la Fermata richiama, il giro dell'Allineamento — senza
+       mai incassarne il premio, e misura una difficolta' che nessuno vive.
+       La Fermata tira dentro il cerchio e ci tiene; l'Allineamento vale
+       come una gemma molto grossa su ogni sigillo ancora acceso. */
+    const ev = G.ev;
+    if (ev && ev.k === 'fermata') {
+      const d = Math.hypot(ev.x - px, ev.y - py);
+      s += d < ev.r * .8 ? 900 : -d * 1.2;
+    } else if (ev && ev.k === 'allineamento') {
+      for (const sg of ev.sig) {
+        if (sg.preso || sg.morto) continue;
+        const d = Math.hypot(sg.x - px, sg.y - py);
+        if (d < 900) s += (900 - d) * .7;
+      }
+    } else if (ev && ev.k === 'breccia' && !ev.preso) {
+      const d = Math.hypot(ev.x - px, ev.y - py);
+      if (d < 1000) s += (1000 - d) * .5;
+    }
     if (s > best) { best = s; botA = a; }
   }
   IN.ax = Math.cos(botA); IN.ay = Math.sin(botA);
@@ -76,7 +95,9 @@ export function partita(opt = {}) {
   S.modo = opt.modo || 'corsa';
   S.asc = S.ascSel = opt.asc || 0;
   S.runes = opt.mazzoPieno ? MAZZO_PIENO.slice() : MAZZO_BASE.slice();
-  S.visti = ['breccia', 'marea', 'caccia', 'nodo', 'gemme'];   /* niente briefing nella misura */
+  /* niente briefing nella misura: l'elenco esce da BRIEFING, cosi'
+     aggiungendo un evento d'arena il bot non si ferma sulla spiegazione */
+  S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
   O.reset(opt.char || 'vega', opt.seed || 12345, S.modo, false);
   G.state = 'play';
   const dt = 1 / 60, max = Math.round((opt.secondi || G.modo.len + 90) / dt);

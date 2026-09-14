@@ -15,6 +15,11 @@ let ko = 0, tot = 0;
 const ok = (c, m) => { tot++; if (!c) { ko++; console.log('  ✗ ' + m); } else console.log('  ✓ ' + m); };
 const sez = t => console.log('\n— ' + t + ' —');
 const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64').replace(/=+$/, '');
+/* Tutte le spiegazioni gia' viste. Era un elenco scritto a mano in sei
+   punti: aggiungendo due eventi d'arena, due di quei sei si sarebbero
+   fermati al primo Allineamento con G.state a 'briefing' e la partita
+   simulata avrebbe smesso di avanzare senza dire perche'. */
+const TUTTI_I_BRIEFING = () => Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
 const gioca = (s, f) => { for (let i = 0; i < 60 * s; i++) { if (f) f(i); O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; } };
 
 sez('ogni bottone ha il suo gestore');
@@ -39,7 +44,7 @@ sez('la corsa in sospeso');
 /* Su un telefono una partita da venti minuti finisce quando arriva una
    notifica, non quando decidi tu: perderla e' il modo piu' rapido di far
    chiudere il gioco. */
-S().visti = ['gemme','breccia','marea','caccia','nodo'];
+S().visti = TUTTI_I_BRIEFING();
 O.reset('vega', 4242, 'incursione', false); G.state = 'play';
 gioca(90);
 const primaT = G.t, primaLv = G.level, primaK = G.kills;
@@ -87,7 +92,7 @@ sez('azzerare e ripristinare buttano via la corsa in sospeso');
    continuava a offrire «Riprendi» su una partita che con quei numeri non
    esiste piu'.                                                          */
 {
-  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  S().visti = TUTTI_I_BRIEFING();
   O.reset('vega', 5150, 'corsa', false); G.state = 'play';
   gioca(20); O.salvaCorsa();
   ok(!!O.leggiCorsa(), 'una corsa annotata c’è');
@@ -138,7 +143,7 @@ sez('la diagnosi dice la condizione giusta');
   const testo = () => O.UI.diagnosi(true);
   const anello = () => O.UI.evoLine();
   const mk = (id, lv, res) => ({ id, el: O.RUNES[id].el, lv, res });
-  S().visti = ['gemme','breccia','marea','caccia','nodo'];
+  S().visti = TUTTI_I_BRIEFING();
   O.reset('vega', 4242, 'incursione', false); G.state = 'play';
   G.slots = 6; G.evoCount = 0; G.culms = 5; G.dmgSrc = { iride: 10 };
 
@@ -173,7 +178,7 @@ sez('il pop delle uccisioni percorre la scala');
    secondo — a ritmo costante, una nota sola. Misurato prima: su 154 pop il
    semitono usciva 0 o 1 nel 75% dei casi e non superava mai il 3.        */
 {
-  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  S().visti = TUTTI_I_BRIEFING();
   O.reset('vega', 777, 'corsa', false); G.state = 'play';
   const visti = new Set();
   const vero = O.AU.pop.bind(O.AU);
@@ -406,7 +411,7 @@ sez('l’Incursione contiene tutto il gioco');
    entrava in campo solo dopo il quarto minuto di otto.                   */
 {
   const quando = (modo) => {
-    S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+    S().visti = TUTTI_I_BRIEFING();
     O.reset('vega', 3131, modo, false); G.state = 'play';
     let t = -1;
     for (let i = 0; i < 60 * G.modo.len && t < 0; i++) {
@@ -433,7 +438,7 @@ sez('il campo si disegna');
    disegno che nessun altro tocca.                                        */
 {
   const prova = (n, f) => { try { f(); O.render(); ok(true, n); } catch (e) { ok(false, n + ': ' + e.message); } };
-  S().visti = ['gemme', 'breccia', 'marea', 'caccia', 'nodo'];
+  S().visti = TUTTI_I_BRIEFING();
   O.reset('vega', 606, 'corsa', false); G.state = 'play';
   gioca(40);
   prova('una partita in corso', () => { });
@@ -461,7 +466,18 @@ sez('il campo si disegna');
     if (k) { G.elAnello.add(k.nodo); k.x = G.p.x + 1200; k.y = G.p.y; G.nodo = null; }
   });
   prova('dentro a un Nodo', () => { const k = G.rocks.find(r => r.nodo); if (k) { G.p.x = k.x; G.p.y = k.y + k.r + 30; O.step(1 / 60); } });
-  prova('durante il Culmine', () => { G.charge = 1; G.culm = 3; O.recalcRing(false); gioca(1); });
+  prova('con un Allineamento acceso', () => {
+    G.form = null;
+    G.ev = { k: 'allineamento', t: 4, dur: 23, r: 72, presi: 0, sig: [
+      { x: G.p.x + 600, y: G.p.y, dur: 11, preso: 0, morto: 0 },
+      { x: G.p.x - 300, y: G.p.y + 700, dur: 17, preso: 0, morto: 0 },
+      { x: G.p.x - 1400, y: G.p.y - 900, dur: 23, preso: 0, morto: 0 }] };
+  });
+  prova('con una Fermata da tenere', () => {
+    G.ev = { k: 'fermata', x: G.p.x + 120, y: G.p.y, t: 5, dur: 21, r: 168, carica: .4, acc: 0 };
+  });
+  prova('con la Fermata fuori campo', () => { G.ev.x = G.p.x + 1500; G.ev.y = G.p.y + 900; });
+  prova('durante il Culmine', () => { G.ev = null; G.charge = 1; G.culm = 3; O.recalcRing(false); gioca(1); });
   prova('la vetrina del menu', () => { G.demo = true; G.state = 'menu'; gioca(2); G.demo = false; });
 }
 
@@ -607,6 +623,97 @@ sez('il terzo grado conta anche quando lo fa il Culmine');
   ok(!!G.tier3, 'che adesso conta per il contratto');
   const h = (O.UI.renderAwake(), O.statoPartita());
   ok(h.tier3 === true, 'e arriva fino allo stato di fine partita');
+}
+
+sez('i cinque eventi d’arena');
+/* Erano tre, con un intervallo di rand(80,105) secondi: una Corsa ne fa
+   undici, quindi ognuno tornava quasi quattro volte nella stessa partita e
+   una volta su tre tornava subito dopo se stesso. Adesso sono cinque, e
+   non si ripetono mai di fila.                                            */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  const visti = {};
+  let difila = 0, prec = null, n = 0;
+  for (let giro = 0; giro < 220 && n < 90; giro++) {
+    O.reset('vega', 1000 + giro, 'corsa', false); G.state = 'play';
+    G.t = 120;
+    for (let k = 0; k < 40 && n < 90; k++) {
+      G.ev = null; G.evT = 0; G.bosses.length = 0; G.boss = null;
+      O.step(1 / 60);
+      if (!G.ev) continue;
+      const kk = G.ev.k;
+      visti[kk] = (visti[kk] || 0) + 1; n++;
+      if (kk === prec) difila++;
+      prec = kk;
+    }
+    prec = null;   /* fra una partita e l'altra non c'e' un "di fila" */
+  }
+  const quanti = Object.keys(visti).length;
+  ok(quanti === 5, 'ne escono cinque diversi (' + Object.keys(visti).sort().join(' ') + ')');
+  ok(difila === 0, 'e nessuno esce due volte di fila su ' + n + ' sorteggi');
+}
+
+sez('l’Allineamento si prende e si spegne a turno');
+/* Tre sigilli con scadenze scaglionate: il piu' vicino non e' quasi mai il
+   primo da prendere. Senza scadenze diverse sarebbe una breccia in tre
+   copie, cioe' un altro viaggio invece di un giro.                        */
+{
+  O.reset('vega', 404, 'corsa', false); G.state = 'play'; G.t = 120;
+  G.ev = { k: 'allineamento', t: 0, dur: 23, r: 72, presi: 0, sig: [
+    { x: G.p.x + 200, y: G.p.y, dur: 11, preso: 0, morto: 0 },
+    { x: G.p.x, y: G.p.y + 200, dur: 17, preso: 0, morto: 0 },
+    { x: G.p.x - 200, y: G.p.y, dur: 23, preso: 0, morto: 0 }] };
+  const sig = G.ev.sig;
+  ok(sig[0].dur < sig[1].dur && sig[1].dur < sig[2].dur, 'i tre non scadono insieme');
+  /* toccandone uno si prende */
+  G.p.x = sig[1].x; G.p.y = sig[1].y;
+  O.step(1 / 60);
+  ok(sig[1].preso === 1 && G.ev && G.ev.presi === 1, 'passarci sopra lo prende');
+  /* lasciando scadere il primo, si spegne senza chiudere l’evento */
+  G.p.x = 9999; G.p.y = 9999; G.ev.t = 12;
+  O.step(1 / 60);
+  ok(sig[0].morto === 1 && !!G.ev, 'quello scaduto si spegne, l’evento continua');
+  /* prendendo il terzo si chiude con due su tre, senza scrigno */
+  G.drops.length = 0;
+  G.ev.t = 24;
+  O.step(1 / 60);
+  ok(!G.ev, 'finiti i sigilli l’evento si chiude');
+  ok(!G.drops.some(d => d.k === 'chest'), 'due su tre non pagano lo scrigno');
+}
+
+sez('la Fermata paga chi resta');
+/* L'unico evento che chiede di NON muoversi: tutto il resto del gioco
+   premia chi non si ferma mai. Uscire non azzera — azzerare farebbe
+   smettere di provarci chi e' stato spinto fuori da un contraccolpo — ma
+   mette in pausa, e il cerchio e' largo abbastanza da girarci dentro.   */
+{
+  O.reset('vega', 505, 'corsa', false); G.state = 'play'; G.t = 120;
+  G.ev = { k: 'fermata', x: G.p.x, y: G.p.y, t: 0, dur: 21, r: 168, carica: 0, acc: 0 };
+  const v = G.ev;
+  gioca(3, () => { G.p.x = v.x; G.p.y = v.y; });
+  const dentro = v.carica;
+  ok(dentro > .2, 'stando dentro si riempie (' + Math.round(dentro * 100) + '% in 3s)');
+  G.p.x = v.x + 900; G.p.y = v.y;
+  gioca(3);
+  ok(Math.abs(G.ev.carica - dentro) < .02, 'uscendo non si azzera: si ferma');
+  /* tenendola fino in fondo: scrigno e un po' di vita */
+  /* fino in fondo, un fotogramma alla volta: lo scrigno cade sotto ai
+     piedi e verrebbe raccolto subito, quindi si guarda nell'istante in cui
+     l'evento si chiude */
+  G.drops.length = 0;
+  P.hp = P.maxHp * .5;
+  const feriti = P.hp;
+  let scrigno = false;
+  /* intoccabile: restare fermi in mezzo alla folla costa vita per davvero
+     — e' il punto dell'evento — e qui si sta misurando la cura, non lei */
+  for (let i = 0; i < 60 * 14 && G.ev; i++) {
+    G.p.x = v.x; G.p.y = v.y; G.p.inv = 9;
+    O.step(1 / 60);
+    if (G.drops.some(d => d.k === 'chest')) scrigno = true;
+  }
+  ok(!G.ev, 'piena, l’evento si chiude');
+  ok(scrigno, 'e lascia uno scrigno');
+  ok(P.hp > feriti, 'e un po’ di vita (' + Math.round(feriti) + ' → ' + Math.round(P.hp) + ')');
 }
 
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
