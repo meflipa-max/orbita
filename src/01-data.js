@@ -596,6 +596,16 @@ const SFIDE = [
   { id: 'ascesa',    n: 'Ascesa',          d: 'Vinci ad ascensione 3 o superiore.',               r: 1000, f: s => s.win && s.ascLv >= 3, unlock: 'nadir' }
 ];
 
+/* Quante rune in fila accendono un Risveglio, e quindi anche i due gradi
+   successivi (+1 e +2). Sta qui perche' lo leggono in tre: recalcRing, che
+   lo applica; la guida, che lo spiega; la diagnosi di fine partita. La
+   guida se l'era riscritto a mano e raccontava le soglie di due versioni
+   fa — «a cinque il secondo grado, a sette il terzo» — cioe' sette rune in
+   fila su un anello che ne tiene sei. */
+const CATENA_BASE = 3;
+const NUM_IT = ['zero', 'una', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto'];
+const Cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
 /* ── ascensioni ─────────────────────────────────────────────────
    Ogni livello aggiunge UNA regola, e le regole si sommano. Non è un
    moltiplicatore generico: ricontestualizza il gioco che c'è già invece
@@ -616,7 +626,7 @@ const ASC = [
   { d: 'I nemici hanno il doppio della vita.', hp: 2 }
 ];
 function ascMods(lv) {
-  const m = { hp: 1, spd: 1, slots: 0, boss: 0, rate: 1, chain: 3, startHp: 1, noChest: 0, noDrops: 0, twin: 0 };
+  const m = { hp: 1, spd: 1, slots: 0, boss: 0, rate: 1, chain: CATENA_BASE, startHp: 1, noChest: 0, noDrops: 0, twin: 0 };
   const top = Math.min(lv | 0, ASC.length - 1);
   for (let i = 1; i <= top; i++) {
     const a = ASC[i];
@@ -819,7 +829,10 @@ const BRIEFING = {
   },
   marea: {
     n: 'Marea', k: 'Evento d’arena', ico: 'ampiezza', c: '#45d7ff',
-    p: ['Per venti secondi i nemici arrivano <b>tutti da una parte sola</b>. La fascia azzurra dice quale, e il conto alla rovescia quanto manca.',
+    /* Diceva «per venti secondi» e ne dura diciotto: un numero scritto a
+       mano accanto a un conto alla rovescia che lo mostra gia' e che non
+       puo' sbagliarlo. */
+    p: ['I nemici arrivano <b>tutti da una parte sola</b>. La fascia azzurra dice quale, e il conto alla rovescia quanto manca.',
         'Ti inseguono, quindi non «passa»: ma il lato <b>opposto</b> alla fascia resta sgombro. Vai di là e falli allungare in fila, invece di attraversarli.']
   },
   caccia: {

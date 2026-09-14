@@ -361,10 +361,15 @@ const UI = {
         p('Ogni livello scegli una runa e <em>dove metterla</em>. Due rune vicine dello stesso elemento <em>risuonano</em>: <b>+30% danno a ciascuna</b>. Lontane fra loro, zero. L’anello è <b>circolare</b>: l’ultimo alloggiamento confina col primo.')) +
 
       sec('Che cos’è un Risveglio',
-        p('Tre rune dello stesso elemento <b>una di fila all’altra</b> accendono un Risveglio: una regola nuova che vale per <em>tutti</em> i tuoi colpi fino a fine partita — anche quelli delle rune di altri elementi.') +
+        p(Cap(NUM_IT[CATENA_BASE]) + ' rune dello stesso elemento <b>una di fila all’altra</b> accendono un Risveglio: una regola nuova che vale per <em>tutti</em> i tuoi colpi fino a fine partita — anche quelli delle rune di altri elementi.') +
         p('Non è un potenziamento della runa: è un potere aggiunto alla partita. E se ne possono tenere accesi più d’uno insieme.') +
         '<div class="awlist">' + awRows + '</div>' +
-        p('A <b>cinque</b> rune in fila il Risveglio sale al secondo grado, a <b>sette</b> al terzo: stesso effetto, molto più forte.')) +
+        /* Diceva «a cinque il secondo grado, a sette il terzo»: erano le
+           soglie di prima, e sette rune in fila su un anello che ne tiene
+           sei non si fanno. Adesso i tre numeri escono dalla stessa
+           espressione che li decide in recalcRing. */
+        p('A <b>' + (CATENA_BASE + 1) + '</b> rune in fila il Risveglio sale al secondo grado, a <b>' +
+          (CATENA_BASE + 2) + '</b> al terzo: stesso effetto, molto più forte.')) +
 
       sec('Tecniche',
         '<ol class="tips">' +
@@ -667,7 +672,8 @@ const UI = {
     }).join('');
     return '<div class="eyebrow" style="text-align:left;margin-top:4px">Forme scoperte · ' +
       SAVE.evoVisti.length + ' di ' + RUNEIDS.length + '</div>' +
-      '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello 6, risonanza da entrambi i lati, elemento risvegliato.</div>' +
+      '<div class="hint" style="text-align:left;margin:-4px 0 2px">Ogni runa ne ha una. Livello ' +
+      (hasRel('crogiolo') ? 5 : 6) + ', risonanza da entrambi i lati, elemento risvegliato.</div>' +
       '<div class="formelist">' + righe + '</div>';
   },
 
@@ -830,7 +836,12 @@ const UI = {
         else evoCls = ' inerte';
       }
       else if (this.dissolving) evoCls = r ? ' dissolvibile' : '';
-      else if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (r.lv >= 8 ? ' vicino' : '');
+      /* «vicino» chiedeva il livello 8, cioe' la soglia di quando la
+         trasformazione arrivava a otto: da quando arriva a sei (cinque col
+         Crogiolo) una runa gia' al livello giusto non si accendeva, e una
+         all'8 si accendeva per un requisito che aveva superato da due
+         livelli. La condizione la sa mancaEvo(), che e' dove sta scritta. */
+      else if (r && EVO[r.id]) evoCls = canEvolve(r) ? ' pronto' : (mancaEvo(r).indexOf('lv') < 0 ? ' vicino' : '');
       const vuoto = !r;
       const dentro = r ? svg(r.id)
         : '<svg viewBox="0 0 24 24" class="plus" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>';

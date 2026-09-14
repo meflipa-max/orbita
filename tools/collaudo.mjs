@@ -297,6 +297,19 @@ sez('uno scrigno si annuncia come uno scrigno');
   ok(/Livello /.test(O.schermo()), 'quella di un livello dice livello');
 }
 
+sez('la guida dice i numeri del gioco');
+/* Diceva «a cinque rune il secondo grado, a sette il terzo»: erano le
+   soglie di due versioni fa, e sette rune in fila su un anello che ne
+   tiene sei non si fanno. Adesso i numeri escono dalla stessa costante che
+   li decide in recalcRing.                                               */
+{
+  O.UI.guide();
+  const h = O.schermo();
+  ok(/<b>4<\/b> rune in fila/.test(h) && /<b>5<\/b> al terzo/.test(h),
+     'secondo grado a 4 rune, terzo a 5');
+  ok(!/<b>sette<\/b>/.test(h), 'e non chiede piu’ sette rune a un anello che ne tiene sei');
+}
+
 sez('il Corriere non attacca');
 /* Il briefing dice «Non ti attacca: scappa», ma era uno spettro normale:
    sbatterci contro toglieva vita, cioe' la caccia puniva esattamente il
