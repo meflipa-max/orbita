@@ -230,6 +230,22 @@ sez('le rune che girano invece di volare');
   ok(/ORBITANTI/.test(rnd), 'e chi orbita lo disegna la stessa lista che lo fa girare');
 }
 
+sez('il gelo che tocca');
+/* «L'alone diventa una stagione: congela al tocco» — ma il congelamento
+   arrivava all'areaHit dentro un `opt` che il codice del danno non leggeva
+   mai, quindi l'Inverno non congelava niente.                            */
+{
+  O.reset('vega', 11, 'corsa', false); G.state = 'play';
+  gioca(12);
+  G.ring.fill(null);
+  G.ring[0] = { id: 'inverno', el: 'gelo', lv: 5, cd: 0, res: 0, slot: 0, st: {} };
+  O.recalcRing(false);
+  const e = G.enemies.find(x => x.hp > 0 && !x.boss);
+  e.x = G.p.x + 30; e.y = G.p.y; e.hp = e.maxHp = 1e7; e.froze = 0;
+  for (let i = 0; i < 40; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; e.x = G.p.x + 30; e.y = G.p.y; }
+  ok(e.froze > 0, 'l’Inverno congela chi tocca');
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],

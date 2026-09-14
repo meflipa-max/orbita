@@ -1041,6 +1041,13 @@ function _hit(e, amount, opt) {
   }
   burstPart(e.x, e.y, crit ? 5 : 2, opt.color || e.c, 140, 2.6, .26);
 
+  /* Congelamento portato dal colpo (Inverno, Zanna, Glaciale). Stava scritto
+     in due posti — updateBullets per i proiettili — e in un terzo non era
+     scritto affatto: `areaHit(..., { gela: .9 })` dell'Inverno passava il
+     valore a un `opt` che nessuno leggeva, quindi «congela al tocco» non
+     congelava niente. Una regola, un posto solo: qui. */
+  if (opt.gela && !e.boss && e.hp > 0) e.froze = Math.max(e.froze, opt.gela);
+
   /* risvegli: regole globali del run */
   const aw = G.awk;
   if (aw.fuoco && !opt.noStatus) { e.burn = Math.max(e.burn, [0, 5, 11, 24][aw.fuoco] * P.dmgMul); e.burnT = 3.2; }

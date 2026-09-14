@@ -515,8 +515,7 @@ function updateBullets(dt) {
       if (b.kind === 'scythe') { if (b.hitCd > 0) continue; b.hitCd = b.hitRate || .16; }
       else { if (!b.hitIds) b.hitIds = []; if (b.hitIds.indexOf(e) >= 0) continue; b.hitIds.push(e); }
       const m = Math.hypot(dx, dy) || 1;
-      if (b.gela && !e.boss) e.froze = Math.max(e.froze, b.gela);
-      hitEnemy(e, b.dmg, { color: b.c, kb: 120, kbx: dx / m, kby: dy / m, el: b.el, src: b.src });
+      hitEnemy(e, b.dmg, { color: b.c, kb: 120, kbx: dx / m, kby: dy / m, el: b.el, src: b.src, gela: b.gela });
       /* Cometa e Zanna: ogni uccisione frantuma il colpo in schegge nuove */
       if (b.splitKill && e.hp <= 0) {
         for (let k = 0; k < b.splitKill; k++) {
