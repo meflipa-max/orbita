@@ -313,6 +313,7 @@ function drawEnemies() {
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
+    if (e.dead || e.hp <= 0) continue;
     if (Math.abs(e.x - cx) > mw || Math.abs(e.y - cy) > mh) continue;
     ctx.save(); ctx.translate(e.x, e.y);
     if (e.boss) ctx.rotate(Math.sin(G.t * 1.2) * .12); else ctx.rotate(Math.atan2(G.p.y - e.y, G.p.x - e.x) + PI / 2);

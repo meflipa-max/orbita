@@ -952,7 +952,6 @@ function syncBosses() {
 
 function spawnBoss(def) {
   const a = rand(TAU), d = Math.max(G.vw, G.vh) * .62 + 120;   /* mondo, non schermo */
-  const mins = G.t / 60;
   /* La tenacia arriva a meta' sui guardiani: a piena dose un direttore alto
      li trasformerebbe in muri da tre minuti, ma senza affatto una build che
      scioglie la folla scioglie anche loro. E ha un tetto: serve a regolare il

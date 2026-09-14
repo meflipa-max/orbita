@@ -870,7 +870,10 @@ function updateEnemies(dt) {
 
     if (e.boss) { bossAI(e, dt); }
     else if (e.type === 'dissonante' && e.froze <= 0) { dissonanteAI(e, dt); }
-    else if (e.froze > 0) { /* congelato */ }
+    /* congelato: la presa si scioglie con lui (updateEnemies riscrive
+       `mutata` a ogni fotogramma), quindi deve sparire anche il filo —
+       altrimenti resta disegnato verso una runa che sta sparando */
+    else if (e.froze > 0) { if (e.type === 'dissonante') { e.attiva = 0; e.slot = undefined; } }
     else {
       const dx = px - e.x, dy = py - e.y, d = Math.hypot(dx, dy) || 1;
       let sp = e.spd * (1 - e.slow);
