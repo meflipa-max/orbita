@@ -1702,6 +1702,12 @@ function riprendiCorsa(r) {
   G.evoCount = r.evo | 0; G.reorders = r.reo | 0; G.awakeMax = r.aM | 0; G.awakeAt = r.aA | 0;
   G.lowHp = r.low; G.pieno = r.pieno; G.rerollUsati = r.ru | 0; G.respiro = r.resp;
   G.lezioneGemme = r.lez | 0; G.saldato = r.sal | 0;
+  /* L'Ascesi va rimessa PRIMA di recalc(), o la vita massima esce sbagliata.
+     E `pending` va riletto dall'annotazione invece di restare quello che
+     resetRun ha appena messo: con la Semenza quello vale 1, cioe' ogni
+     ripresa regalava una carta. */
+  G.ascesi = r.asc2 | 0; G.culms = r.cul | 0; G.pending = r.pend | 0; G.chests = r.chs | 0;
+  G.dmgSrc = (r.src && typeof r.src === 'object' && !Array.isArray(r.src)) ? Object.assign({}, r.src) : {};
   G.passives = Object.assign({}, r.pas || {});
   G.ring = new Array(G.slots).fill(null);
   for (const x of r.ring) {

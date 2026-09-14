@@ -240,7 +240,17 @@ function salvaCorsa() {
       bk: G.bossKills | 0, ml: G.maxLv | 0, t2: G.tier2 ? 1 : 0, t3: G.tier3 ? 1 : 0,
       evo: G.evoCount | 0, reo: G.reorders | 0, aM: G.awakeMax | 0, aA: G.awakeAt | 0,
       low: G.lowHp ? 1 : 0, pieno: G.pieno ? 1 : 0, ru: G.rerollUsati | 0,
-      resp: G.respiro ? 1 : 0, lez: G.lezioneGemme | 0, sal: G.saldato | 0
+      resp: G.respiro ? 1 : 0, lez: G.lezioneGemme | 0, sal: G.saldato | 0,
+      /* L'Ascesi e' un potenziamento ripetibile senza limite, cioe' danno,
+         vita e area accumulati per tutta la corsa: non era annotata, quindi
+         riprendere una corsa la azzerava (misurato: sei Ascesi, +30% di
+         danno, spariti). Le carte in attesa nemmeno — e chi ha la Semenza
+         ne riceveva una NUOVA a ogni ripresa, cioe' un potenziamento
+         gratis per ogni volta che usciva dal gioco. */
+      asc2: G.ascesi | 0, pend: G.pending | 0, chs: G.chests | 0, cul: G.culms | 0,
+      /* da dove e' venuto il danno: senza, la schermata di fine di una
+         corsa ripresa racconta solo l'ultimo tratto */
+      src: G.dmgSrc
     };
     storeSet(RUNKEY, JSON.stringify(r));
   } catch (e) { }
@@ -629,7 +639,7 @@ const G = {
   ripresa: 0, briefing: null, elAnello: new Set(),
   /* 0 = non spiegato, 1 = spiegato ma non ancora raccolto, 2 = imparato */
   lezioneGemme: 0,
-  bossKills: 0, maxLv: 1, tier2: 0, rerollUsati: 0, respiro: 0, giornaliera: false,
+  bossKills: 0, maxLv: 1, tier2: 0, tier3: 0, rerollUsati: 0, respiro: 0, giornaliera: false,
   runaNuova: null, contrattiFatti: [], sfideNuove: []
 };
 const P = {}; /* statistiche derivate */

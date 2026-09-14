@@ -171,6 +171,28 @@ sez('il Culmine si carica con quello che uccidi');
   ok(e.hp <= 0 && G.charge > .05, 'un elite abbattuto carica l’indicatore (' + G.charge.toFixed(3) + ')');
 }
 
+sez('riprendere una corsa non cambia la corsa');
+/* Due difetti nella stessa riga di codice mancante. L'Ascesi e' il
+   potenziamento ripetibile senza limite — danno, vita e area accumulati per
+   tutta la partita — e non veniva annotata: riprendere la azzerava. E la
+   Semenza (reliquia) mette una carta in mano a inizio partita: siccome
+   riprendere ripassa da resetRun, ne regalava una NUOVA a ogni ripresa,
+   cioe' un potenziamento gratis per ogni volta che uscivi dal gioco.      */
+{
+  S().reliquie = ['semenza'];
+  O.reset('vega', 99, 'corsa', false); G.state = 'play';
+  gioca(20);
+  for (let i = 0; i < 6; i++) O.apply({ t: 'ascesi' });
+  const dmg = P.dmgMul, vita = P.maxHp;
+  G.pending = 0;
+  O.salvaCorsa();
+  O.riprendiCorsa(O.leggiCorsa());
+  ok(G.ascesi === 6 && Math.abs(P.dmgMul - dmg) < 1e-9 && Math.abs(P.maxHp - vita) < 1,
+     'sei Ascesi restano sei dopo la ripresa');
+  ok(G.pending === 0, 'la Semenza non regala una carta a ogni ripresa');
+  S().reliquie = [];
+}
+
 sez('le schermate si disegnano');
 S().visti = ['gemme']; O.reset('vega', 4, 'corsa', false);
 for (const [n, f] of [['titolo', () => O.UI.title()], ['guida', () => O.UI.guide()],
