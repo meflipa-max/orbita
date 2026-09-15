@@ -169,6 +169,55 @@ function bancoCong() {
   }
 }
 
+/* ── l'economia ─────────────────────────────────────────────────
+   Quanto rende una partita e quanto costa il negozio, misurati insieme:
+   sono l'unico modo di dire se i frammenti valgono qualcosa. La domanda a
+   cui risponde e' «dopo quante corse il negozio e' finito?», e la risposta
+   giusta non e' «una».                                                    */
+function bancoSoldi() {
+  const fmt = n => n.toLocaleString('it-IT');
+  let meta = 0, senzaDominio = 0;
+  for (const m of O.META) {
+    let c = 0; for (let lv = 0; lv < m.max; lv++) c += O.metaCost(m, lv);
+    meta += c; if (m.id !== 'dominio') senzaDominio += c;
+  }
+  const nuclei = O.CHARS.reduce((a, c) => a + (c.cost || 0), 0);
+  const rel = O.RELIQUIE.reduce((a, r) => a + r.c, 0);
+  const tutto = senzaDominio + nuclei + rel;
+  console.log('il negozio, tutto quello che ha un fondo:');
+  console.log('  potenziamenti (senza Dominio) ' + fmt(senzaDominio));
+  console.log('  nuclei                        ' + fmt(nuclei));
+  console.log('  reliquie                      ' + fmt(rel));
+  console.log('  TOTALE                        ' + fmt(tutto));
+  console.log('  (il Dominio, senza fondo, ne costa ' + fmt(meta - senzaDominio) + ')\n');
+  console.log('formato      seme  tempo  lv   uccisioni  vinta  paga   corse per il negozio');
+  const righe = [];
+  for (const modo of ['corsa', 'incursione'])
+    for (const s of semi.slice(0, 2)) {
+      const r = partita({ modo, seed: s, mazzoPieno: true, immortale: true });
+      const paga = O.payout();
+      righe.push(paga);
+      console.log(modo.padEnd(12), String(s).padEnd(5), String(r.t).padEnd(6),
+        String(r.lv).padEnd(4), String(r.kills).padEnd(10), (r.vinta ? 'sì' : 'no').padEnd(6),
+        String(paga).padEnd(6), (tutto / paga).toFixed(1));
+    }
+  console.log('\nmedia paga: ' + media(righe, x => x) + ' · corse per comprare tutto: ' +
+    (tutto / (righe.reduce((a, b) => a + b, 0) / righe.length)).toFixed(1));
+  /* La prima corsa della vita: mazzo base, cinque minuti, persa. Deve pagare
+     le prime due REGOLE del negozio — Innesco 110 e Presagio 160 — perche' e'
+     su quella promessa che il negozio e' costruito: «in cima ci sono regole a
+     buon mercato, comprabili dopo una partita sola». Un'economia si sbaglia
+     in due modi, e questo e' l'altro. */
+  console.log('\nla prima corsa (mazzo base, 5 minuti, persa)');
+  for (const s of semi.slice(0, 2)) {
+    partita({ modo: 'corsa', seed: s, secondi: 300 });
+    const paga = O.payout();
+    console.log('  seme ' + s + ': ' + G.kills + ' uccisioni, livello ' + G.level +
+      ' → ' + paga + ' frammenti (Innesco 110' + (paga >= 110 ? ' ✓' : ' ✗') +
+      ', Innesco+Presagio 270' + (paga >= 270 ? ' ✓' : ' ✗') + ')');
+  }
+}
+
 const quale = process.argv[2] || 'base';
 console.log('— banco: ' + quale + ' —\n');
-({ base: banchoBase, asc: bancoAsc, cong: bancoCong }[quale] || banchoBase)();
+({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi }[quale] || banchoBase)();

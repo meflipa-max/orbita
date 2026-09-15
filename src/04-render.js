@@ -1082,10 +1082,12 @@ function drawScreenUI() {
     let tot = 0, viva = 0;
     for (const b of B) {
       const u = voci[voci.length - 1];
-      if (u && u.n === b.boss.n) u.k++; else voci.push({ n: b.boss.n, k: 1, c: b.c });
+      if (u && u.n === b.boss.n) u.k++; else voci.push({ n: b.boss.n, k: 1, c: b.c, fine: b.boss.fine });
       tot += b.maxHp; viva += Math.max(0, b.hp);
     }
-    for (const v of voci) v.t = v.k > 1 ? v.n + ' ×' + v.k : v.n;
+    /* l'ultimo guardiano lo dice la barra: e' la condizione di vittoria
+       del formato, e la sua barra era identica a quella degli altri */
+    for (const v of voci) v.t = (v.k > 1 ? v.n + ' ×' + v.k : v.n) + (v.fine ? ' · ULTIMO' : '');
     const pct = Math.ceil(clamp(viva / tot, 0, 1) * 100) + '%';
 
     /* il nome si stringe finché non sta nella riga, invece di sbordare */

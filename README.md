@@ -16,6 +16,165 @@ Due formati: la **Corsa** da 20 minuti con cinque guardiani, poi modalità senza
 l'**Incursione** da 8 minuti con tre. I **frammenti** restano fra una partita e l'altra e si
 spendono nell'Osservatorio in potenziamenti permanenti, nuclei e reliquie.
 
+### Il lessico
+
+Un giocatore vede apparire scritte e **nomi di cose che accadono** senza capirne il
+significato. Era vero, e si vedeva dal codice: «Torpore II», «Ritempra», «Corazza di Gelo»,
+«Dissonante», «Ascesi», «Eccesso» comparivano per la prima volta dentro un avviso di due
+secondi in mezzo all'azione, e la spiegazione — quando c'era — stava nella guida, nel menu,
+raggiungibile solo abbandonando la partita.
+
+Adesso dalla **pausa** si apre il **Lessico**: quarantatré voci, tutto quello che il gioco
+nomina, con la riga che dice cosa vuol dire. Quello che sta scritto altrove lo prende da dove
+sta scritto — i Risvegli da `EL`, gli eventi d'arena dal briefing che li spiega, la soglia
+della trasformazione da `sogliaEvo()` — così una regola cambiata in un posto non resta vecchia
+lì dentro.
+
+E le due regole che, non capite, si leggono come un **difetto del gioco** hanno finalmente la
+loro spiegazione a schermo intero, la prima volta e una volta sola:
+
+- il **Dissonante** si spiega *quando zittisce la prima runa*, non quando compare: il fatto —
+  una tua runa che si spegne e un filo che la tiene — arrivava dopo l'avviso, e senza una
+  spiegazione si legge come un bug;
+- la **corazza elementale** diceva «Corazza di Gelo», cioè il nome della regola e non la
+  regola. Il mezzo danno — che è il momento in cui una seconda catena ripaga — non stava
+  scritto da nessuna parte, né nell'avviso né sul cerchio disegnato addosso al guardiano.
+
+### La Ritempra fa quello che dice
+
+La Ritempra riaccorda una runa a un altro elemento. Cambiava `r.el` — l'elemento con cui
+l'anello disegna e conta le catene — e **nient'altro**: `runeStats` leggeva l'elemento di
+*nascita*, e da lì lo leggevano tutte le funzioni di tiro. Una Scheggia riaccordata al Fuoco
+era quindi rossa nell'anello e di Gelo in campo: sparava schegge azzurre, prendeva il +35% dal
+Nodo di Gelo invece che da quello di Fuoco, e contro un guardiano con la corazza di Gelo faceva
+metà danno per un elemento che secondo l'anello non aveva più. Chi la giocava vedeva una runa
+cambiare colore e continuare a sparare il colore di prima.
+
+Adesso l'elemento della runa è **uno solo**, e ce l'ha `s.el`: da lì lo leggono tutti i colpi,
+tutte le zone, la catena del Sovraccarico e il bonus del Nodo. Tre posti in cui si disfaceva:
+
+- **trasformarsi** riportava la runa all'elemento di nascita. Ogni forma evoluta ha l'elemento
+  della runa da cui nasce, quindi `RUNES[c.to].el` sembrava innocuo — ma quella Scheggia
+  reggeva un lato della catena di Fuoco, e il premio per cui avevi progettato la partita
+  **spegneva il Risveglio** che serviva a ottenerlo.
+- **riprendere una corsa sospesa** la riportava indietro allo stesso modo: l'annotazione
+  teneva id, livello e alloggiamento, non l'elemento.
+- il **nome** restava quello della forma, cioè quello della versione di Gelo. Sedici forme per
+  cinque elementi sarebbero ottanta nomi da inventare; l'elemento invece si dice: **«Scheggia
+  di Fuoco»**, e solo quando c'è qualcosa da dire.
+
+E il momento in cui succede adesso si vede: due onde del colore nuovo, una dal nucleo e una
+**dalla runa** — è quella che dice quale.
+
+### Ritemprare non è toccare a caso l'anello
+
+La schermata era qualche runa che pulsa, una freccia con un nome di elemento e nessun modo di
+sapere cosa sarebbe cambiato. Il primo tocco era definitivo. Tre difetti in uno.
+
+- Ogni bersaglio adesso porta scritto il **guadagno**: `→ FUOCO 3/3` sotto, e sopra
+  **RISVEGLIO** quando quella mossa ne accende uno.
+- Il punteggio dei bersagli sommava solo i guadagni — `Math.max(0, …)` — quindi proponeva con
+  entusiasmo la riaccordatura che allunga una catena di una runa e **spegne il Risveglio**
+  dall'altra parte. Ora si misura in gradi di Risveglio, e una mossa che ne toglie non si
+  offre. L'**Iride** è fuori dai bersagli: vale già come qualunque elemento, fissarla su uno è
+  l'unica mossa che le toglie qualcosa.
+- Il primo tocco **sceglie**, il secondo conferma, e in mezzo una riga dice la frase intera:
+  *«Scheggia · da Gelo a Fuoco · forma e livello 6 restano — Fuoco 2 → 3/3 · accende Ardore»*.
+
+Anche i «no» dicono quale regola hai incontrato: l'alloggiamento vuoto, l'Iride, o la runa che
+riaccordata non allunga niente — con l'alloggiamento che invece conviene.
+
+### Il ghiaccio parte dalla runa
+
+Otto rune a proiettile su nove fanno nascere i colpi in `r.wx/r.wy`, cioè **dalla runa che
+gira**. La Scheggia e la Zanna li facevano nascere nel nucleo: il ghiaccio sembrava un'abilità
+del nucleo e non della runa che te lo stava dando, e con l'anello in rotazione non c'era modo
+di capire quale runa lo facesse. Anche la direzione adesso si misura dalla runa — il corridoio
+più pieno visto dal centro non è quello che le schegge attraversano se partono trentadue pixel
+più in là.
+
+### Una corsa vinta resta vinta
+
+> «Il mio record è una partita da oltre 21 minuti, ma ho dovuto abbandonarla e risulta che ho
+> perso. Perché non l'ho vinta?»
+
+La Corsa si vince abbattendo l'**ultimo guardiano**, che arriva al diciottesimo minuto: da lì
+la corsa è vinta, pagata, segnata vinta nello storico e l'ascensione è salita. Ma qualunque
+cosa la chiudesse dopo — la morte nel senza fine, o il bottone Abbandona — chiamava
+`endRun(false)`, e quel `false` arrivava intero fino allo schermo: **FINE**, «Il nucleo si
+spegne», e la diagnosi da sconfitta. Peggio: `statoPartita(false)` diceva `win:false` a sfide,
+sblocchi e contratti, cioè alla seconda chiusura nessuno di quelli che chiedono una vittoria
+poteva completarsi.
+
+La vittoria è un fatto della corsa, non dell'ultimo istante. Quello che si paga una volta sola
+resta protetto — i frammenti, la riga dello storico, e adesso anche il **conto delle vittorie**
+con l'ascensione che sblocca, che senza il nuovo guardiano avrebbe contato due vittorie per la
+stessa corsa.
+
+E la schermata di fine conosce **tre uscite** invece di due: vinta, persa e **abbandonata** —
+«Il nucleo si spegne» era l'unica frase sbagliata proprio nell'unica uscita in cui il nucleo
+non si spegne. «Ucciso da» valeva `!win`, quindi nominava l'ultima cosa che aveva sfiorato chi
+abbandonava e taceva a chi cadeva nel senza fine dopo aver vinto, cioè proprio a chi vuole
+saperlo: la domanda è «sei morto?», non «hai perso?». E «Continua senza fine» non viene più
+offerto a chi è morto o ha abbandonato — quel bottone rimetteva in piedi una corsa finita.
+
+Soprattutto: il **traguardo adesso si vede**. La targhetta in alto a destra conta i guardiani
+che stanno per arrivare e resta libera proprio da lì in poi — ora dice **ULTIMO · ABBATTILO E
+HAI VINTO** finché è in campo, e **CORSA VINTA · SENZA FINE** dopo. La sua barra in cima allo
+schermo porta scritto `· ULTIMO`.
+
+### Il Culmine torna a essere un momento
+
+Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in 18:44, spendendolo appena
+pronto): **cinquantuno Culmini, uno ogni ventidue secondi**. Ne dura cinque e mezzo, quindi il
+Culmine era acceso per un quarto della corsa — e una cosa che succede ogni venti secondi non è
+un momento, è uno stato.
+
+Il difetto stava nella pendenza: il costo saliva di `.085` al secondo mentre il ritmo delle
+uccisioni, misurato, sale da una al secondo a venticinque. Cioè il prezzo cresceva trenta volte
+più piano di quello che lo paga, e più avanti andava la corsa più spesso arrivava. Con
+`65 + t·.55` la stessa corsa ne dà **ventidue**, uno ogni cinquanta secondi circa, e il primo
+arriva ancora entro il primo minuto.
+
+E adesso che costa può **valere**: fermo immagine vero, velo d'oro (il rosa è il male, il
+bianco è la spazzata: l'oro è il tuo momento), tre onde sfasate invece di una, e il nome a
+schermo pieno — la stessa forma del Risveglio, perché è la stessa scala di evento. Il banner
+dice **cosa fa con i nomi dei Risvegli che sta alzando**: «Ardore e Torpore salgono di un
+grado» insegna cos'è un grado nell'istante in cui uno ne guadagna uno.
+
+### Il negozio non si compra in cinque partite
+
+Una Corsa da venti minuti vinta pagava **8106 frammenti** (misurato col bot, semi 1111 e 2222:
+8106 e 7720) contro un negozio che, tutto quello che ha un fondo, ne costa **38.928**: cinque
+partite e non restava più niente da comprare tranne il Dominio. Non è un caso — i pesi sono
+nati quando il negozio aveva un terzo delle voci di adesso.
+
+Il pezzo più grosso era la riga delle uccisioni, `.5` per nemico, cioè 3416 frammenti su 6832
+nemici: è anche la quantità **meno decisa da chi gioca**, perché sale col tetto dei nemici e
+con la durata, non con la costruzione dell'anello. E un terzo dell'incasso erano i frammenti
+raccolti in campo, di cui mille dal solo gocciolio del 5% su ogni nemico.
+
+Ora i quattro pesi stanno in un posto solo (`PAGA`) e i frammenti che cadono hanno una scala
+sola (`FRAM_RESA`), così i numeri che gli avvisi promettono restano quelli che finiscono nel
+borsello. Misurato con lo stesso banco e gli stessi semi: **2940 e 2852 per una Corsa vinta, cioè il
+negozio in tredici partite invece di cinque**, e la prima corsa — cinque minuti, persa, mazzo base — ne paga ancora 575, che basta
+per le prime due regole del negozio (110 e 160). Un'economia si sbaglia in due modi, e quello
+è l'altro. `npm run misura -- soldi` rimisura le due cose insieme.
+
+### Sei o otto
+
+«Non ho capito se la trasformazione è a 6 o a 8.» Ed era colpa di due segnali che dicevano
+numeri diversi per due cose diverse: la carta di potenziamento disegna **otto** pallini — il
+livello massimo di una runa — e l'anello scriveva **MAX** sulla runa che ha raggiunto la
+**soglia**, che è il 6. Chi contava i pallini leggeva otto; chi leggeva MAX su una runa al 6
+concludeva sei.
+
+Sono due cose e adesso si vedono come due cose: la carta dice «**Livello 6 di 8**», il pallino
+della soglia porta un segno, e su quel livello — solo su quello — la carta aggiunge «**È la
+soglia della trasformazione**». L'anello non scrive più MAX ma **SOGLIA OK**, che è quello che
+vuol dire: il livello c'è, manca altro. Il massimo stava scritto a mano in due punti e adesso
+si chiama `RUNE_MAX`.
+
 ### Culmine
 
 Un indicatore che si riempie **uccidendo**. Quando è pieno, `Spazio` (o il tasto in basso a

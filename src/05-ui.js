@@ -87,7 +87,7 @@ const ARC = (r, a1, a2) => {
 };
 
 const UI = {
-  cur: null, sel: -1, placing: null, dissolving: false, ritemprando: false, chestMode: false,
+  cur: null, sel: -1, placing: null, dissolving: false, ritemprando: false, ritSel: -1, chestMode: false,
   /* armato: cosa attende conferma ("char:lyra"); spesa: quanto e' appena
      uscito dal borsello, per farlo vedere sul contatore. */
   armato: null, spesa: 0,
@@ -186,12 +186,9 @@ const UI = {
     elKills.textContent = G.kills + ' ELIMINAZIONI';
     /* il roster della partita, non la tabella globale: l'ordine si rimescola
        e l'Incursione ne salta due, quindi il prossimo nome è quello vero */
-    const nb = G.roster[G.bossIdx];
-    if (nb && !G.boss) {
-      const left = Math.max(0, Math.max(45, nb.t + G.asc.boss + G.cg.boss) - G.t);
-      elNext.className = left < 25 ? 'on soon' : 'on';
-      elNext.innerHTML = '<i></i>' + nb.n + ' ' + fmtTime(left);
-    } else elNext.className = '';
+    const ob = this.obiettivo();
+    elNext.className = ob.c;
+    if (ob.h && ob.h !== this._ob) { this._ob = ob.h; elNext.innerHTML = ob.h; }
     if (G.ascLv > 0) { elAsc.className = 'clip on'; elAsc.textContent = 'ASCENSIONE ' + G.ascLv; }
     else elAsc.className = 'clip';
     /* La targhetta si accende solo se il Nodo ti sta davvero potenziando.
@@ -204,6 +201,32 @@ const UI = {
       elNodo.style.setProperty('--c', EL[G.nodo].c);
       elNodo.innerHTML = '<i></i>NODO DI ' + EL[G.nodo].n.toUpperCase() + ' · ATTIVO';
     } else elNodo.className = 'clip';
+  },
+
+  /* ── dov'e' il traguardo ────────────────────────────────────────
+     «La mia ultima partita e' durata oltre 21 minuti ma risulta che ho perso:
+     perche' non l'ho vinta?» La Corsa si vince abbattendo l'ULTIMO guardiano,
+     che arriva al diciottesimo minuto, e questo non stava scritto da nessuna
+     parte: la sua barra in cima allo schermo era identica a quella degli altri
+     quattro, e l'orologio, passati i venti minuti, smetteva perfino di
+     mostrare il traguardo. Chi lo teneva a distanza per tre minuti e poi
+     smetteva non aveva modo di sapere di aver lasciato li' la vittoria.
+     La targhetta in alto a destra conta i guardiani che stanno per arrivare, e
+     resta libera proprio da li' in poi: prima dice che quello in campo e'
+     l'ultimo, poi dice che la corsa e' vinta.
+     E' una funzione e non tre righe dentro hud() perche' il collaudo deve
+     poter leggere la frase: l'HUD e' un elemento del DOM e da fuori non si
+     rilegge. */
+  obiettivo() {
+    const nb = G.roster[G.bossIdx];
+    if (nb && !G.boss) {
+      const left = Math.max(0, Math.max(45, nb.t + G.asc.boss + G.cg.boss) - G.t);
+      return { c: left < 25 ? 'on soon' : 'on', h: '<i></i>' + nb.n + ' ' + fmtTime(left) };
+    }
+    if (!G.victory && G.bosses.some(b => b.boss && b.boss.fine))
+      return { c: 'on soon', h: '<i></i>ULTIMO · ABBATTILO E HAI VINTO' };
+    if (G.victory) return { c: 'on', h: '<i></i>CORSA VINTA · SENZA FINE' };
+    return { c: '', h: '' };
   },
 
   /* Le targhette dei Risvegli, in basso a sinistra. Leggevano G.awaken, cioe'
@@ -412,7 +435,7 @@ const UI = {
         p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> o <kbd>P</kbd> per la pausa, <kbd>Spazio</kbd> per il Culmine, <kbd>R</kbd> sulla schermata di fine per ripartire subito. Le rune sparano da sole: tu schivi, e decidi <b>quando scatenare il Culmine</b>.')) +
 
       sec('Il Culmine',
-        p('In basso a destra c’è un anello che si riempie <b>uccidendo</b>. Quando è pieno, premi <kbd>Spazio</kbd> (o toccalo) e per cinque secondi e mezzo succede tutto insieme: l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>.') +
+        p('In basso a destra c’è un anello che si riempie <b>uccidendo</b>. Quando è pieno, premi <kbd>Spazio</kbd> (o toccalo) e per ' + culmDurataIt() + ' succede tutto insieme: l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>.') +
         p('Non accende Risvegli nuovi: moltiplica quelli che hai costruito. Tenerlo in tasca non serve a niente — si ricarica in fretta.')) +
 
       sec('L’anello',
@@ -508,7 +531,46 @@ const UI = {
         p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e <b>reliquie</b> — quelle sono care, ma ognuna è una regola invece di una percentuale.')) +
 
       '</div></div>' +
-      '<button class="btn clip" style="max-width:280px;margin:0 auto" data-a="title"><span class="face">Indietro</span></button>'
+      '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
+      '<button class="btn clip" data-a="lessico"><span class="face">Lessico · che vuol dire</span></button>' +
+      '<button class="btn ghost clip" data-a="title"><span class="face">Indietro</span></button>' +
+      '</div>'
+    );
+  },
+
+  /* ── il lessico ─────────────────────────────────────────────────
+     «Un giocatore vede apparire scritte e nomi di cose che accadono ma non
+     ne capisce il significato.» Era vero e si vedeva dal codice: ogni nome
+     proprio del gioco compariva dentro un avviso di due secondi in mezzo
+     all'azione, e la sua spiegazione — quando c'era — stava nella guida,
+     nel menu, raggiungibile solo abbandonando la partita.
+     Questa schermata e' l'elenco di tutto quello che il gioco nomina, e si
+     apre DALLA PAUSA: nel momento in cui uno si ferma a chiedersi cosa
+     voglia dire «Torpore II». Le voci le tiene lessico() in 01-data, che le
+     prende da dove le regole stanno scritte.
+     Si apre anche dalla guida, e l'unico stato che tiene e' da dove si
+     arriva: il bottone «Indietro» deve riportare dove si era. */
+  lessicoApri(da) {
+    this.lesDa = da || (G.state === 'pause' ? 'pause' : 'guide');
+    const gruppi = lessico().map(g =>
+      '<div class="gsec"><div class="eyebrow">' + g.t + '</div><dl class="lex">' +
+      g.v.map(v => '<dt>' + v[0] + '</dt><dd>' + v[1] + '</dd>').join('') +
+      '</dl></div>').join('');
+    /* i cinque Risvegli con nome, elemento ed effetto: la tabella esiste
+       gia' nella guida e nasce dai dati veri, quindi qui non si riscrive */
+    const aw = ELKEYS.map(e =>
+      '<div class="awrow" style="--c:' + EL[e].c + '">' +
+      '<span class="awn">' + EL[e].aw + '</span><span class="awe">' + EL[e].n + '</span>' +
+      '<span class="awd">' + EL[e].awd[0] + '</span></div>').join('');
+    this.open('lessico',
+      '<div class="eyebrow">Che vuol dire</div><h2 class="ttl">Lessico</h2>' +
+      '<p class="sub" style="margin-top:-8px">Ogni nome che il gioco ti dice, e cosa vuol dire.</p>' +
+      '<div class="frame clip guide"><div class="inner clip">' +
+      '<div class="gsec"><div class="eyebrow">I cinque Risvegli</div>' +
+      '<div class="awlist">' + aw + '</div></div>' +
+      gruppi +
+      '</div></div>' +
+      '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="lesback"><span class="face">Indietro</span></button>'
     );
   },
 
@@ -906,7 +968,18 @@ const UI = {
       let evoCls = '', tag = '';
       if (this.ritemprando) {
         const bg = r ? (this.ritBersagli || []).find(x => x.slot === i) : null;
-        if (bg) { evoCls = ' ritemprabile'; c = EL[bg.el].c; tag = '<span class="tagslot" style="--c:' + c + '">→ ' + EL[bg.el].n.toUpperCase() + '</span>'; }
+        if (bg) {
+          /* La freccia diceva solo l'elemento d'arrivo. Il numero accanto e'
+             la ragione per scegliere QUESTA runa: la catena che si allunga,
+             e sopra — quando succede — il Risveglio che si accende. */
+          const armata = this.ritSel === i;
+          evoCls = armata ? ' ritconf' : ' ritemprabile';
+          c = EL[bg.el].c;
+          tag = '<span class="tagslot" style="--c:' + c + '">' +
+            (armata ? 'CONFERMA' : '→ ' + EL[bg.el].n.toUpperCase() + ' ' + bg.dopo + '/' + bg.c0) + '</span>';
+          if (bg.accende) tag += '<span class="tagsu" style="--c:' + c + '">RISVEGLIO</span>';
+          else if (bg.spegne) tag += '<span class="tagsu" style="--c:#ff3d6e">SPEGNE</span>';
+        }
         else if (r) evoCls = ' inerte';
       }
       else if (this.placing && r) {
@@ -973,9 +1046,38 @@ const UI = {
     const ris = r.res >= 2 ? 'risuona da <b>entrambi</b> i lati'
       : r.res === 1 ? 'risuona da <b>un lato solo</b>'
       : '<b>non risuona</b> con le vicine';
-    return '<span style="color:' + c + '"><b>' + d.n + '</b></span> · ' +
+    return '<span style="color:' + c + '"><b>' + nomeRuna(r) + '</b></span> · ' +
       (r.el === 'iride' ? 'Iride' : EL[r.el].n) + ' · ' + d.tag +
-      ' · livello ' + r.lv + ' · ' + ris + '<br>';
+      /* «livello 6» non diceva 6 su quanto, e il massimo e' 8: chi leggeva
+         «livello 6» accanto a una trasformazione che arriva al 6 non poteva
+         sapere se quella runa fosse finita o a meta' strada. */
+      ' · livello ' + r.lv + ' di ' + RUNE_MAX + (r.lv >= sogliaEvo() ? ' (soglia ' + sogliaEvo() + ' superata)' : ' · soglia ' + sogliaEvo()) +
+      ' · ' + ris + '<br>';
+  },
+
+  /* ── la Ritempra, a parole ──────────────────────────────────────
+     La schermata mostrava rune che pulsano e una freccia con un nome di
+     elemento: non diceva ne' cosa sia una riaccordatura, ne' cosa cambi
+     nella partita, ne' che il tocco fosse definitivo. Chi la giocava
+     toccava una runa a caso e vedeva un colore cambiare.
+     Adesso la riga dice, della runa in mano, la frase intera: chi e', da
+     quale elemento a quale, quanto diventa lunga la catena, che Risveglio
+     accende — e cosa perde l'elemento che lascia. Poi chiede conferma,
+     perche' un tocco che riscrive una runa per il resto della partita non
+     puo' essere lo stesso gesto con cui si esplora l'anello. */
+  ritLine() {
+    const b = (this.ritBersagli || []).find(x => x.slot === this.ritSel);
+    if (!b) return '';
+    const r = G.ring[b.slot]; if (!r) return '';
+    const ca = EL[b.el].c, cd = EL[b.da].c;
+    let t = '<b>' + nomeRuna(r) + '</b> · da <span style="color:' + cd + '">' + EL[b.da].n +
+      '</span> a <span style="color:' + ca + '">' + EL[b.el].n + '</span>' +
+      ' · forma e livello ' + r.lv + ' restano<br>' +
+      '<span style="color:' + ca + '">' + EL[b.el].n + ' ' + b.prima + ' → ' + b.dopo + '/' + b.c0 + '</span>';
+    if (b.accende) t += ' · <b style="color:' + ca + '">accende ' + EL[b.el].aw + '</b>';
+    if (b.spegne) t += ' · <b style="color:#ff3d6e">spegne ' + EL[b.da].aw + '</b>';
+    else if (b.giuDopo < b.giuPrima) t += ' · <span style="color:' + cd + '">' + EL[b.da].n + ' scende a ' + b.giuDopo + '</span>';
+    return t + '<br><b>Tocca di nuovo per confermare.</b><br>';
   },
 
   /* Cosa manca per trasformare. È l'informazione più importante dell'anello
@@ -987,7 +1089,7 @@ const UI = {
     for (let i = 0; i < G.slots; i++) {
       const r = G.ring[i];
       if (!r || !EVO[r.id]) continue;
-      const nome = RUNES[r.id].n, col = EL[r.el].c;
+      const nome = nomeRuna(r), col = EL[r.el].c;
       if (canEvolve(r)) { parts.push('<b style="color:' + col + '">' + nome + ' può trasformarsi</b>'); continue; }
       const mancano = mancaEvo(r);
       if (mancano.indexOf('lv') >= 0) continue;
@@ -1079,6 +1181,34 @@ const UI = {
     }
     clearTimeout(this._awT);
     this._awT = setTimeout(() => { fx.className = ''; }, 1800);
+  },
+
+  /* ── il Culmine a schermo pieno ──────────────────────────────────
+     Stessa forma del Risveglio (#awakefx), perche' e' la stessa scala di
+     evento: il Risveglio e' la regola che costruisci, il Culmine e' il
+     momento in cui la moltiplichi. Dura meno — un secondo, non due — perche'
+     mentre e' acceso si sta ancora schivando, e la riga sotto dice il suo
+     effetto CON I NOMI dei Risvegli che sta alzando: «Ardore e Torpore
+     salgono di un grado» insegna cos'e' un grado nell'istante in cui uno ne
+     guadagna uno. Senza Risvegli accesi dice l'altra meta' del suo effetto,
+     che e' l'unica che in quel momento e' vera. */
+  culmineFx() {
+    const su = ELKEYS.filter(e => G.awaken[e]).map(e => EL[e].aw);
+    const d = su.length
+      ? '<b>' + (su.length > 1 ? su.slice(0, -1).join(', ') + ' e ' + su[su.length - 1] : su[0]) +
+        '</b> ' + (su.length > 1 ? 'salgono' : 'sale') + ' di un grado'
+      : 'L’anello spara tutto insieme, ricariche quasi al doppio';
+    const fx = $('#awakefx');
+    if (!fx) return;
+    fx.style.setProperty('--c', '#ffe9b0');
+    fx.style.removeProperty('--fit');
+    fx.innerHTML = '<div class="aw-in">' +
+      '<div class="aw-k">Culmine · ' + numSec(culmSec()) + '</div>' +
+      '<div class="aw-n">CULMINE</div>' +
+      '<div class="aw-d">' + d + '</div></div>';
+    fx.className = ''; void fx.offsetWidth; fx.className = 'on culm';
+    clearTimeout(this._awT);
+    this._awT = setTimeout(() => { fx.className = ''; }, 1100);
   },
 
   awakeLine() {
@@ -1214,7 +1344,13 @@ const UI = {
            che nessuna vicina porta, cioe' la carta faceva una cosa che la
            carta stessa escludeva. L'anello, quando la giochi, dice gia' su
            ogni runa verso che elemento andrebbe. */
-        '<p>Riaccorda una runa a un altro elemento — quello di una <em>vicina</em>, o quello della tua <em>apertura</em>. Conserva forma e livello: cambia solo con chi risuona.</p>' +
+        /* «cambia solo con chi risuona» era la meta' vera: cambiava la
+           contabilita' delle catene e nient'altro, quindi la runa restava
+           dell'elemento di prima in campo — colore dei colpi, Nodo, corazza
+           dei guardiani. Adesso l'elemento e' quello nuovo per tutto il
+           gioco, e la carta lo dice: e' la ragione per cui la si gioca. */
+        '<p>Riaccorda una runa a un altro elemento — quello di una <em>vicina</em>, o quello della tua <em>apertura</em>. ' +
+        'Conserva <em>forma e livello</em>: cambia l’elemento, quindi con chi risuona e di che colore colpisce.</p>' +
         '</span></span></button>';
     }
     if (c.t === 'diss') {
@@ -1243,7 +1379,12 @@ const UI = {
     const d = RUNES[c.id], el = EL[d.el];
     const isNew = c.t === 'rnew';
     const cur = isNew ? 0 : (G.ring.find(r => r && r.id === c.id) || { lv: 0 }).lv;
-    let pips = ''; for (let k = 0; k < 8; k++) pips += '<i class="' + (k < cur + 1 ? 'f' : '') + '"></i>';
+    /* il pallino della soglia porta un segno: da li' in poi quella runa
+       puo' trasformarsi, e il conto totale dice fin dove sale */
+    const sog = sogliaEvo();
+    let pips = '';
+    for (let k = 0; k < RUNE_MAX; k++)
+      pips += '<i class="' + (k < cur + 1 ? 'f' : '') + (k === sog - 1 ? ' sog' : '') + '"></i>';
     const detail = isNew ? d.d : this.upgradeText(c.id, cur);
     /* quante rune di questo elemento ho già: è l'informazione che guida verso un Risveglio */
     let same = 0;
@@ -1301,16 +1442,27 @@ const UI = {
       if (bits.length >= 3) break;
       if (b[k] !== undefined && b[k] > a[k] + 1e-6) bits.push('+' + altri[k]);
     }
-    return '<em>Livello ' + (lv + 1) + '</em> · ' + bits.slice(0, 3).join(', ') + '.';
+    /* Il livello che apre la trasformazione e' il piu' importante della runa
+       e la carta non lo diceva: si scopriva dopo averlo comprato. Sta fuori
+       dall'elenco dei gradini, che ne mostra al massimo tre: messo dentro
+       spingeva fuori un guadagno vero — la perforazione dell'Iride dal 5 al
+       6 — e la carta tornava a promettere meno di quello che dava. */
+    const soglia = lv + 1 === sogliaEvo() ? ' <b>È la soglia della trasformazione.</b>' : '';
+    return '<em>Livello ' + (lv + 1) + ' di ' + RUNE_MAX + '</em> · ' + bits.slice(0, 3).join(', ') + '.' + soglia;
   },
 
   /* ── editor dell’anello ─────────────────────────────────── */
   ringEdit(placing, dissolving, ritemprando) {
     this.placing = placing || null; this.dissolving = !!dissolving;
-    this.ritemprando = !!ritemprando; this.sel = -1;
+    this.ritemprando = !!ritemprando; this.sel = -1; this.ritSel = -1;
     if (this.ritemprando) this.ritBersagli = bersagliRitempra();
     const t = this.ritemprando
-      ? 'Tocca la runa da riaccordare: prende l’elemento che le fa allungare la catena.'
+      ? 'Riaccordare vuol dire <b>cambiarle elemento</b>: forma e livello restano, cambia con chi risuona. ' +
+        'Le rune che pulsano dicono <b>verso quale elemento</b> e <b>quanto diventa lunga</b> quella catena — ' +
+        'toccane una per leggere cosa cambia, toccala di nuovo per confermare.' +
+        (this.ritBersagli && this.ritBersagli.length > 1
+          ? '<br><span style="color:' + EL[this.ritBersagli[0].el].c + '">Il guadagno più grande è l’alloggiamento ' + (this.ritBersagli[0].slot + 1) + '.</span>'
+          : '')
       : this.dissolving
       ? 'Tocca la runa da dissolvere. L’alloggiamento torna libero.'
       : this.placing
@@ -1322,7 +1474,7 @@ const UI = {
       '<h2 class="ttl">' + (this.ritemprando ? 'Ritempra' : this.dissolving ? 'Dissoluzione' : this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
       '<p class="sub" style="margin-top:-8px">' + t + '</p>' +
       this.ringHTML(true) +
-      '<div class="hint" id="ringinfo">' + this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
+      '<div class="hint" id="ringinfo">' + this.ritLine() + this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       (this.placing || this.dissolving || this.ritemprando ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
     );
   },
@@ -1331,7 +1483,7 @@ const UI = {
     const w = SCR.querySelector('.ringwrap');
     if (w) w.outerHTML = this.ringHTML(true);
     const inf = SCR.querySelector('#ringinfo');
-    if (inf) inf.innerHTML = this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
+    if (inf) inf.innerHTML = this.ritLine() + this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
   },
 
   /* ── pausa ──────────────────────────────────────────────── */
@@ -1366,6 +1518,10 @@ const UI = {
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
       '<button class="btn primary clip" data-a="resume"><span class="face">Riprendi</span></button>' +
       '<button class="btn clip" data-a="ringedit2"><span class="face">Riordina l’anello</span></button>' +
+      /* La pausa e' il posto in cui si torna a chiedersi cosa voleva dire
+         quella scritta: la guida sta nel menu e da qui non ci si arriva
+         senza abbandonare la corsa. */
+      '<button class="btn clip" data-a="lessico"><span class="face">Lessico · che vuol dire</span></button>' +
       '<div class="btnrow">' +
       '<button class="btn ghost clip" data-a="sfx"><span class="face">Suoni ' + (SAVE.sfx ? 'ON' : 'OFF') + '</span></button>' +
       '<button class="btn ghost clip" data-a="mus"><span class="face">Musica ' + (SAVE.mus ? 'ON' : 'OFF') + '</span></button>' +
@@ -1484,7 +1640,7 @@ const UI = {
            a chi non aveva piu' niente da fare era la diagnosi piu' sbagliata
            di tutte — e la frase usciva pure monca, senza un motivo da
            elencare dopo il "ma". */
-        if (!m.length) return '<b style="color:' + EL[quasi.el].c + '">' + RUNES[quasi.id].n +
+        if (!m.length) return '<b style="color:' + EL[quasi.el].c + '">' + nomeRuna(quasi) +
           '</b> era pronta a trasformarsi e la sua carta poteva uscire a ogni salita di livello. Quando compare, prendila: è la scelta più forte del mazzo.';
         if (m.indexOf('res') >= 0) voci.push('non risuonava da <b>entrambi</b> i lati');
         if (m.indexOf('iride') >= 0) voci.push('le servono <b>due Risvegli</b> accesi insieme (ne avevi ' + acceso + ')');
@@ -1494,7 +1650,7 @@ const UI = {
         const come = m.indexOf('res') >= 0
           ? ' Riordina l’anello dalla pausa — è gratis.'
           : ' Serve un’altra catena: <b>' + c0 + ' rune dello stesso elemento</b> una accanto all’altra.';
-        return 'Nessuna trasformazione: <b style="color:' + EL[quasi.el].c + '">' + RUNES[quasi.id].n +
+        return 'Nessuna trasformazione: <b style="color:' + EL[quasi.el].c + '">' + nomeRuna(quasi) +
           '</b> era al livello giusto, ma ' + voci.join(' e ') + '.' + come;
       }
       return 'Nessuna trasformazione. Serve una runa a <b>livello ' + soglia + '</b> che risuoni da entrambi i lati, con il suo elemento risvegliato.';
@@ -1523,10 +1679,28 @@ const UI = {
   end(win, gained) {
     const r = G.rec || { t: 0, k: 0, nuovoT: false, nuovoK: false };
     const stats = [['TEMPO', fmtTime(G.t), r.nuovoT], ['LIVELLO', G.level], ['ELIMINAZIONI', G.kills, r.nuovoK], ['DANNO', Math.round(G.dmgDone).toLocaleString('it-IT')]];
+    /* ── tre uscite, non due ────────────────────────────────────
+       La schermata conosceva «vinta» e «finita», e chiamava «Il nucleo si
+       spegne» anche l'unica uscita in cui il nucleo non si spegne: quella di
+       chi abbandona. E chi vinceva, continuava senza fine e poi cadeva —
+       oppure smetteva — leggeva FINE su una corsa che era vinta e pagata.
+       Adesso il titolo dice il fatto (la corsa e' vinta o no) e la riga
+       sotto dice come e' andata a finire, che sono due cose diverse. */
+    const morto = P.hp <= 0;
+    const uscita = win
+      ? (G.oltre
+          ? 'Vinta al ' + fmtTime(G.vintaT || 0) + ', poi senza fine ' +
+            (morto ? 'fino a qui' : 'e lasciata in piedi')
+          : 'Eclissi dissolta')
+      : (morto ? 'Il nucleo si spegne' : 'Corsa abbandonata');
     this.open('end',
-      '<div class="eyebrow">' + (win ? 'Eclissi dissolta' : 'Il nucleo si spegne') + '</div>' +
-      '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : 'FINE') + '</h1>' +
-      (!win && G.killer ? '<div class="killer">Ucciso da <b>' + G.killer + '</b></div>' : '') +
+      '<div class="eyebrow">' + uscita + '</div>' +
+      '<h1 class="logo" style="font-size:clamp(38px,11vw,72px)">' + (win ? 'VITTORIA' : morto ? 'FINE' : 'ABBANDONATA') + '</h1>' +
+      /* «Ucciso da» valeva `!win`, quindi lo diceva anche a chi abbandonava
+         — nominando l'ultima cosa che l'aveva sfiorato — e lo taceva a chi
+         cadeva nel senza fine dopo aver vinto, che e' proprio chi vuole
+         saperlo. La domanda e' «sei morto?», non «hai perso?». */
+      (morto && G.killer ? '<div class="killer">Ucciso da <b>' + G.killer + '</b></div>' : '') +
       '<div class="stats">' + stats.map(s => '<div class="stat' + (s[2] ? ' rec' : '') + '"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>').join('') + '</div>' +
       this.recordLine() +
       '<div class="reward">' + shardIcon() + '+' + gained + '</div>' +
@@ -1561,7 +1735,11 @@ const UI = {
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
       /* la modalità senza fine è della Corsa: l'Incursione è un formato
          chiuso, e allungarla all'infinito la cancellerebbe */
-      (win && G.modo.id === 'corsa' ? '<button class="btn primary clip" data-a="endless"><span class="face">Continua senza fine</span></button>' : '') +
+      /* Solo se la corsa puo' davvero continuare: il bottone riprende la
+         partita in corso, quindi offrirlo a chi e' morto o ha abbandonato
+         rimetteva in piedi una corsa finita. */
+      (win && G.modo.id === 'corsa' && !morto && !G.abbandonata
+        ? '<button class="btn primary clip" data-a="endless"><span class="face">Continua senza fine</span></button>' : '') +
       /* la congiunzione della prossima corsa, sotto al bottone che la fa
          partire: è il gancio vero — «ancora una» è più facile da dire
          quando la prossima è già diversa da quella appena finita */
@@ -1569,7 +1747,7 @@ const UI = {
          qui sotto e' l'unico posto in cui lo si legge prima di rigiocare */
       this.ascCardHTML() +
       this.congHTML(this.prossimoSeme()) +
-      '<button class="btn ' + (win && G.modo.id === 'corsa' ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
+      '<button class="btn ' + (win && G.modo.id === 'corsa' && !morto && !G.abbandonata ? '' : 'primary ') + 'clip" data-a="retry"><span class="face">Rigioca</span></button>' +
       '<button class="btn ghost clip" data-a="replay"><span class="face">Ripeti questa semenza</span></button>' +
       (G.giornaliera ? '<button class="btn ghost clip" data-a="condividi"><span class="face">Copia il risultato di oggi</span></button>' : '') +
       '<div class="btnrow">' +
@@ -1596,26 +1774,59 @@ function runeSbloccate() {
    La catena la misura catenaDi() in 02-engine, lo stesso che la trasforma
    in gradi: qui ce n'era una seconda copia, e una seconda copia della
    stessa regola prima o poi racconta quella sbagliata. */
-/* quali rune, riaccordate, allungherebbero una catena — e verso quale elemento */
+/* ── quali rune conviene riaccordare, e a cosa serve ──────────────
+   Diceva soltanto «questa, verso il Fuoco». Bastava a far comparire la
+   carta, non a farla capire: in campo la Ritempra era una schermata con
+   qualche runa che pulsa e nessun motivo visibile per preferirne una, cioe'
+   «toccare a caso l'anello». Adesso ogni bersaglio si porta dietro il
+   PERCHE' — quanto diventa lunga la catena, se accende un Risveglio, e cosa
+   l'elemento di prima ci rimette — e l'anello lo scrive sopra alle rune.
+   Due cose che prima non guardava affatto:
+   · l'Iride non e' un bersaglio. Vale GIA' come qualunque elemento, quindi
+     fissarla su uno e' l'unica mossa che le toglie qualcosa.
+   · un bersaglio che ABBASSA il conto dei Risvegli non si offre. Il vecchio
+     punteggio sommava solo i guadagni — `Math.max(0, ...)` — quindi
+     proponeva con entusiasmo la riaccordatura che allungava una catena di
+     una runa spegnendo il Risveglio dall'altra parte.
+   Il grado lo misura gradoCatena(), lo stesso che accende i Risvegli:
+   una regola, un posto solo. */
 function bersagliRitempra() {
-  const out = [], n = G.slots, R = G.ring;
-  const base = {}; for (const e of ELKEYS) base[e] = catenaDi(e);
+  const out = [], n = G.slots, R = G.ring, c0 = catenaRichiesta();
+  const base = {}, grado = {};
+  for (const e of ELKEYS) { base[e] = catenaDi(e); grado[e] = gradoCatena(base[e], c0); }
   for (let i = 0; i < n; i++) {
-    const r = R[i]; if (!r) continue;
+    const r = R[i]; if (!r || r.el === 'iride') continue;
     const cand = new Set();
     const a = R[(i - 1 + n) % n], b = R[(i + 1) % n];
     if (a && a.el !== 'iride') cand.add(a.el);
     if (b && b.el !== 'iride') cand.add(b.el);
     if (SAVE.apertura && SAVE.apertura !== 'iride') cand.add(SAVE.apertura);
-    let best = null, gain = 0;
+    let best = null;
     for (const el of cand) {
       if (el === r.el) continue;
-      let g = 0;
-      for (const e of ELKEYS) g += Math.max(0, catenaDi(e, { i, el }) - base[e]);
-      if (g > gain) { gain = g; best = el; }
+      let gradi = 0, dopo = 0, giu = 0;
+      for (const e of ELKEYS) {
+        const q = catenaDi(e, { i, el });
+        if (e === el) dopo = q;
+        if (e === r.el) giu = q;
+        gradi += gradoCatena(q, c0) - grado[e];
+      }
+      if (dopo <= base[el] || gradi < 0) continue;
+      const v = {
+        slot: i, el, da: r.el, gain: dopo - base[el], gradi,
+        prima: base[el], dopo, c0,
+        accende: gradoCatena(dopo, c0) > grado[el],
+        /* cosa lascia indietro l'elemento di prima: e' la meta' della
+           decisione, e non era scritta da nessuna parte */
+        giuPrima: base[r.el], giuDopo: giu,
+        spegne: gradoCatena(giu, c0) < grado[r.el]
+      };
+      if (!best || v.gradi > best.gradi || (v.gradi === best.gradi && v.gain > best.gain)) best = v;
     }
-    if (best) out.push({ slot: i, el: best, gain });
+    if (best) out.push(best);
   }
+  /* il migliore per primo: l'anello lo marca, e la riga sotto lo nomina */
+  out.sort((x, y) => (y.gradi - x.gradi) || (y.gain - x.gain));
   return out;
 }
 /* risonanza che avrebbe la runa in posizione i, su un anello ipotetico */
@@ -1700,7 +1911,7 @@ function rollChoices(n) {
   if (rit.length) pool.push({ t: 'ritempra', w: empty ? 2.2 : 6.5 });
   const vuoti = G.slots - inRing.length;
   const wNew = 3.6 + vuoti * 1.3;
-  for (const r of inRing) if (r.lv < 8) pool.push({ t: 'rup', id: r.id, w: 3.4 });
+  for (const r of inRing) if (r.lv < RUNE_MAX) pool.push({ t: 'rup', id: r.id, w: 3.4 });
   /* Solo le rune sbloccate. Prima ci finivano tutte e sedici dal primo
      livello della prima partita, quindi non esisteva — mai, in tutta la
      vita del giocatore — il momento «ho trovato una runa nuova». Le sei
@@ -1789,7 +2000,20 @@ function applyChoice(c) {
   if (c.t === 'evo') {
     const i = G.ring.findIndex(x => x && x.id === c.id);
     if (i >= 0) {
-      const el = RUNES[c.to].el;
+      /* ── la trasformazione non disfa la Ritempra ────────────────
+         L'elemento della forma evoluta era `RUNES[c.to].el`, cioe' quello di
+         NASCITA. Ogni evoluzione resta nel proprio elemento, quindi per una
+         runa qualunque e' lo stesso numero — ma non per una riaccordata: una
+         Scheggia portata al Fuoco dalla Ritempra tornava di Gelo nell'istante
+         in cui si trasformava, davanti agli occhi di chi l'aveva riaccordata
+         per costruirci una catena.
+         E non era solo il colore: quella runa reggeva un lato della catena di
+         Fuoco, quindi il premio per cui avevi progettato tutta la partita
+         SPEGNEVA il Risveglio che serviva ad ottenerlo. Misurato: anello
+         Scintilla-Scheggia(→fuoco)-Pira, Ardore acceso, la Scheggia si
+         trasforma in Zanna e l'Ardore si spegne nello stesso fotogramma.
+         L'elemento e' quello che la runa ha ADESSO, come il livello. */
+      const el = G.ring[i].el;
       /* ── la trasformazione non costa livelli ────────────────────
          Il livello della runa nuova era scritto a mano: 5. Era il numero
          giusto quando la soglia per trasformarsi era 8 — si scendeva di
@@ -1828,7 +2052,7 @@ function applyChoice(c) {
   }
   if (c.t === 'rup') {
     const r = G.ring.find(x => x && x.id === c.id);
-    if (r) { r.lv++; UI.toast(RUNES[c.id].n + ' ' + r.lv, 'Potenziata', EL[r.el].c); }
+    if (r) { r.lv++; UI.toast(nomeRuna(r) + ' ' + r.lv, 'Potenziata', EL[r.el].c); }
     recalcRing(true);
     return false;
   }
@@ -1912,6 +2136,10 @@ function resetRun(charId, seed, modoId, giorno) {
      nello storico: servono a «Continua senza fine», che chiude la partita
      una volta e poi la fa finire una seconda */
   G.saldato = 0; G.registrata = 0; G.lezioneGemme = 0;
+  /* la vittoria di questa corsa: se e' gia' stata contata (una sola, anche
+     quando la corsa finisce due volte), a che minuto e' arrivata, se e'
+     proseguita nel senza fine e se e' stata abbandonata invece che persa */
+  G.vintaContata = 0; G.vintaT = 0; G.oltre = 0; G.abbandonata = 0;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.popIdx = 0; G.popT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };
@@ -1977,7 +2205,10 @@ function riprendiCorsa(r) {
   G.ring = new Array(G.slots).fill(null);
   for (const x of r.ring) {
     if (!x || !RUNES[x.id] || x.slot >= G.slots) continue;
-    G.ring[x.slot] = { id: x.id, el: RUNES[x.id].el, lv: x.lv, cd: rand(.4), res: 0, slot: x.slot, st: {} };
+    /* l'elemento annotato, non quello di nascita: vedi salvaCorsa. Le
+       annotazioni vecchie non ce l'hanno, e allora vale quello di nascita. */
+    const el = (x.el && EL[x.el]) ? x.el : RUNES[x.id].el;
+    G.ring[x.slot] = { id: x.id, el, lv: x.lv, cd: rand(.4), res: 0, slot: x.slot, st: {} };
   }
   recalc(); P.hp = Math.max(1, Math.min(r.hp, P.maxHp));
   recalcRing(false);
@@ -2014,7 +2245,11 @@ function payout() {
      una perdita di tempo. Con .8 l'Incursione rende ancora un po' di più
      all'ora — è giusto, sono otto minuti più intensi — ma non tanto da
      cancellare l'altro formato. */
-  const g = Math.round((G.kills * .5 + G.t * .85 + G.level * 9 + (G.victory ? 700 : 0)) * P.shardMul * asc * (G.modo.paga || 1)) + G.shards;
+  /* i quattro pesi stanno in PAGA (01-data), con la misura che li ha
+     decisi: qui c'era una riga di numeri scritti a mano, nati quando il
+     negozio aveva un terzo delle voci di adesso. */
+  const g = Math.round((G.kills * PAGA.kill + G.t * PAGA.sec + G.level * PAGA.lv +
+    (G.victory ? PAGA.vittoria : 0)) * P.shardMul * asc * (G.modo.paga || 1)) + G.shards;
   return Math.max(1, g);
 }
 
@@ -2091,7 +2326,9 @@ function valutaContratti(s) {
 function registraStorico(win, g) {
   const r = {
     t: Math.floor(G.t), k: G.kills, l: G.level, c: G.char.id,
-    m: G.modo.id, a: G.ascLv | 0, w: (win || G.victory) ? 1 : 0, s: g,
+    /* `win` arriva gia' vero per una corsa vinta e poi continuata: la
+       regola sta in endRun, e riscriverla qui era la seconda copia */
+    m: G.modo.id, a: G.ascLv | 0, w: win ? 1 : 0, s: g,
     g: G.cong.id, b: G.bossKills | 0, d: Date.now(), sd: G.seed >>> 0
   };
   /* Una corsa continuata senza fine finisce due volte: la riga e' la
@@ -2107,6 +2344,25 @@ function registraStorico(win, g) {
 }
 
 function endRun(win) {
+  /* ── una corsa vinta resta vinta ────────────────────────────────
+     «Il mio record e' una partita da oltre 21 minuti, ma ho dovuto
+     abbandonarla e risulta che ho perso.» Succedeva davvero, e la Corsa e'
+     costruita perche' succeda: l'ultimo guardiano arriva al diciottesimo
+     minuto, lo abbatti, la schermata dice VITTORIA e offre «Continua senza
+     fine». Da quel momento la corsa e' vinta — il premio di 700 frammenti e'
+     pagato, la riga dello storico e' segnata `w:1`, l'ascensione e' salita —
+     ma qualunque cosa la chiudesse dopo chiamava `endRun(false)`, e quel
+     `false` arrivava intero fino allo schermo: «FINE», «Il nucleo si
+     spegne», e la diagnosi da sconfitta. Peggio: statoPartita(false) diceva
+     `win:false` a sfide, sblocchi e contratti, cioe' alla seconda chiusura
+     nessuno di quelli che chiedono una vittoria poteva completarsi.
+     La vittoria e' un fatto della corsa, non dell'ultimo istante: `G.victory`
+     lo sa, e da qui in giu' `win` e' quel fatto.
+     Quello che invece si paga UNA VOLTA SOLA resta protetto: i frammenti da
+     `G.saldato`, la riga dello storico da `G.registrata`, e il conto delle
+     vittorie — con l'ascensione che sblocca — da `G.vintaContata`, che senza
+     questo avrebbe contato due vittorie per la stessa corsa. */
+  win = !!(win || G.victory);
   /* `Continua senza fine` chiude la partita e poi la fa finire di nuovo:
      senza questo la stessa corsa veniva pagata due volte per intero — e
      con lei il premio di vittoria. Adesso si paga solo la differenza. */
@@ -2144,7 +2400,8 @@ function endRun(win) {
   if (G.rec.nuovoK) SAVE.rec[G.modo.id].k = G.kills;
   if (G.t > (SAVE.best || 0)) SAVE.best = Math.floor(G.t);
   if (G.kills > (SAVE.bestKills || 0)) SAVE.bestKills = G.kills;
-  if (win) {
+  if (win && !G.vintaContata) {
+    G.vintaContata = 1;
     SAVE.wins = (SAVE.wins | 0) + 1;
     /* si sblocca il livello dopo solo vincendo al proprio massimo:
        non si scala l'ascensione rigiocando quelle facili */
@@ -2162,7 +2419,7 @@ function endRun(win) {
 }
 function winRun() {
   if (G.victory) return;
-  G.victory = true;
+  G.victory = true; G.vintaT = G.t;
   G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 1200, t: 0, dur: 1, c: '#ffffff' });
   setTimeout(() => { if (G.state === 'play') endRun(true); }, 900);
 }
@@ -2224,6 +2481,11 @@ SCR.addEventListener('click', ev => {
     }
     case 'title': UI.title(); break;
     case 'guide': UI.guide(); break;
+    /* Il lessico si apre dalla pausa e dalla guida, e «Indietro» riporta da
+       dove si e' arrivati: aprirlo in partita non deve poter buttare fuori
+       dalla corsa (open() manda al menu solo i nomi title/hub/guide). */
+    case 'lessico': UI.lessicoApri(UI.cur === 'guide' ? 'guide' : 'pause'); break;
+    case 'lesback': if (UI.lesDa === 'guide') UI.guide(); else UI.pause(); break;
     case 'start': { const el = SCR.querySelector('#seedin'); const v = el ? parseInt(el.value, 10) : NaN; startRun(SAVE.char, Number.isFinite(v) && v > 0 ? v : 0); break; }
     case 'retry': startRun(SAVE.char); break;
     case 'replay': startRun(SAVE.char, G.seed); break;
@@ -2232,10 +2494,17 @@ SCR.addEventListener('click', ev => {
        valutazione: chi usciva al dodicesimo minuto perdeva il contratto
        «sopravvivi dodici minuti» che aveva appena completato, il che è
        esattamente il tipo di sorpresa che fa smettere. */
-    case 'quit': scordaCorsa(); endRun(false); break;
+    /* Abbandonare non e' morire: la schermata diceva «Il nucleo si spegne»
+       e, se la corsa era gia' vinta, «FINE». Sono due uscite diverse e
+       adesso si distinguono. */
+    case 'quit': scordaCorsa(); G.abbandonata = 1; endRun(false); break;
     case 'sfx': SAVE.sfx = SAVE.sfx ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
     case 'mus': SAVE.mus = SAVE.mus ? 0 : 1; storeSave(); AU.vol(); UI.pause(); break;
-    case 'endless': G.victory = true; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce', '#ff3d6e'); break;
+    /* `G.oltre` dice che la corsa vinta e' proseguita: serve alla schermata
+       di fine, che senza di lui riproponeva «Continua senza fine» a chi era
+       appena morto nel senza fine — e quel bottone riprendeva una partita
+       finita. */
+    case 'endless': G.victory = true; G.oltre = 1; HUD.classList.add('on'); riprendiGioco(); UI.toast('SENZA FINE', 'La difficoltà cresce · la corsa resta vinta', '#ff3d6e'); break;
     case 'ringedit': UI.ringEdit(null); break;
     case 'ringedit2': UI.ringEdit(null); break;
     case 'ringdone': if (G.state === 'pause') UI.pause(); else if (G.pending > 0) UI.levelup(true); else riprendiGioco(); break;
@@ -2325,10 +2594,12 @@ SCR.addEventListener('click', ev => {
          rinuncia una scelta fra potenza e sopravvivenza */
       const avanzo = hasRel('avanzo');
       const cura = Math.round(P.maxHp * (avanzo ? .3 : .15));
-      const fram = avanzo ? 120 : 40;
+      /* la carta saltata paga la stessa scala di tutto il resto: il numero
+         che l'avviso promette e' quello che finisce nel borsello */
+      const premio = fram(avanzo ? 120 : 40);
       P.hp = Math.min(P.maxHp, P.hp + cura);
-      G.shards += fram;
-      UI.toast('SALTATO', '+' + cura + ' vita · +' + fram + ' frammenti', '#6ff2c4');
+      G.shards += premio;
+      UI.toast('SALTATO', '+' + cura + ' vita · +' + premio + ' frammenti', '#6ff2c4');
       AU.play('buy');
       consumaCarta();
       if (G.pending > 0) UI.levelup(); else riprendiGioco();
@@ -2350,12 +2621,40 @@ SCR.addEventListener('click', ev => {
       if (UI.ritemprando) {
         const r = G.ring[i];
         const t = (UI.ritBersagli || []).find(x => x.slot === i);
-        if (!r || !t) { UI.toast('NESSUN GUADAGNO', 'Riaccordare questa runa non allunga nessuna catena', '#ff3d6e'); return; }
-        const prima = RUNES[r.id].n, da = EL[r.el].n;
-        r.el = t.el; UI.ritemprando = false;
+        /* Il rifiuto diceva sempre la stessa frase, anche quando il motivo
+           era un altro: un alloggiamento vuoto, o l'Iride — che un elemento
+           suo non ce l'ha. Un «no» che non dice quale regola hai incontrato
+           insegna solo che la schermata e' capricciosa. */
+        if (!r) { UI.toast('ALLOGGIAMENTO VUOTO', 'La Ritempra riaccorda una runa che c’è già', '#ff3d6e'); return; }
+        if (r.el === 'iride') { UI.toast('L’IRIDE È GIÀ OGNI ELEMENTO', 'Fissarla su uno le toglierebbe il suo mestiere', '#ff7de3'); return; }
+        if (!t) {
+          const b0 = (UI.ritBersagli || [])[0];
+          UI.toast('NESSUN GUADAGNO', 'Riaccordare ' + RUNES[r.id].n + ' non allunga nessuna catena' +
+            (b0 ? ' · prova l’alloggiamento ' + (b0.slot + 1) : ''), '#ff3d6e');
+          return;
+        }
+        /* primo tocco: la scelgo e la riga sotto dice cosa cambia. Il
+           secondo conferma — vedi ritLine(). */
+        if (UI.ritSel !== i) { UI.ritSel = i; AU.play('ui'); UI.refreshRing(); return; }
+        const da = EL[r.el].n;
+        r.el = t.el; UI.ritemprando = false; UI.ritSel = -1;
         recalcRing(true);
-        UI.toast('RITEMPRATA', prima + ' · da ' + da + ' a ' + EL[t.el].n, EL[t.el].c);
-        AU.play('buy'); G.shake = Math.max(G.shake, 7);
+        UI.toast('RITEMPRATA', nomeRuna(r) + ' · da ' + da + ' a ' + EL[t.el].n + ' · forma e livello restano', EL[t.el].c);
+        AU.play('buy'); G.shake = Math.max(G.shake, 9);
+        /* ── e si vede in campo ──────────────────────────────────
+           La Ritempra e' l'unica delle tre carte dell'anello a non lasciare
+           traccia a schermo: la trasformazione ha l'onda e il fermo
+           immagine, la dissoluzione il tonfo, e riaccordare una runa era un
+           colore che cambiava in una schermata ferma. Al rientro in campo
+           non c'era modo di riconoscere quale runa fosse cambiata.
+           Due onde del colore nuovo — una dal nucleo, una dalla runa — e le
+           scintille addosso a lei: la seconda e' quella che conta, perche'
+           dice QUALE. */
+        G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 380, t: 0, dur: .55, c: EL[t.el].c });
+        if (r.wx !== undefined) {
+          G.zones.push({ k: 'ring', x: r.wx, y: r.wy, r0: 4, r1: 120, t: 0, dur: .5, wait: .1, c: EL[t.el].c });
+          burstPart(r.wx, r.wy, 16, EL[t.el].c, 220, 3.4, .6);
+        }
         if (G.pending > 0) UI.levelup(); else riprendiGioco();
         return;
       }
@@ -2364,10 +2663,10 @@ SCR.addEventListener('click', ev => {
         if (!r) return;
         /* mai svuotare del tutto l'anello: resteresti senza attacchi */
         if (G.ring.filter(Boolean).length <= 1) { UI.toast('SERVE ALMENO UNA RUNA', null, '#ff3d6e'); return; }
-        const reso = (25 + r.lv * 20) * (hasRel('mercante') ? 2 : 1);
+        const reso = fram(25 + r.lv * 20) * (hasRel('mercante') ? 2 : 1);
         G.shards += reso; G.ring[i] = null; UI.dissolving = false; G.dissolto = 1;
         recalcRing(true);
-        UI.toast('DISSOLTA', RUNES[r.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
+        UI.toast('DISSOLTA', nomeRuna(r) + ' · +' + reso + ' frammenti', '#ff3d6e');
         AU.play('blast'); G.shake = Math.max(G.shake, 8);
         if (G.pending > 0) UI.levelup(); else riprendiGioco();
         return;
@@ -2376,9 +2675,9 @@ SCR.addEventListener('click', ev => {
         const occ = G.ring[i];
         if (occ && !sacrificabile(i)) { UI.toast('SPEGNEREBBE UN RISVEGLIO', 'Scegli una runa che non regge una catena accesa', '#ff3d6e'); return; }
         if (occ) {
-          const reso = (20 + occ.lv * 16) * (hasRel('mercante') ? 2 : 1);
+          const reso = fram(20 + occ.lv * 16) * (hasRel('mercante') ? 2 : 1);
           G.shards += reso;
-          UI.toast('SOSTITUITA', RUNES[occ.id].n + ' · +' + reso + ' frammenti', '#ff3d6e');
+          UI.toast('SOSTITUITA', nomeRuna(occ) + ' · +' + reso + ' frammenti', '#ff3d6e');
           G.shake = Math.max(G.shake, 6);
         }
         placeRune(UI.placing, i); UI.placing = null;

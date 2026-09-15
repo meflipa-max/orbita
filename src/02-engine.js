@@ -278,7 +278,12 @@ function salvaCorsa() {
       t: G.t, level: G.level, xp: G.xp, xpNeed: G.xpNeed, kills: G.kills, shards: G.shards,
       dmg: G.dmgDone, diff: G.diff, ten: G.tenacia, bossIdx: G.bossIdx,
       hp: P.hp, rer: G.rerolls, riv: G.revives,
-      ring: G.ring.map(x => (x ? { id: x.id, lv: x.lv, slot: x.slot } : null)),
+      /* `el` va annotato: e' l'elemento che la runa ha ADESSO, e la Ritempra
+         lo cambia. Senza, riprendere una corsa sospesa riportava ogni runa
+         riaccordata al proprio elemento di nascita — cioe' scioglieva la
+         catena e spegneva il Risveglio costruito con la Ritempra, e chi
+         riprendeva vedeva le rune tornate del colore di prima. */
+      ring: G.ring.map(x => (x ? { id: x.id, lv: x.lv, slot: x.slot, el: x.el } : null)),
       pas: G.passives,
       /* i contatori che pagano sfide e contratti: senza, riprendere
          cancellerebbe mezz'ora di obiettivi gia' guadagnati */
@@ -898,7 +903,7 @@ function recalcRing(announce) {
       const r = R[i];
       if (!r || !EVO[r.id] || G.evoAnn[r.id] || !canEvolve(r)) continue;
       G.evoAnn[r.id] = 1;
-      UI.toast('PRONTA A TRASFORMARSI', RUNES[r.id].n + ' → ' + RUNES[EVO[r.id]].n, EL[r.el].c);
+      UI.toast('PRONTA A TRASFORMARSI', nomeRuna(r) + ' → ' + RUNES[EVO[r.id]].n, EL[r.el].c);
       AU.play('buy');
     }
   }
@@ -928,8 +933,25 @@ function runeStats(r) {
   if (s.spd !== undefined && !angolare(r.id)) s.spd *= P.projMul;
   if (s.count !== undefined) s.count = Math.max(1, Math.floor(s.count));
   if (s.pierce !== undefined) s.pierce = Math.floor(s.pierce);
-  s.el = d.el;
-  if (G.nodo && G.nodo === d.el) s.dmg *= 1.35;   /* rune sintonizzate col Nodo */
+  /* ── l'elemento della runa e' quello che l'anello mostra ────────
+     Era `d.el`, cioe' l'elemento con cui la runa e' NATA. Ma la Ritempra
+     riaccorda una runa a un altro elemento, e cambiava solo `r.el`: la
+     contabilita' delle catene. Tutto il resto del gioco continuava a
+     leggere quello di nascita, quindi una Scheggia riaccordata al Fuoco
+     restava di Fuoco nell'anello e di Gelo in campo — sparava schegge
+     azzurre, prendeva il +35% dal Nodo di Gelo e non da quello di Fuoco, e
+     contro un guardiano con la corazza di Gelo faceva meta' danno per un
+     elemento che secondo l'anello non aveva piu'. Chi la giocava vedeva
+     una runa rossa che spara ghiaccio: la Ritempra sembrava non fare
+     niente, o disfarsi da sola.
+     `s.el` e' il colore e l'elemento con cui la runa colpisce, e da qui lo
+     leggono tutte le FIRE: una regola, un posto solo. La forma resta
+     quella di nascita (il Glaciale congela perche' e' il Glaciale), e
+     l'Iride non ha un elemento suo — se lo prende dalle vicine ogni volta
+     che spara. */
+  s.el = r.el || d.el;
+  s.c = EL[s.el].c;
+  if (G.nodo && G.nodo === s.el) s.dmg *= 1.35;   /* rune sintonizzate col Nodo */
   return s;
 }
 
@@ -1050,9 +1072,19 @@ function spawnBoss(def) {
     corazza: G.bossIdx >= 1 ? pick(ELKEYS) : null
   };
   G.enemies.push(e); G.bosses.push(e); syncBosses();
-  const sub2 = e.corazza ? 'Corazza di ' + EL[e.corazza].n + (mod.d ? ' · ' + mod.d : '')
+  /* L'avviso diceva «Corazza di Gelo», cioe' il nome della regola e non la
+     regola: chi lo leggeva sapeva soltanto che il guardiano aveva qualcosa a
+     che fare col Gelo. Il mezzo danno e' l'informazione che cambia la
+     partita — e' il momento in cui la seconda catena ripaga — e non stava
+     scritta da nessuna parte, ne' qui ne' sul cerchio disegnato addosso a
+     lui. Il modificatore invece si spiegava gia' da solo (`mod.d`), e resta. */
+  const sub2 = e.corazza ? 'I colpi di ' + EL[e.corazza].n + ' gli fanno metà danno' + (mod.d ? ' · ' + mod.d : '')
     : (mod.d || 'Guardiano risvegliato');
   UI.toast(def.n + (mod.n ? ' · ' + mod.n.toUpperCase() : ''), sub2, def.c);
+  /* e la prima corazza della vita del giocatore si spiega per intero, con
+     il guardiano fermo sullo sfondo: e' la regola che chiede di costruire
+     l'anello su due elementi invece di uno */
+  if (e.corazza && !G.demo && !visto('corazza')) G.briefing = 'corazza';
   AU.play('boss'); G.shake = 16;
   return e;
 }
@@ -1196,7 +1228,14 @@ function _hit(e, amount, opt) {
   if (e.hp <= 0) killEnemy(e, opt);
 }
 
-function chainFrom(src, dmg, jumps, range, srcId) {
+/* `el` e' l'elemento della catena. Senza, era 'fulmine' cablato: giusto per
+   la catena del Sovraccarico — che E' il Risveglio del Fulmine — ma sbagliato
+   per l'Arco, il Fulgore e il Giudizio, che la usano come proprio attacco e
+   possono essere stati riaccordati dalla Ritempra. Contro un guardiano con la
+   corazza di Fulmine il colpo diretto faceva danno pieno e la sua stessa
+   catena meta'. */
+function chainFrom(src, dmg, jumps, range, srcId, el) {
+  const cel = el || 'fulmine', cc = EL[cel].c;
   let cur = src; const used = new Set([cur]);
   for (let j = 0; j < jumps; j++) {
     GRID.near(cur.x, cur.y, range, _q);
@@ -1207,9 +1246,9 @@ function chainFrom(src, dmg, jumps, range, srcId) {
       if (dd < bd) { bd = dd; best = o; }
     }
     if (!best) break;
-    G.zones.push({ k: 'spark', x1: cur.x, y1: cur.y, x2: best.x, y2: best.y, t: 0, dur: .16, c: '#ffe14f' });
+    G.zones.push({ k: 'spark', x1: cur.x, y1: cur.y, x2: best.x, y2: best.y, t: 0, dur: .16, c: cc });
     used.add(best); cur = best;
-    hitEnemy(best, dmg, { noChain: true, color: '#ffe14f', noCrit: true, el: 'fulmine', src: srcId });
+    hitEnemy(best, dmg, { noChain: true, color: cc, noCrit: true, el: cel, src: srcId });
   }
 }
 
@@ -1305,10 +1344,12 @@ function killEnemy(e, opt) {
      tenerlo fuori anche dai sorteggi di cuore e bomba, che sono roba da
      nemici comuni. */
   if (e.boss) { /* vedi sotto */ }
-  else if (e.elite) { if (G.asc.noChest) addGem(e.x, e.y, 45, 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
+  else if (e.elite) { if (G.asc.noChest) addGem(e.x, e.y, fram(45), 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
-  if (chance(.05) || e.elite) addGem(e.x, e.y, e.boss ? 60 : e.elite ? 12 : 3, 1);
+  /* il gocciolio su ogni nemico: tre frammenti sul 5% delle uccisioni
+     facevano mille frammenti in una corsa, piu' di qualunque evento */
+  if (chance(.05) || e.elite) addGem(e.x, e.y, fram(e.boss ? 60 : e.elite ? 12 : 3), 1);
 
   if (e.type === 'scissore' && !e.small && !e.elite && G.enemies.length < 330) {
     for (let i = 0; i < 2; i++) {
@@ -1319,10 +1360,10 @@ function killEnemy(e, opt) {
   if (e.boss) {
     syncBosses(); G.shake = 26; G.hitstop = .16;
     UI.toast('ABBATTUTO', e.boss.n, e.boss.c);
-    if (G.asc.noChest) addGem(e.x, e.y, 140, 1);
+    if (G.asc.noChest) addGem(e.x, e.y, fram(140), 1);
     /* un guardiano vale uno scrigno grosso, non due schermate di carte
        di fila: la seconda arrivava mentre stavi ancora leggendo la prima */
-    else { G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); addGem(e.x, e.y, 220, 1); }
+    else { G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); addGem(e.x, e.y, fram(220), 1); }
     G.bossKills++;
     /* Prima si controllava `id === 'eclissi'`. Adesso l'ordine dei guardiani
        si rimescola e l'Incursione ne salta due, quindi «è l'ultimo» è una
@@ -1368,13 +1409,31 @@ function attivaCulmine() {
   if (!puoCulmine()) return false;
   G.charge = 0; G.chargeAnn = 0; G.culm = CULM_DUR * G.cg.culmDur; G.culms++;
   recalcAwk();
-  G.hitstop = Math.max(G.hitstop, .12);
-  G.shake = Math.max(G.shake, 14);
-  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 12, r1: 620, t: 0, dur: .7, c: '#ffe9b0' });
-  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: 200, t: 0, dur: .4, c: '#ffffff' });
+  /* ── l'istante piu' grosso della partita ────────────────────────
+     E' l'unica cosa che il giocatore fa con le mani oltre a schivare, e si
+     annunciava con un sussulto da 14, mezzo decimo di fermo immagine, due
+     cerchi e un avviso in alto — meno di quello che il gioco mette su una
+     Nova qualunque. Adesso che arriva una volta ogni cinquanta secondi
+     invece che ogni venti puo' costare tutto quello che serve: un fermo
+     immagine vero, un velo d'oro (il rosa e' il male, il bianco e' la
+     spazzata: l'oro e' il tuo momento), tre onde che partono sfasate dal
+     nucleo invece di una, e il nome a schermo pieno — la stessa forma del
+     Risveglio, perche' e' la stessa scala di evento.
+     E il nome dice COSA FA: fin qui il suo effetto principale — ogni
+     Risveglio acceso sale di un grado — stava scritto in un avviso di due
+     secondi che non nominava nessun Risveglio, quindi chi non sapeva cosa
+     fosse un grado restava senza saperlo. */
+  G.hitstop = Math.max(G.hitstop, .3);
+  G.shake = Math.max(G.shake, 24);
+  G.flashT = .22; G.flashC = '#ffe9b0';
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 12, r1: 700, t: 0, dur: .8, c: '#ffe9b0' });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R, r1: 240, t: 0, dur: .45, c: '#ffffff' });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 30, r1: 560, t: 0, dur: .6, wait: .12, c: '#fff4d2' });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 20, r1: 820, t: 0, dur: .9, wait: .26, c: '#ffe9b0' });
+  burstPart(G.p.x, G.p.y, 26, '#ffe9b0', 320, 4.2, .7);
   for (const r of G.ring) if (r) r.cd = 0;   /* l'anello spara insieme */
   AU.play('culmine');
-  UI.toast('CULMINE', 'Ogni Risveglio sale di un grado', '#ffe9b0');
+  UI.culmineFx();
   return true;
 }
 function updateCulmine(dt) {

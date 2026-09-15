@@ -107,7 +107,32 @@ const ELKEYS = ['fuoco', 'gelo', 'fulmine', 'vuoto', 'luce'];
    l'ha costruito bene.                                                   */
 const CULM_DUR = 5.5;
 const CULM_CD = 1.85;
-function culmineCost(t) { return 42 + t * .085; }
+/* Quante uccisioni riempiono l'indicatore, al secondo `t`.
+   ── era acceso un quarto della partita ────────────────────────────
+   Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in
+   18:44, spendendolo appena pronto): CINQUANTUNO Culmini, uno ogni ventidue
+   secondi. Ne dura cinque e mezzo, quindi il Culmine era acceso per un
+   quarto della corsa — e una cosa che succede ogni venti secondi non e' un
+   momento, e' uno stato. L'unica cosa che premi in tutta la partita valeva
+   quanto premere un tasto qualunque.
+   Il difetto stava nella pendenza: il costo saliva di .085 al secondo mentre
+   il ritmo delle uccisioni, misurato, sale da una al secondo a venticinque —
+   cioe' il costo cresceva trenta volte piu' piano di quello che lo paga, e
+   piu' avanti andava la corsa piu' spesso arrivava.
+   Con questa curva la stessa corsa ne da' VENTIDUE, uno ogni cinquanta
+   secondi circa, e il primo arriva ancora entro il primo minuto: resta il
+   momento che decidi tu, e torna a essere un momento. */
+function culmineCost(t) { return 65 + t * .55; }
+/* Quanto dura, in cifre e in parole. «Cinque secondi e mezzo» stava scritto
+   a mano nella guida, nel lessico e nel banner: tre copie di un numero che
+   la congiunzione Apogeo RADDOPPIA, quindi tutte e tre erano false in una
+   corsa su otto. Qui esce da CULM_DUR e dal moltiplicatore in vigore. */
+const culmSec = () => CULM_DUR * (G.cg ? G.cg.culmDur : 1);
+const numSec = n => String(Math.round(n * 10) / 10).replace('.', ',') + 's';
+function culmDurataIt() {
+  const s = culmSec(), i = Math.floor(s), mezzo = s - i >= .49;
+  return (NUM_IT[i] || i) + ' secondi' + (mezzo ? ' e mezzo' : '');
+}
 
 /* ── il primo elite ─────────────────────────────────────────────
    E' il primo scrigno, cioe' la prima carta in piu', e il Presagio esiste
@@ -318,6 +343,21 @@ const EVO = {
 };
 const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
 
+/* ── come si chiama questa runa ──────────────────────────────────
+   Il nome veniva sempre da RUNES[id].n, cioe' dalla FORMA. Ma la Ritempra
+   cambia l'elemento e non la forma, quindi una Scheggia portata al Fuoco
+   restava «Scheggia» in ogni riga del gioco — e Scheggia, con il suo glifo
+   di lame di ghiaccio, e' il nome della versione di Gelo. Sedici forme per
+   cinque elementi sarebbero ottanta nomi da inventare; l'elemento invece
+   si dice, come nei nomi di cosa e materia: «Scheggia di Fuoco».
+   Lo dice solo quando c'e' qualcosa da dire, cioe' quando l'elemento non e'
+   quello di nascita: per tutte le altre rune il nome resta quello che il
+   giocatore ha letto sulla carta. */
+function nomeRuna(r) {
+  const d = RUNES[r.id];
+  return (r.el && r.el !== d.el && EL[r.el]) ? d.n + ' di ' + EL[r.el].n : d.n;
+}
+
 /* ── la soglia della trasformazione ─────────────────────────────
    Il numero sta scritto qui e in nessun altro posto. Lo raccontavano in
    cinque — canEvolve, mancaEvo, l'anello in pausa, la diagnosi di fine
@@ -327,6 +367,16 @@ const RUNEIDS = Object.keys(RUNES).filter(id => !RUNES[id].evo);
    l'evento che non capitava mai. Adesso la sua riga si scrive da sola con
    questi due, e non puo' piu' invecchiare da sola. */
 const EVO_LV = 6, EVO_LV_CROGIOLO = 5;
+/* ── quanto sale una runa, e dove sta la soglia ──────────────────
+   Due numeri diversi che si somigliano, e il gioco ne mostrava uno solo:
+   la carta di potenziamento disegna OTTO pallini — il livello massimo — e la
+   trasformazione arriva al SESTO. Chi contava i pallini leggeva «otto» e
+   trovava scritto «livello 6» nella collezione delle forme: due regole per
+   la stessa cosa, e nessun posto in cui stesse scritto che sono due cose.
+   Il massimo stava scritto a mano in due punti (il `for` dei pallini e la
+   condizione che offre il potenziamento), quindi non si poteva nemmeno
+   nominare. Adesso si chiama, e la soglia si VEDE sui pallini. */
+const RUNE_MAX = 8;
 function sogliaEvo() {
   /* la Fornace (congiunzione) sposta la soglia come il Crogiolo, e le due
      si sommano: mai sotto 3, se no la trasformazione arriverebbe prima che
@@ -617,6 +667,35 @@ const META = [
 ];
 const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
 
+/* ── quanto rende una corsa ──────────────────────────────────────
+   Il negozio, tutto quello che ha un fondo — undicimilaseicento di
+   potenziamenti, novemilatrecento di nuclei, diciottomila di reliquie — costa
+   38.928 frammenti. Una Corsa da venti minuti vinta ne pagava 8106 (misurato
+   col bot, semi 1111 e 2222: 8106 e 7720), cioe' il negozio finiva in
+   CINQUE partite. Dopo la quinta i frammenti non compravano piu' niente
+   tranne il Dominio, e con essi smetteva di contare l'unica cosa che lega
+   una partita alla successiva: «per che cosa sto giocando adesso».
+   Non e' un caso che fosse cosi': i pesi sono nati quando il negozio aveva
+   un terzo delle voci di adesso, e sono rimasti.
+   Il pezzo piu' grosso era la riga delle uccisioni — .5 per nemico, cioe'
+   3416 frammenti su 6832 nemici — che e' anche la quantita' meno decisa da
+   chi gioca: sale col tetto dei nemici e con la durata, non con la
+   costruzione dell'anello. Adesso pesa meno di un sesto, e il traguardo —
+   vincere — pesa di piu' di quanto pesava.
+   Misurato dopo: 2850 per una Corsa vinta, cioe' il negozio in QUATTORDICI
+   partite invece di cinque, e la prima corsa (cinque minuti, persa) paga
+   ancora abbastanza per le prime due regole del negozio — 110 e 160 — che
+   e' la promessa su cui il negozio e' costruito.
+   `npm run misura -- soldi` rimisura tutto questo in un colpo.        */
+const PAGA = { kill: .08, sec: .35, lv: 10, vittoria: 800 };
+/* Quanto valgono i frammenti raccolti in campo. Erano un terzo di tutto
+   l'incasso di una corsa (2780 su 8106) e passavano dal payout senza mai
+   comparire a schermo, quindi nessuno poteva accorgersene: il gocciolio del
+   5% su ogni nemico ne faceva mille da solo. I numeri stanno scritti dove
+   cadono — killEnemy, gli eventi d'arena — e questa e' la loro scala. */
+const FRAM_RESA = .34;
+const fram = v => Math.max(1, Math.round(v * FRAM_RESA));
+
 /* ── sfide ──────────────────────────────────────────────────────
    Non medaglie da vetrina: chiavi. Danno una direzione alle partite e
    soprattutto insegnano i sistemi, spingendoti a usarli in modi che da
@@ -849,7 +928,9 @@ const RELIQUIE = [
   { id: 'semenza',   n: 'Semenza',        c: 1400, ico: 'innesco',   d: 'Inizi ogni partita con un livello già preso.' },
   { id: 'mercante',  n: 'Mercante',       c: 1600, ico: 'frammento', d: 'Dissolvere una runa rende il doppio dei frammenti.' },
   { id: 'richiamo',  n: 'Richiamo',       c: 1800, ico: 'orbita',    d: 'Gli eventi d’arena arrivano il 35% prima.' },
-  { id: 'avanzo',    n: 'Avanzo',         c: 1900, ico: 'linfa',     d: 'Saltare una carta cura il doppio e dà 120 frammenti.' },
+  /* il numero lo scrive fram(): la scheda prometteva 120 frammenti e la
+     carta ne dava un'altra quantita' appena la scala dell'economia cambiava */
+  { id: 'avanzo',    n: 'Avanzo',         c: 1900, ico: 'linfa',     d: 'Saltare una carta cura il doppio e dà ' + fram(120) + ' frammenti.' },
   { id: 'bussola',   n: 'Bussola',        c: 2300, ico: 'magnete',   d: 'Un Nodo dell’arena è sempre sintonizzato sulla tua apertura.' },
   { id: 'crogiolo',  n: 'Crogiolo',       c: 2600, ico: 'cometa',    d: 'Le trasformazioni arrivano al livello ' + EVO_LV_CROGIOLO + ' invece che al ' + EVO_LV + '.' },
   { id: 'coro',      n: 'Coro di stelle', c: 3000, ico: 'vortice',   d: 'Ogni Risveglio acceso dà +7% danno a tutte le rune.' },
@@ -923,7 +1004,87 @@ const BRIEFING = {
     n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',
     p: ['Dentro quest’aura le tue rune del suo elemento fanno <b>+35% danno</b>, e ne bastano <b>due vicine</b> per accendere il Risveglio invece di tre.',
         'Il cuore del cristallo è solido: <b>ci si gira intorno</b>. Si accende solo se stai giocando il suo elemento.']
+  },
+  /* ── le due cose che ATTACCANO la build ─────────────────────────
+     Un avviso di due secondi le annunciava per nome e non diceva cosa
+     fossero. Sono le due regole che, non capite, si leggono come un
+     difetto del gioco: una runa che smette di sparare da sola, e un
+     guardiano che incassa il doppio senza motivo visibile.               */
+  dissonante: {
+    n: 'Dissonante', k: 'Attacca la tua build', ico: 'presagio', c: '#e0d0ff',
+    p: ['Non vuole la tua vita: <b>aggancia una runa e la tiene zitta</b>. Vedi il filo che parte da lui e la runa che si spegne — non è un difetto, è il suo attacco.',
+        'Prende sempre la tua runa migliore, e <b>tiene le distanze</b> apposta: per liberarla devi smettere di mietere e <b>andarlo a prendere</b>. Non possono zittirtene più di due insieme.']
+  },
+  corazza: {
+    n: 'Corazza elementale', k: 'Dal secondo guardiano', ico: 'corazza', c: '#9c93c6',
+    p: ['Il cerchio tratteggiato attorno al guardiano porta scritto un <b>elemento</b>: i colpi di quell’elemento gli fanno <b>metà danno</b>. Tutti gli altri, danno pieno.',
+        'È la ragione per cui conviene avere <b>una seconda catena</b>, o un’<b>Iride</b>: un anello di un solo elemento, contro la corazza di quell’elemento, dimezza tutto quello che sa fare.']
   }
 };
+
+/* ── il lessico ────────────────────────────────────────────────
+   Il gioco dice molti nomi propri: «Torpore II», «Ritempra», «Congiunzione
+   Fornace», «Corazza di Gelo», «Dissonante», «Ascesi», «Eccesso». Ognuno e'
+   una regola, e quasi tutti comparivano per la prima volta dentro un avviso
+   di due secondi in mezzo all'azione. La guida li spiega, ma sta nel menu:
+   dalla partita non ci si arriva, e il momento in cui serve saperlo e'
+   sempre dentro la partita.
+   Questo e' l'elenco di tutto quello che il gioco NOMINA, con la riga che
+   dice cosa vuol dire, raggiungibile dalla pausa. Quello che sta scritto
+   altrove lo prende da dove sta scritto — i Risvegli da EL, gli eventi dal
+   briefing che li spiega, i modificatori dei guardiani da BOSSMOD — cosi'
+   una regola cambiata in un posto non resta vecchia qui.                */
+function lessico() {
+  const ev = id => [BRIEFING[id].n, BRIEFING[id].p[0]];
+  return [
+    { t: 'L’anello', v: [
+      ['Runa', 'Un’arma che ti gira intorno e spara da sola. Non si mira e non si spara: quello che decidi è <b>quali rune</b> e in <b>quale ordine</b>.'],
+      ['Alloggiamento', 'Uno dei posti dell’anello. Sono numerati, e l’anello è circolare: l’ultimo confina col primo.'],
+      ['Risonanza', 'Due rune <b>vicine</b> dello stesso elemento: <b>+30% danno a testa</b>. Distanti fra loro, niente. L’arco colorato fra due rune dice che risuonano.'],
+      ['Catena', 'Rune dello stesso elemento <b>una di fila all’altra</b>. È la sua lunghezza a decidere i Risvegli: «Fuoco 2/3» vuol dire che ne manca una.'],
+      ['Risveglio', Cap(NUM_IT[CATENA_BASE]) + ' rune in fila accendono una <b>regola nuova per tutti i tuoi colpi</b> — anche quelli delle rune di altri elementi — fino a fine partita.'],
+      ['Grado (I · II · III)', 'Ogni runa in più nella stessa catena alza il grado del Risveglio: <b>' + (CATENA_BASE + 1) + '</b> per il secondo, <b>' + (CATENA_BASE + 2) + '</b> per il terzo. Stesso effetto, molto più forte.'],
+      ['Iride', 'Il jolly: <b>conta come qualsiasi elemento</b>. In mezzo a due gruppi ne accende due Risvegli insieme, dentro il tuo gruppo fa più danno puro.'],
+      /* la soglia la sa sogliaEvo(), che e' l'unico posto in cui sta
+         scritta: il Crogiolo e la Fornace la spostano */
+      ['Trasformazione', 'Una runa al <b>livello ' + sogliaEvo() + '</b> che risuona da <b>entrambi</b> i lati e ha l’<b>elemento risvegliato</b> diventa un’altra runa. Ne ha una ognuna delle sedici.'],
+      ['Ritempra', 'La carta che <b>cambia elemento</b> a una runa che hai già: prende quello di una vicina, e si tiene forma e livello. È il modo di aggiustare una catena senza perdere niente.'],
+      ['Dissolvi', 'La carta che <b>toglie</b> una runa e libera il suo alloggiamento, in cambio di frammenti. Serve quando la composizione dell’anello non ti porta da nessuna parte.'],
+      ['Ascesi', 'La carta sempre disponibile e <b>ripetibile all’infinito</b>: +5% danno, +4% vita, +3% area. Compare quando il resto è al massimo.'],
+      ['Eccesso', 'Un passivo spinto <b>oltre il suo massimo</b>, a valore ridotto. Vuol dire che quel potenziamento non ha più gradini pieni.'],
+      ['Apertura', 'La runa da cui parti, scelta nell’Osservatorio. Decide quale sarà la tua prima catena, ed è sempre pescabile.']
+    ] },
+    { t: 'In campo', v: [
+      ['Culmine', 'L’anello in basso a destra si riempie <b>uccidendo</b>. Pieno, premilo: per ' + culmDurataIt() + ' l’anello spara tutto insieme e <b>ogni Risveglio acceso sale di un grado</b>. Non accende Risvegli nuovi: moltiplica quelli che hai.'],
+      ['Raffica', 'Stai uccidendo molto in fretta. È solo un contatore: dice il ritmo, non aggiunge regole.'],
+      ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere.'],
+      ['Frammenti', 'La valuta che <b>resta fra una partita e l’altra</b>. Si spende nell’Osservatorio.'],
+      ['Scrigno', 'Una carta in più, subito. La lasciano i guardiani e gli eventi d’arena.'],
+      ['Annichilimento', 'La bomba a terra non colpisce i dintorni: <b>uccide ogni nemico della mappa</b>, guardiani esclusi.'],
+      ['Respiro', 'Tre secondi di invulnerabilità per uscire da dove ti sei incastrato. Arriva quando stai per cedere.'],
+      ['Rinascita', 'Il nucleo si riaccende: hai speso una vita in più — le danno certe reliquie e certe ascensioni.'],
+      ['Temprato', 'Nemico col <b>bordo caldo</b>: il gioco ha visto che li disintegri prima che ti arrivino addosso, e li rende più duri. Meno nemici, ognuno che vale di più.'],
+      ['Elite', 'Un nemico comune ingrandito, con la <b>barra della vita</b> sopra la testa. Vale molto di più.'],
+      ['Guardiano', 'Il boss. Ne arrivano cinque in una Corsa, tre in un’Incursione, e <b>l’ultimo è la vittoria</b>: la barra in cima allo schermo è la sua vita.'],
+      ['Corazza elementale', 'Il cerchio tratteggiato attorno a un guardiano: i colpi di <b>quell’elemento gli fanno metà danno</b>.'],
+      ['Dissonante', 'Non punta alla tua vita: <b>aggancia una runa e la tiene zitta</b>, col filo che si vede. Tiene le distanze, quindi va inseguito.'],
+      ['Muro · Accerchiamento · Cuneo', 'Un gruppo che arriva <b>in formazione</b>: il muro si aggira, l’accerchiamento va rotto da un lato, il cuneo si schiva di fianco.'],
+      ev('breccia'), ev('marea'), ev('caccia'), ev('allineamento'), ev('fermata'),
+      ['Nodo elementale', BRIEFING.nodo.p[0]]
+    ] },
+    { t: 'Fra le partite', v: [
+      ['Osservatorio', 'Dove si spendono i frammenti: potenziamenti permanenti, nuclei, reliquie, e la collezione delle sedici forme.'],
+      ['Nucleo', 'Il personaggio. Ognuno porta una <b>regola</b> sua, non solo statistiche diverse.'],
+      ['Reliquia', 'Un acquisto caro e <b>definitivo</b>: non una percentuale, una regola in più per tutte le partite che verranno.'],
+      ['Contratto', 'Tre obiettivi sempre in corso, che si rinnovano appena li completi. Pagano frammenti.'],
+      ['Sfida', 'Un traguardo che si prende <b>una volta sola</b>. Alcune sbloccano un nucleo.'],
+      ['Ascensione', 'La difficoltà scelta prima di partire. Si sale di un livello solo <b>vincendo al proprio massimo</b>, e ogni livello cambia una regola.'],
+      ['Congiunzione', 'La regola sorteggiata dal seme, <b>scritta prima di partire</b>: vale per quella corsa e per tutte quelle con la stessa semenza. Una su quattro è Quiete, cioè nessuna.'],
+      ['Semenza', 'Il numero da cui nasce la partita: arena, guardiani e congiunzione. Stessa semenza, stessa corsa — è così che due partite si possono confrontare.'],
+      ['Corsa · Incursione', 'I due formati: venti minuti con cinque guardiani e poi il senza fine, oppure otto minuti con tre. <b>Il record è di ciascuno</b>, non uno solo per tutti e due.'],
+      ['Senza fine', 'Dopo la vittoria si può continuare: la corsa <b>resta vinta</b>, e da lì la difficoltà cresce senza traguardo.']
+    ] }
+  ];
+}
 const PRIMEVOLTE = Object.keys(BRIEFING).concat(['gemme', 'raffica', 'culmine']);
 const visto = id => SAVE.visti.indexOf(id) >= 0;

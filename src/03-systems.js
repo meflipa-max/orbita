@@ -110,29 +110,38 @@ const FIRE = {
     const a0 = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
     for (let i = 0; i < s.count; i++) {
       const a = a0 + (i - (s.count - 1) / 2) * .17;
-      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'fuoco', c: EL.fuoco.c, pierce: s.pierce, kind: 'orb', life: 2.3, homing: 2.6, trail: 1 });
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: s.el, c: s.c, pierce: s.pierce, kind: 'orb', life: 2.3, homing: 2.6, trail: 1 });
     }
     AU.play('shoot');
   },
   pira(r, s) {
-    G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.fuoco.c, el: 'fuoco' });
+    G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: s.c, el: s.el });
   },
   nova(r, s) {
-    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .46, dmg: s.dmg, hit: new Set(), c: EL.fuoco.c, kb: 340 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .46, dmg: s.dmg, hit: new Set(), c: s.c, el: s.el, kb: 340 });
     AU.play('blast'); G.shake = Math.max(G.shake, 4);
   },
+  /* ── le schegge partono dalla runa ─────────────────────────
+     Nascevano al centro, cioe' dal nucleo: l'unica runa a proiettile che
+     non veniva vista sparare. Le altre otto partono tutte da `r.wx/r.wy`,
+     quindi il ghiaccio sembrava un'abilita' del nucleo e non della runa che
+     te lo stava dando — e con l'anello in rotazione non c'era modo di
+     capire QUALE runa lo facesse.
+     Anche la direzione si misura dalla runa: il corridoio piu' pieno visto
+     dal centro non e' quello che le schegge attraversano davvero se partono
+     trentadue pixel piu' in la'. */
   scheggia(r, s) {
     const mv = Math.hypot(G.p.vx, G.p.vy);
     const bias = mv > 24 ? Math.atan2(G.p.vy, G.p.vx) : null;
-    let a = direzioneDensa(G.p.x, G.p.y, 780, s.size + 16, bias, .45);
-    if (a === null) { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : (bias !== null ? bias : r.wa); }
+    let a = direzioneDensa(r.wx, r.wy, 780, s.size + 16, bias, .45);
+    if (a === null) { const t = nearest(r.wx, r.wy, 940); a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : (bias !== null ? bias : r.wa); }
     for (let i = 0; i < s.count; i++) {
       const aa = a + (i - (s.count - 1) / 2) * .2;
-      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg, el: 'gelo', c: EL.gelo.c, pierce: s.pierce, kind: 'shard', life: 1.7, ang: aa });
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg, el: s.el, c: s.c, pierce: s.pierce, kind: 'shard', life: 1.7, ang: aa });
     }
     AU.play('shoot');
   },
-  bruma(r, s) { areaHit(G.p.x, G.p.y, s.area, s.dmg, { color: EL.gelo.c, noCrit: true, el: 'gelo' }); },
+  bruma(r, s) { areaHit(G.p.x, G.p.y, s.area, s.dmg, { color: s.c, noCrit: true, el: s.el }); },
   cristallo(r, s) {
     if (!r.st.orb || r.st.n !== s.count) { r.st.n = s.count; r.st.orb = []; for (let i = 0; i < s.count; i++) r.st.orb.push({ p: i / s.count * TAU }); }
     return true;
@@ -140,16 +149,16 @@ const FIRE = {
   arco(r, s) {
     const t = nearest(G.p.x, G.p.y, s.area * 1.4);
     if (!t) { r.cd = .18; return; }
-    G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .16, c: EL.fulmine.c });
-    hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
-    chainFrom(t, s.dmg, s.count - 1, s.area, r.id);
+    G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .16, c: s.c });
+    hitEnemy(t, s.dmg, { color: s.c, el: s.el });
+    chainFrom(t, s.dmg, s.count - 1, s.area, r.id, s.el);
     AU.play('shoot');
   },
   tempesta(r, s) {
     for (let i = 0; i < s.count; i++) {
       const a = rand(TAU), d = rand(s.area, s.area * .18);
       const x = G.p.x + Math.cos(a) * d, y = G.p.y + Math.sin(a) * d;
-      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .42, dmg: s.dmg, done: 0, c: EL.fulmine.c });
+      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .42, dmg: s.dmg, done: 0, c: s.c, el: s.el });
     }
   },
   filo(r, s) {
@@ -160,8 +169,8 @@ const FIRE = {
     r.st.tgt = ts[0];
     for (let i = 0; i < ts.length; i++) {
       const t = ts[i];
-      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .11, c: EL.fulmine.c, w: 3 });
-      hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
+      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .11, c: s.c, w: 3 });
+      hitEnemy(t, s.dmg, { color: s.c, noCrit: nextRand() > .3, el: s.el });
     }
   },
   singolarita(r, s) {
@@ -200,7 +209,7 @@ const FIRE = {
       x = G.p.x + Math.cos(a) * MINIMO; y = G.p.y + Math.sin(a) * MINIMO;
     }
     x = clamp(x, -ARENA, ARENA); y = clamp(y, -ARENA, ARENA);
-    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto' });
+    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: s.c, el: s.el });
     AU.play('blast');
   },
   falce(r, s) {
@@ -208,7 +217,7 @@ const FIRE = {
     const a0 = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : r.wa;
     for (let i = 0; i < s.count; i++) {
       const a = a0 + i * (TAU / s.count);
-      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'vuoto', c: EL.vuoto.c, pierce: 99, kind: 'scythe', life: 2.6, spin: rand(9, 6), back: 0, retime: .42 });
+      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: s.el, c: s.c, pierce: 99, kind: 'scythe', life: 2.6, spin: rand(9, 6), back: 0, retime: .42 });
     }
     AU.play('shoot');
   },
@@ -217,29 +226,29 @@ const FIRE = {
     const a0 = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
     for (let i = 0; i < s.count; i++) {
       const a = a0 + (i - (s.count - 1) / 2) * .19;
-      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'vuoto', c: EL.vuoto.c, pierce: s.pierce, kind: 'bolt', life: 1.9, ang: a });
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: s.el, c: s.c, pierce: s.pierce, kind: 'bolt', life: 1.9, ang: a });
     }
     AU.play('shoot');
   },
   raggio(r, s) {
     const a = r.st.a || 0;
     const x2 = G.p.x + Math.cos(a) * s.area, y2 = G.p.y + Math.sin(a) * s.area;
-    G.zones.push({ k: 'beam', x1: G.p.x, y1: G.p.y, x2, y2, t: 0, dur: .1, c: EL.luce.c, w: 7 });
+    G.zones.push({ k: 'beam', x1: G.p.x, y1: G.p.y, x2, y2, t: 0, dur: .1, c: s.c, w: 7 });
     /* danno lungo il segmento */
     const steps = Math.ceil(s.area / 46);
     for (let i = 1; i <= steps; i++) {
       const f = i / steps;
-      areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 26, s.dmg, { color: EL.luce.c, noCrit: nextRand() > .2, el: 'luce' });
+      areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 26, s.dmg, { color: s.c, noCrit: nextRand() > .2, el: s.el });
     }
   },
   prisma(r, s) {
     const t = nearest(G.p.x, G.p.y, 940);
     const a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
-    shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: 'luce', c: EL.luce.c, pierce: s.pierce, kind: 'orb', life: 2.2, split: s.count, splitPierce: 1, trail: 1 });
+    shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg, el: s.el, c: s.c, pierce: s.pierce, kind: 'orb', life: 2.2, split: s.count, splitPierce: 1, trail: 1 });
     AU.play('shoot');
   },
   aureola(r, s) {
-    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: EL.luce.c, kb: 90 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: s.c, el: s.el, kb: 90 });
     P.hp = Math.min(P.maxHp, P.hp + s.heal);
     addFloat(G.p.x, G.p.y - 30, '+' + s.heal.toFixed(1), '#6ff2c4');
   },
@@ -265,7 +274,7 @@ const FIRE = {
     for (let i = 0; i < s.count; i++) {
       const a = a0 + (i - (s.count - 1) / 2) * .2;
       shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
-        el: 'fuoco', c: EL.fuoco.c, pierce: s.pierce, kind: 'orb', life: 2.6, homing: 3.2, trail: 1,
+        el: s.el, c: s.c, pierce: s.pierce, kind: 'orb', life: 2.6, homing: 3.2, trail: 1,
         scia: 1, splitKill: 3 });
     }
     AU.play('blast');
@@ -276,12 +285,12 @@ const FIRE = {
   fulgore(r, s) {
     const t = nearest(G.p.x, G.p.y, s.area * 1.6);
     if (!t) { r.cd = .16; return; }
-    G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .18, c: EL.fulmine.c });
-    hitEnemy(t, s.dmg, { color: EL.fulmine.c, el: 'fulmine' });
+    G.zones.push({ k: 'spark', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .18, c: s.c });
+    hitEnemy(t, s.dmg, { color: s.c, el: s.el });
     /* due catene che partono dallo stesso bersaglio: si sdoppia */
-    chainFrom(t, s.dmg * .8, Math.ceil(s.count / 2), s.area, r.id);
-    chainFrom(t, s.dmg * .8, Math.floor(s.count / 2), s.area, r.id);
-    G.zones.push({ k: 'ring', x: t.x, y: t.y, r0: 6, r1: 90, t: 0, dur: .3, c: EL.fulmine.c });
+    chainFrom(t, s.dmg * .8, Math.ceil(s.count / 2), s.area, r.id, s.el);
+    chainFrom(t, s.dmg * .8, Math.floor(s.count / 2), s.area, r.id, s.el);
+    G.zones.push({ k: 'ring', x: t.x, y: t.y, r0: 6, r1: 90, t: 0, dur: .3, c: s.c });
     AU.play('blast');
   },
   mietitore(r, s) {
@@ -290,7 +299,7 @@ const FIRE = {
     for (let i = 0; i < s.count; i++) {
       const a = a0 + i * (TAU / s.count);
       shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
-        el: 'vuoto', c: EL.vuoto.c, pierce: 99, kind: 'scythe', life: s.dur, spin: rand(11, 7),
+        el: s.el, c: s.c, pierce: 99, kind: 'scythe', life: s.dur, spin: rand(11, 7),
         retime: 1.5, risucchio: 150, hitRate: s.hit });
     }
     AU.play('shoot');
@@ -299,38 +308,39 @@ const FIRE = {
   vulcano(r, s) {
     /* la pozza non brucia soltanto: erutta, e ogni eruzione è un'onda d'urto */
     G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0,
-      c: EL.fuoco.c, el: 'fuoco', erutta: 1.15, eruttaT: 1.15, eruttaDmg: s.dmg * 1.5 });
+      c: s.c, el: s.el, erutta: 1.15, eruttaT: 1.15, eruttaDmg: s.dmg * 1.5 });
   },
   supernova(r, s) {
-    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .42, dmg: s.dmg, hit: new Set(), c: EL.fuoco.c, kb: 360 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 12, r1: s.area, t: 0, dur: .42, dmg: s.dmg, hit: new Set(), c: s.c, el: s.el, kb: 360 });
     /* e poi collassa e riesplode, molto più larga */
     G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 20, r1: s.area * 1.6, t: 0, dur: .6, wait: .48,
-      dmg: s.dmg * 1.25, hit: new Set(), c: '#ffd7a8', el: 'fuoco', kb: 460 });
+      dmg: s.dmg * 1.25, hit: new Set(), c: mixc(s.c, '#ffffff', .45), el: s.el, kb: 460 });
     AU.play('blast'); G.shake = Math.max(G.shake, 8);
   },
+  /* le lance partono dalla runa, come le schegge da cui nascono */
   zanna(r, s) {
     const mv = Math.hypot(G.p.vx, G.p.vy);
     const bias = mv > 24 ? Math.atan2(G.p.vy, G.p.vx) : null;
-    let a = direzioneDensa(G.p.x, G.p.y, 900, s.size + 20, bias, .45);
-    if (a === null) { const t = nearest(G.p.x, G.p.y, 940); a = t ? Math.atan2(t.y - G.p.y, t.x - G.p.x) : (bias !== null ? bias : r.wa); }
+    let a = direzioneDensa(r.wx, r.wy, 900, s.size + 20, bias, .45);
+    if (a === null) { const t = nearest(r.wx, r.wy, 940); a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : (bias !== null ? bias : r.wa); }
     for (let i = 0; i < s.count; i++) {
       const aa = a + (i - (s.count - 1) / 2) * .17;
-      shoot({ x: G.p.x, y: G.p.y, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg,
-        el: 'gelo', c: EL.gelo.c, pierce: s.pierce, kind: 'shard', life: 2.2, ang: aa, splitKill: 2, gela: 1 });
+      shoot({ x: r.wx, y: r.wy, vx: Math.cos(aa) * s.spd, vy: Math.sin(aa) * s.spd, r: s.size, dmg: s.dmg,
+        el: s.el, c: s.c, pierce: s.pierce, kind: 'shard', life: 2.2, ang: aa, splitKill: 2, gela: 1 });
     }
     AU.play('shoot');
   },
   inverno(r, s) {
-    areaHit(G.p.x, G.p.y, s.area, s.dmg, { color: EL.gelo.c, noCrit: true, el: 'gelo', gela: .9 });
+    areaHit(G.p.x, G.p.y, s.area, s.dmg, { color: s.c, noCrit: true, el: s.el, gela: .9 });
     /* e lascia stagione dietro di sé */
     if ((r.st.gelo = (r.st.gelo || 0) + 1) % 5 === 0)
-      G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area * .68, t: 0, dur: 2.6, dps: s.dmg * 1.6, tick: 0, c: EL.gelo.c, el: 'gelo', gela: 1 });
+      G.zones.push({ src: r.id, k: 'pool', x: G.p.x, y: G.p.y, r: s.area * .68, t: 0, dur: 2.6, dps: s.dmg * 1.6, tick: 0, c: s.c, el: s.el, gela: 1 });
   },
   giudizio(r, s) {
     for (let i = 0; i < s.count; i++) {
       const a = rand(TAU), d = rand(s.area, s.area * .14);
       const x = G.p.x + Math.cos(a) * d, y = G.p.y + Math.sin(a) * d;
-      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .5, dmg: s.dmg, done: 0, c: EL.fulmine.c, catena: 5 });
+      G.zones.push({ src: r.id, k: 'bolt', x, y, r: s.size, t: 0, dur: .5, dmg: s.dmg, done: 0, c: s.c, el: s.el, catena: 5 });
     }
     G.shake = Math.max(G.shake, 5);
   },
@@ -339,14 +349,14 @@ const FIRE = {
     if (!ts.length) return;
     for (let i = 0; i < ts.length; i++) {
       const t = ts[i];
-      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .12, c: EL.fulmine.c, w: 5 });
-      hitEnemy(t, s.dmg, { color: EL.fulmine.c, noCrit: nextRand() > .3, el: 'fulmine' });
+      G.zones.push({ k: 'beam', x1: r.wx, y1: r.wy, x2: t.x, y2: t.y, t: 0, dur: .12, c: s.c, w: 5 });
+      hitEnemy(t, s.dmg, { color: s.c, noCrit: nextRand() > .3, el: s.el });
     }
   },
   abisso(r, s) {
     const t = nearest(G.p.x, G.p.y, 700);
     const x = t ? t.x : G.p.x + rand(240, -240), y = t ? t.y : G.p.y + rand(240, -240);
-    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: EL.vuoto.c, el: 'vuoto', forza: 1.5 });
+    G.zones.push({ src: r.id, k: 'hole', x, y, r: s.area, t: 0, dur: s.dur, dps: s.dmg, tick: 0, c: s.c, el: s.el, forza: 1.5 });
     AU.play('blast'); G.shake = Math.max(G.shake, 6);
   },
   nugolo(r, s) {
@@ -355,7 +365,7 @@ const FIRE = {
     for (let i = 0; i < s.count; i++) {
       const a = a0 + (i - (s.count - 1) / 2) * .16;
       shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
-        el: 'vuoto', c: EL.vuoto.c, pierce: s.pierce, kind: 'bolt', life: 2.6, ang: a, homing: 3.4 });
+        el: s.el, c: s.c, pierce: s.pierce, kind: 'bolt', life: 2.6, ang: a, homing: 3.4 });
     }
     AU.play('shoot');
   },
@@ -363,12 +373,12 @@ const FIRE = {
     const t = nearest(G.p.x, G.p.y, 940);
     const a = t ? Math.atan2(t.y - r.wy, t.x - r.wx) : r.wa;
     shoot({ x: r.wx, y: r.wy, vx: Math.cos(a) * s.spd, vy: Math.sin(a) * s.spd, r: s.size, dmg: s.dmg,
-      el: 'luce', c: EL.luce.c, pierce: 0, kind: 'orb', life: 2.4, split: s.count, splitPierce: 1,
+      el: s.el, c: s.c, pierce: 0, kind: 'orb', life: 2.4, split: s.count, splitPierce: 1,
       splitAgain: Math.max(2, Math.round(s.count * .5)), trail: 1 });
     AU.play('shoot');
   },
   sacrario(r, s) {
-    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: EL.luce.c, kb: 120 });
+    G.zones.push({ src: r.id, k: 'nova', x: G.p.x, y: G.p.y, r0: 8, r1: s.area, t: 0, dur: .4, dmg: s.dmg, hit: new Set(), c: s.c, el: s.el, kb: 120 });
     /* e resta un cerchio che risana finché ci stai dentro */
     G.zones.push({ src: r.id, k: 'cura', x: G.p.x, y: G.p.y, r: s.area * .62, t: 0, dur: 3.2, hps: s.heal * .8, tick: 0, c: '#6ff2c4' });
     P.hp = Math.min(P.maxHp, P.hp + s.heal);
@@ -395,11 +405,11 @@ const FIRE = {
     for (let k = 0; k < 2; k++) {
       const aa = a + k * PI;
       const x2 = G.p.x + Math.cos(aa) * s.area, y2 = G.p.y + Math.sin(aa) * s.area;
-      G.zones.push({ k: 'beam', x1: G.p.x, y1: G.p.y, x2, y2, t: 0, dur: .1, c: EL.luce.c, w: 11 });
+      G.zones.push({ k: 'beam', x1: G.p.x, y1: G.p.y, x2, y2, t: 0, dur: .1, c: s.c, w: 11 });
       const steps = Math.ceil(s.area / 44);
       for (let i = 1; i <= steps; i++) {
         const f = i / steps;
-        areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 34, s.dmg, { color: EL.luce.c, noCrit: nextRand() > .25, el: 'luce' });
+        areaHit(G.p.x + (x2 - G.p.x) * f, G.p.y + (y2 - G.p.y) * f, 34, s.dmg, { color: s.c, noCrit: nextRand() > .25, el: s.el });
       }
     }
   }
@@ -443,7 +453,7 @@ function updateRunes(dt) {
                la scheggia non scheggia: frantuma. È la sua stessa presa a
                prepararle il colpo. */
             const frantuma = gelido && e.froze > 0 ? 2.4 : 1;
-            hitEnemy(e, s.dmg * frantuma, { color: EL.gelo.c, kb: gelido ? s.kb : 170, kbx: dx / m, kby: dy / m, el: 'gelo' });
+            hitEnemy(e, s.dmg * frantuma, { color: s.c, kb: gelido ? s.kb : 170, kbx: dx / m, kby: dy / m, el: s.el });
             if (gelido && !e.boss) e.froze = Math.max(e.froze, s.gelo);   /* congela al tocco */
           }
         }
@@ -639,7 +649,7 @@ function updateZones(dt) {
     } else if (z.k === 'bolt') {
       if (!z.done && z.t > .16) {
         z.done = 1;
-        areaHit(z.x, z.y, z.r, z.dmg, { color: z.c, el: 'fulmine', src: z.src });
+        areaHit(z.x, z.y, z.r, z.dmg, { color: z.c, el: z.el || 'fulmine', src: z.src });
         burstPart(z.x, z.y, 8, z.c, 190, 3, .35);
         /* Giudizio: dove cade, scarica anche una catena */
         if (z.catena) { const t = nearest(z.x, z.y, z.r * 1.6); if (t) chainFrom(t, z.dmg * .55, z.catena, 260, z.src); }
@@ -833,6 +843,15 @@ function dissonanteAI(e, dt) {
       if (!G.ring[e.slot].mutata) G.dissAtt++;
       G.ring[e.slot].mutata = 1;
       e.attiva = 1;
+      /* ── il momento in cui una runa smette di sparare ────────────
+         L'unico avviso stava alla comparsa del Dissonante, due secondi in
+         mezzo all'azione e a schermo intero di distanza da quello che poi
+         succede. Il fatto — una delle tue rune che si spegne e un filo che
+         la tiene — arriva dopo, e senza una spiegazione si legge come un
+         difetto del gioco: la runa e' grigia, non spara, e non hai fatto
+         niente. Si spiega adesso, che e' quando lo vedi, e una volta sola
+         per sempre. */
+      if (!G.demo && !visto('dissonante')) G.briefing = 'dissonante';
       if (cchance(dt * 14)) {
         const r = G.ring[e.slot];
         addPart(lerp(e.x, r.wx, crand(1)), lerp(e.y, r.wy, crand(1)), 0, 0, .3, 2.4, '#e0d0ff');
@@ -1433,9 +1452,9 @@ function updateEventi(dt) {
       /* uno scrigno, non due: ogni scrigno e' una schermata di carte, e fra
          eventi, elite e guardiani le interruzioni erano una ogni sedici
          secondi per tutta la partita. Il valore che tolgo torna in gemme. */
-      if (G.asc.noChest) { addGem(v.x, v.y, 220, 1); }
+      if (G.asc.noChest) { addGem(v.x, v.y, fram(220), 1); }
       else G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
-      addGem(v.x, v.y, 240, 1);
+      addGem(v.x, v.y, fram(240), 1);
       G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 460, t: 0, dur: .7, c: '#b06bff' });
       UI.toast('BRECCIA APERTA', 'Ricompensa raccolta', '#b06bff');
       AU.play('buy'); G.shake = Math.max(G.shake, 10);
@@ -1448,7 +1467,7 @@ function updateEventi(dt) {
       const dx = G.p.x - g.x, dy = G.p.y - g.y;
       if (dx * dx + dy * dy < v.r * v.r) {
         g.preso = 1; v.presi++;
-        addGem(g.x, g.y, 150, 1);
+        addGem(g.x, g.y, fram(150), 1);
         G.zones.push({ k: 'ring', x: g.x, y: g.y, r0: 10, r1: 300, t: 0, dur: .5, c: '#ff7de3' });
         AU.play('buy'); G.shake = Math.max(G.shake, 7);
         addFloat(g.x, g.y - 30, v.presi + '/3', '#ff7de3', true);
@@ -1463,8 +1482,8 @@ function updateEventi(dt) {
          perche' un evento che da' zero a chi ci e' quasi riuscito insegna
          solo a non provarci. */
       if (!G.asc.noChest) G.drops.push({ x: G.p.x, y: G.p.y, k: 'chest', t: 0 });
-      else addGem(G.p.x, G.p.y, 220, 1);
-      addGem(G.p.x, G.p.y, 240, 1);
+      else addGem(G.p.x, G.p.y, fram(220), 1);
+      addGem(G.p.x, G.p.y, fram(240), 1);
       G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 520, t: 0, dur: .8, c: '#ff7de3' });
       UI.toast('ALLINEAMENTO COMPLETO', 'Tre su tre', '#ff7de3');
       AU.play('buy'); G.shake = Math.max(G.shake, 12);
@@ -1501,8 +1520,8 @@ function updateEventi(dt) {
     }
     if (v.carica >= 1) {
       if (!G.asc.noChest) G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
-      else addGem(v.x, v.y, 220, 1);
-      addGem(v.x, v.y, 260, 1);
+      else addGem(v.x, v.y, fram(220), 1);
+      addGem(v.x, v.y, fram(260), 1);
       P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .2);
       addFloat(G.p.x, G.p.y - 34, '+VITA', '#6ff2c4', true);
       G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 620, t: 0, dur: .9, c: '#6ff2c4' });
@@ -1525,7 +1544,7 @@ function updateEventi(dt) {
     const e = v.e;
     if (!e || e.hp <= 0) {
       if (!G.asc.noChest) G.drops.push({ x: e ? e.x : G.p.x, y: e ? e.y : G.p.y, k: 'chest', t: 0 });
-      addGem(e ? e.x : G.p.x, e ? e.y : G.p.y, 160, 1);
+      addGem(e ? e.x : G.p.x, e ? e.y : G.p.y, fram(160), 1);
       UI.toast('CORRIERE ABBATTUTO', 'Bottino recuperato', '#6ff2c4');
       AU.play('buy'); G.ev = null; return;
     }
@@ -1554,7 +1573,7 @@ function updateEventi(dt) {
        la prossima volta non ci prova. Ma senza scrigno — quello si paga
        tenendola tutta. */
     if (v.k === 'fermata') {
-      if (v.carica > .25) { addGem(v.x, v.y, Math.round(260 * v.carica), 1); UI.toast('FERMATA', Math.round(v.carica * 100) + '% tenuto', '#6a6199'); }
+      if (v.carica > .25) { addGem(v.x, v.y, fram(260 * v.carica), 1); UI.toast('FERMATA', Math.round(v.carica * 100) + '% tenuto', '#6a6199'); }
       else UI.toast('FERMATA SVANITA', null, '#6a6199');
     }
     G.ev = null;

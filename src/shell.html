@@ -220,6 +220,12 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 #awakefx .aw-d{font:600 13.5px/1.45 var(--ui);color:#fff;text-wrap:balance;margin:0 auto;
   max-width:min(360px,100% - 24px);text-shadow:0 1px 10px rgba(0,0,0,.95)}
 #awakefx.max .aw-n{font-size:min(clamp(44px,15vw,108px),var(--fit,999px))}
+/* il Culmine usa la stessa forma del Risveglio ma passa in un secondo:
+   mentre e' acceso si sta ancora schivando, e un velo addosso all'azione
+   per due secondi si paga in vita */
+#awakefx.on.culm{animation:awFade 1.05s ease-out forwards}
+#awakefx.culm .aw-in{animation:awPop .42s cubic-bezier(.16,1.2,.3,1) both}
+#awakefx.culm .aw-n{font-size:min(clamp(34px,11vw,78px),var(--fit,999px))}
 @keyframes awFade{0%{opacity:0}8%{opacity:1}72%{opacity:1}100%{opacity:0}}
 @keyframes awPop{from{transform:scale(.82);filter:blur(6px)}to{transform:scale(1);filter:blur(0)}}
 
@@ -481,6 +487,10 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .pips{display:flex;gap:3px;margin-top:8px}
 .pips i{width:12px;height:3px;background:color-mix(in srgb,var(--c) 22%,transparent);display:block}
 .pips i.f{background:var(--c);box-shadow:0 0 7px color-mix(in srgb,var(--c) 80%,transparent)}
+/* il pallino della soglia: da quel livello la runa puo' trasformarsi. E' il
+   solo modo di far vedere, sulla carta che mostra OTTO livelli, che il
+   momento importante e' il sesto. */
+.pips i.sog{border-top:2px solid #fff;border-bottom:2px solid #fff;height:7px;margin-top:-2px}
 .newtag{position:absolute;top:0;right:0;font:600 9px/1 var(--ui);letter-spacing:.18em;padding:4px 6px;
   background:var(--c);color:#0a0818}
 /* la trasformazione è il momento più raro della partita: si vede */
@@ -529,7 +539,12 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 @keyframes evoReady{0%,100%{box-shadow:0 0 0 2px rgba(255,255,255,.5),0 0 22px -4px var(--c)}
   50%{box-shadow:0 0 0 3px #fff,0 0 44px 0 var(--c)}}
 .slot.vicino .in{border-style:dashed;border-width:2px}
-.slot.vicino::after{content:"MAX";position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+/* Diceva «MAX», e voleva dire un'altra cosa: che la runa ha raggiunto la
+   SOGLIA della trasformazione (il livello 6), non il suo livello massimo
+   (l'8). Chi leggeva MAX su una runa al 6 non poteva che concludere che il
+   massimo fosse 6 — o che il gioco si contraddicesse con la carta, che di
+   pallini ne disegna otto. */
+.slot.vicino::after{content:"SOGLIA OK";position:absolute;top:-13px;left:50%;transform:translateX(-50%);
   font:700 8px/1 var(--ui);letter-spacing:.12em;color:var(--c);white-space:nowrap}
 /* in dissoluzione le rune rimovibili si segnalano da sole */
 .slot.dissolvibile .in{border-color:#ff3d6e;border-width:2px;animation:dissPulse 1s ease-in-out infinite}
@@ -544,8 +559,22 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .slot.ritemprabile .in{border-color:var(--c);border-width:2px;animation:evoReady 1.1s ease-in-out infinite}
 .slot.sostituibile .in{border-color:#ff3d6e;border-width:2px;animation:dissPulse 1s ease-in-out infinite}
 .slot.inerte{opacity:.34}
+/* la runa scelta per la Ritempra, in attesa del secondo tocco: bianca come
+   ogni conferma del gioco, perche' il colore dell'elemento qui dice
+   "dove va", non "sei sicuro" */
+.slot.ritconf{transform:translate(-50%,-50%) scale(1.13)}
+.slot.ritconf .in{border-color:#fff;border-width:2px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 34%,rgba(12,10,30,.9)),rgba(9,7,24,.92));
+  animation:ritConf .7s ease-in-out infinite}
+@keyframes ritConf{0%,100%{box-shadow:0 0 0 2px rgba(255,255,255,.6),0 0 24px -4px var(--c)}
+  50%{box-shadow:0 0 0 3px #fff,0 0 46px 0 var(--c)}}
+.slot.ritconf .tagslot{color:#fff}
 .tagslot{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;
   font:700 8px/1 var(--ui);letter-spacing:.14em;color:var(--c,#fff);pointer-events:none}
+/* la conseguenza sta SOPRA la runa: sotto c'e' gia' la freccia con
+   l'elemento d'arrivo, e due righe nello stesso punto si leggono come una */
+.tagsu{position:absolute;top:-13px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font:700 8px/1 var(--ui);letter-spacing:.12em;color:var(--c,#fff);pointer-events:none}
 /* Il numero dell'alloggiamento. Sta fuori dall'anello, dalla parte opposta
    al centro: non ruba spazio al glifo e non si accavalla col livello, che
    sta nell'angolo in basso a destra del riquadro. Tenue apposta — serve
@@ -750,6 +779,19 @@ ol.tips li::marker{color:var(--xp);font-weight:700}
 ol.tips b{color:#fff;font-weight:600}
 /* l'elenco dei cinque eventi d'arena: stessa voce dei consigli, ma senza
    numeri — non c'e' un ordine, sono cinque cose che possono capitare */
+/* il lessico: nome a sinistra, cosa vuol dire sotto. Su schermo largo
+   affiancati, cosi' la colonna dei nomi si scorre con l'occhio — e' un
+   elenco in cui si CERCA una parola, non un testo che si legge. */
+dl.lex{margin:0;display:flex;flex-direction:column;gap:9px}
+dl.lex dt{font:700 12.5px/1.3 var(--disp);color:#fff;letter-spacing:.01em}
+dl.lex dd{margin:2px 0 0;font:400 12.5px/1.5 var(--ui);color:var(--dim)}
+dl.lex dd b{color:#fff;font-weight:600}
+dl.lex dd em{color:var(--txt);font-style:normal;font-weight:600}
+@media(min-width:560px){
+  dl.lex{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;align-items:baseline}
+  dl.lex dt{text-align:right}
+  dl.lex dd{margin:0}
+}
 ul.lista{margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:7px}
 ul.lista li{font:400 13px/1.55 var(--ui);color:var(--dim)}
 ul.lista li::marker{color:var(--xp)}

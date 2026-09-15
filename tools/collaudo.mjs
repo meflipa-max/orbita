@@ -1034,5 +1034,389 @@ sez('la guida dice la soglia che il gioco usa');
   ok(/<b>livello 5<\/b>/.test(O.schermo()), 'col Crogiolo dice livello 5, come la scheda delle forme');
 }
 
+sez('la Ritempra cambia l’elemento davvero, non solo la contabilità');
+/* La Ritempra riaccorda una runa a un altro elemento. Cambiava `r.el` — che
+   e' quello che l'anello disegna e quello con cui si contano le catene — e
+   NIENT'ALTRO: runeStats leggeva l'elemento di nascita (`d.el`), e da lui lo
+   leggevano tutte le FIRE. Una Scheggia riaccordata al Fuoco era quindi
+   rossa nell'anello e di Gelo in campo: sparava schegge azzurre, prendeva il
+   +35% dal Nodo di Gelo invece che da quello di Fuoco, e contro un guardiano
+   con la corazza di Gelo faceva meta' danno per un elemento che secondo
+   l'anello non aveva piu'. Chi la giocava vedeva una runa che cambia colore
+   e continua a sparare il colore di prima.
+   Rimettendo indietro la correzione la prima riga legge 'gelo'.           */
+{
+  O.reset('vega', 808, 'corsa', false); G.state = 'play';
+  const r = { id: 'scheggia', el: 'fuoco', lv: 3, cd: 0, res: 0, slot: 0, st: {} };
+  const st = O.runeStats(r);
+  ok(st.el === 'fuoco', 'una Scheggia riaccordata al Fuoco colpisce di Fuoco (' + st.el + ')');
+  ok(st.c === O.EL.fuoco.c, 'e del colore del Fuoco (' + st.c + ')');
+  /* il Nodo premia l'elemento che la runa ha ADESSO */
+  G.nodo = 'fuoco'; const conNodo = O.runeStats(r).dmg;
+  G.nodo = 'gelo';  const conGelo = O.runeStats(r).dmg;
+  G.nodo = null;    const nudo = O.runeStats(r).dmg;
+  ok(conNodo > nudo * 1.3, 'il Nodo di Fuoco la potenzia (+' + Math.round((conNodo / nudo - 1) * 100) + '%)');
+  ok(Math.abs(conGelo - nudo) < .01, 'il Nodo di Gelo non piu’');
+  /* e i proiettili che escono sono di quell'elemento */
+  G.ring = new Array(G.slots).fill(null); G.ring[0] = r;
+  O.recalcRing(false);
+  G.bullets.length = 0;
+  for (let i = 0; i < 90 && !G.bullets.length; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  const b = G.bullets[0];
+  ok(!!b && b.el === 'fuoco', 'le schegge che spara portano l’elemento Fuoco (' + (b ? b.el : '—') + ')');
+  ok(!!b && b.c === O.EL.fuoco.c, 'e il colore del Fuoco');
+}
+
+sez('le schegge partono dalla runa, non dal nucleo');
+/* Otto rune a proiettile su nove nascono i colpi in `r.wx/r.wy`, cioe' dalla
+   runa che gira: la Scheggia e la Zanna li facevano nascere in `G.p`, il
+   nucleo. Il ghiaccio sembrava quindi un'abilita' del nucleo e non della runa
+   che te lo dava, e con l'anello in rotazione non c'era modo di capire quale
+   runa lo stesse facendo.
+   Rimettendo indietro la correzione la distanza letta e' zero.            */
+{
+  for (const id of ['scheggia', 'zanna']) {
+    O.reset('vega', 909, 'corsa', false); G.state = 'play';
+    G.ring = new Array(G.slots).fill(null);
+    G.ring[0] = { id, el: O.RUNES[id].el, lv: 3, cd: 0, res: 0, slot: 0, st: {} };
+    O.recalcRing(false);
+    G.bullets.length = 0;
+    let d = -1;
+    for (let i = 0; i < 120 && d < 0; i++) {
+      O.step(1 / 60); P.hp = P.maxHp; G.pending = 0;
+      const b = G.bullets[0];
+      if (b) d = Math.hypot(b.x - G.p.x, b.y - G.p.y);
+    }
+    ok(d > 20, O.RUNES[id].n + ': il colpo nasce a ' + Math.round(d) + 'px dal nucleo, non addosso');
+  }
+}
+
+sez('trasformarsi non disfa la Ritempra');
+/* Ogni forma evoluta ha l'elemento della runa da cui nasce, quindi
+   `RUNES[c.to].el` sembrava innocuo — ma non per una runa riaccordata: una
+   Scheggia portata al Fuoco tornava di Gelo nell'istante in cui si
+   trasformava. E siccome quella runa reggeva un lato della catena di Fuoco,
+   il premio per cui avevi progettato la partita SPEGNEVA il Risveglio che
+   serviva ad ottenerlo.
+   Rimettendo indietro la correzione la prima riga legge 'gelo' e l'Ardore si
+   spegne.                                                                 */
+{
+  O.reset('vega', 910, 'corsa', false); G.state = 'play';
+  const mk = (id, el, lv) => ({ id, el, lv, cd: 0, res: 0, st: {} });
+  G.ring = new Array(G.slots).fill(null);
+  G.ring[0] = mk('scintilla', 'fuoco', 6); G.ring[1] = mk('scheggia', 'fuoco', 6); G.ring[2] = mk('pira', 'fuoco', 6);
+  for (let i = 0; i < 3; i++) G.ring[i].slot = i;
+  O.recalcRing(false);
+  ok(G.awaken.fuoco >= 1, 'tre rune di Fuoco in fila (una riaccordata): Ardore acceso');
+  ok(O.apply({ t: 'evo', id: 'scheggia', to: 'zanna' }) === false, 'la Scheggia si trasforma in Zanna');
+  ok(G.ring[1].id === 'zanna', 'la forma e’ cambiata');
+  ok(G.ring[1].el === 'fuoco', 'l’elemento riaccordato resta (' + G.ring[1].el + ')');
+  ok(G.awaken.fuoco >= 1, 'e l’Ardore resta acceso');
+}
+
+sez('riprendere una corsa non riporta le rune all’elemento di nascita');
+/* L'annotazione della corsa sospesa teneva id, livello e alloggiamento: non
+   l'elemento. Riprendendo, ogni runa riaccordata tornava di nascita — cioe'
+   la catena costruita con la Ritempra si scioglieva e il Risveglio si
+   spegneva, mentre riprendere deve restituire la corsa che avevi.         */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 911, 'corsa', false); G.state = 'play';
+  gioca(20);
+  G.ring[0].el = 'luce';                 /* come se l'avessi ritemprata */
+  const idPrima = G.ring[0].id;
+  O.salvaCorsa();
+  const nota = O.leggiCorsa();
+  O.reset('vega', 1, 'incursione', false);
+  O.riprendiCorsa(nota);
+  const r0 = G.ring.find(x => x && x.id === idPrima);
+  ok(!!r0 && r0.el === 'luce', 'l’elemento riaccordato sopravvive alla ripresa (' + (r0 ? r0.el : '—') + ')');
+  O.scordaCorsa();
+}
+
+sez('la Ritempra si capisce e chiede conferma');
+/* «La ritempra non si capisce bene come funziona, sembra un toccare a caso
+   l'anello.» Era una schermata con qualche runa che pulsa, una freccia col
+   nome di un elemento e nessun modo di sapere cosa avrebbe cambiato — e il
+   primo tocco era definitivo. Tre difetti in uno: non diceva il guadagno,
+   proponeva anche mosse che spengono un Risveglio, e non si poteva
+   riflettere.                                                             */
+{
+  O.reset('vega', 912, 'corsa', false); G.state = 'play';
+  const mk = (id, el, lv) => ({ id, el, lv, cd: 0, res: 0, st: {} });
+  G.ring = new Array(G.slots).fill(null);
+  /* Fuoco, Fuoco, Gelo: riaccordare la terza al Fuoco accende l'Ardore */
+  G.ring[0] = mk('scintilla', 'fuoco', 2); G.ring[1] = mk('pira', 'fuoco', 2); G.ring[2] = mk('scheggia', 'gelo', 2);
+  for (let i = 0; i < 3; i++) G.ring[i].slot = i;
+  O.recalcRing(false);
+  O.UI.ringEdit(null, false, true);
+  const h = O.schermo();
+  ok(/RISVEGLIO/.test(h), 'l’anello marca la runa che accenderebbe un Risveglio');
+  ok(/→ FUOCO 3\/3/.test(h), 'e dice verso quale elemento e quanto diventa lunga la catena');
+  const b = O.UI.ritBersagli.find(x => x.slot === 2);
+  ok(!!b && b.accende, 'il bersaglio sa che accende un Risveglio');
+  /* primo tocco: non applica ancora niente */
+  O.UI.ritSel = 2;
+  const h2 = O.UI.ritLine();
+  ok(/Tocca di nuovo per confermare/.test(h2), 'il primo tocco chiede conferma');
+  ok(/Ardore/.test(h2) && /da <span[^>]*>Gelo/.test(h2), 'e la riga dice da cosa a cosa, e cosa accende');
+  ok(G.ring[2].el === 'gelo', 'e la runa non e’ ancora cambiata');
+}
+
+sez('la Ritempra non propone l’Iride né mosse che spengono un Risveglio');
+/* Il punteggio dei bersagli sommava solo i guadagni — `Math.max(0, …)` —
+   quindi proponeva con entusiasmo la riaccordatura che allunga una catena di
+   una runa e spegne il Risveglio dall'altra parte. E metteva fra i bersagli
+   l'Iride, che vale GIA' come qualunque elemento: fissarla su uno e' l'unica
+   mossa che le toglie qualcosa.                                           */
+{
+  O.reset('vega', 913, 'corsa', false); G.state = 'play';
+  const mk = (id, el, lv) => ({ id, el, lv, cd: 0, res: 0, st: {} });
+  G.ring = new Array(G.slots).fill(null);
+  /* Fuoco Fuoco Fuoco | Gelo Gelo — riaccordare un Fuoco di bordo al Gelo
+     allungherebbe il Gelo e spegnerebbe l'Ardore */
+  const el = ['fuoco', 'fuoco', 'fuoco', 'gelo', 'gelo', 'iride'];
+  const idd = ['scintilla', 'pira', 'nova', 'scheggia', 'bruma', 'iride'];
+  for (let i = 0; i < 6; i++) { G.ring[i] = mk(idd[i], el[i], 2); G.ring[i].slot = i; }
+  O.recalcRing(false);
+  ok(G.awaken.fuoco >= 1, 'l’Ardore e’ acceso');
+  O.UI.ringEdit(null, false, true);
+  const b = O.UI.ritBersagli;
+  ok(!b.some(x => x.slot === 5), 'l’Iride non e’ un bersaglio');
+  ok(!b.some(x => x.gradi < 0), 'nessun bersaglio abbassa il conto dei Risvegli');
+}
+
+sez('una corsa vinta resta vinta');
+/* «Il mio record e' una partita da oltre 21 minuti, ma ho dovuto
+   abbandonarla e risulta che ho perso.» La Corsa si vince abbattendo
+   l'ultimo guardiano, che arriva al diciottesimo minuto: da li' la corsa e'
+   vinta, pagata e segnata nello storico. Ma qualunque cosa la chiudesse dopo
+   — la morte nel senza fine, o il bottone Abbandona — chiamava
+   `endRun(false)`, e quel `false` arrivava intero fino allo schermo: FINE,
+   «Il nucleo si spegne», e la diagnosi da sconfitta. Peggio: statoPartita
+   diceva `win:false` a sfide, sblocchi e contratti.
+   Rimettendo indietro la correzione la schermata legge FINE.              */
+{
+  O.importSave(b64({ shards: 0, runs: 3, asc: 0 }));
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 914, 'corsa', false); G.state = 'play';
+  gioca(5);
+  const vintePrima = S().wins | 0;
+  G.victory = true; G.vintaT = G.t; G.oltre = 1;     /* vinta, e proseguita senza fine */
+  P.hp = P.maxHp;
+  G.abbandonata = 1; O.endRun(false);                /* poi abbandonata */
+  const h = O.schermo();
+  ok(/VITTORIA/.test(h), 'la schermata di fine dice VITTORIA');
+  ok(!/>FINE</.test(h), 'e non FINE');
+  ok(/senza fine/i.test(h), 'e racconta che e’ proseguita senza fine');
+  ok(!/data-a="endless"/.test(h), 'senza offrire di continuare una corsa che non c’e’ piu’');
+  ok((S().wins | 0) === vintePrima + 1, 'la vittoria e’ contata una volta sola (' + (S().wins | 0) + ')');
+  ok(S().storico[0] && S().storico[0].w === 1, 'e lo storico la segna vinta');
+  /* e la seconda chiusura non la conta di nuovo */
+  O.endRun(false);
+  ok((S().wins | 0) === vintePrima + 1, 'nemmeno chiudendola due volte');
+}
+
+sez('abbandonare non è morire');
+/* La schermata di fine conosceva due uscite — vinta e finita — e chiamava
+   «Il nucleo si spegne» anche l'unica in cui il nucleo non si spegne: quella
+   di chi abbandona. E «Ucciso da» valeva `!win`, quindi nominava l'ultima
+   cosa che aveva sfiorato chi abbandonava, e taceva a chi cadeva nel senza
+   fine dopo aver vinto — cioe' proprio a chi vuole saperlo.               */
+{
+  O.reset('vega', 915, 'corsa', false); G.state = 'play';
+  gioca(5); P.hp = P.maxHp;
+  G.abbandonata = 1; O.endRun(false);
+  const h = O.schermo();
+  ok(/ABBANDONATA/.test(h), 'chi abbandona legge ABBANDONATA');
+  ok(!/nucleo si spegne/.test(h), 'e non «Il nucleo si spegne»');
+  O.reset('vega', 916, 'corsa', false); G.state = 'play';
+  gioca(5); P.hp = 0; G.killer = 'SCIAMANTE'; O.endRun(false);
+  const h2 = O.schermo();
+  ok(/>FINE</.test(h2), 'chi muore legge FINE');
+  ok(/Ucciso da/.test(h2), 'e da cosa');
+}
+
+sez('il negozio non si compra in cinque partite');
+/* Una Corsa da venti minuti vinta pagava 8106 frammenti (misurato col bot,
+   semi 1111 e 2222: 8106 e 7720) contro un negozio che, tutto quello che ha
+   un fondo, ne costa 38.928: cinque partite e non restava piu' niente da
+   comprare tranne il Dominio. I pesi erano nati quando il negozio aveva un
+   terzo delle voci di adesso. Il pezzo piu' grosso era la riga delle
+   uccisioni, .5 per nemico, che e' anche la quantita' meno decisa da chi
+   gioca: sale col tetto dei nemici e con la durata.
+   L'altro modo di sbagliare un'economia e' la prima partita: le prime due
+   voci del negozio sono REGOLE da 110 e 160 frammenti, comprabili «dopo una
+   partita sola», e quella promessa deve restare vera.
+   `npm run misura -- soldi` rimisura le due cose insieme.                 */
+{
+  let negozio = 0;
+  for (const m of O.META) { if (m.id === 'dominio') continue; for (let lv = 0; lv < m.max; lv++) negozio += O.metaCost(m, lv); }
+  negozio += O.CHARS.reduce((a, c) => a + (c.cost || 0), 0) + O.RELIQUIE.reduce((a, r) => a + r.c, 0);
+  O.importSave(b64({ shards: 0 }));
+  O.reset('vega', 917, 'corsa', false);
+  /* i numeri misurati col bot su una Corsa vinta di venti minuti */
+  G.kills = 6832; G.t = 1159; G.level = 25; G.victory = true; G.shards = 945;
+  const corsa = O.payout();
+  ok(negozio / corsa > 10, 'una Corsa vinta paga ' + corsa + ': il negozio (' + negozio + ') chiede ' +
+     (negozio / corsa).toFixed(1) + ' corse, non cinque');
+  /* la prima corsa della vita: cinque minuti, persa */
+  O.reset('vega', 918, 'corsa', false);
+  G.kills = 1995; G.t = 300; G.level = 13; G.victory = false; G.shards = 180;
+  const prima = O.payout();
+  const innesco = O.META.find(m => m.id === 'innesco'), presagio = O.META.find(m => m.id === 'presagio');
+  ok(prima >= innesco.c + presagio.c, 'la prima corsa ne paga ' + prima + ': bastano per le prime due regole (' +
+     (innesco.c + presagio.c) + ')');
+}
+
+sez('il Culmine è un momento, non uno stato');
+/* Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in
+   18:44, spendendolo appena pronto): cinquantuno Culmini, uno ogni ventidue
+   secondi. Ne dura cinque e mezzo, quindi era acceso per un quarto della
+   corsa — e una cosa che succede ogni venti secondi non e' un momento, e' uno
+   stato. Il difetto stava nella pendenza: il costo saliva di .085 al secondo
+   mentre il ritmo delle uccisioni, misurato, sale da una al secondo a
+   venticinque.                                                             */
+{
+  O.reset('vega', 919, 'corsa', false); G.state = 'play';
+  const c0 = O.culmineCost(0), c900 = O.culmineCost(900);
+  ok(c0 <= 80, 'il primo Culmine costa ' + Math.round(c0) + ' uccisioni: arriva ancora entro il primo minuto');
+  ok(c900 >= 400, 'al quindicesimo minuto ne costa ' + Math.round(c900) + ', non centoventi');
+  ok(c900 / c0 > 4, 'il prezzo sale col ritmo delle uccisioni, non sotto (×' + (c900 / c0).toFixed(1) + ')');
+  /* e un elite ne vale cinque: le proporzioni restano quelle */
+  G.t = 0; G.charge = 0; G.culm = 0;
+  const passo = 1 / O.culmineCost(0);
+  ok(Math.abs(passo * 51 - 1) < .25, 'ci vogliono una cinquantina di nemici comuni per il primo (' + Math.round(1 / passo) + ')');
+}
+
+sez('il Culmine si annuncia, e dice cosa fa');
+/* Il suo effetto principale — ogni Risveglio acceso sale di un grado — stava
+   scritto in un avviso di due secondi che non nominava nessun Risveglio:
+   chi non sapeva cosa fosse un grado restava senza saperlo. */
+{
+  O.reset('vega', 920, 'corsa', false); G.state = 'play';
+  const mk = (id, el, lv) => ({ id, el, lv, cd: 0, res: 0, st: {} });
+  G.ring = new Array(G.slots).fill(null);
+  for (let i = 0; i < 3; i++) { G.ring[i] = mk(['scintilla', 'pira', 'nova'][i], 'fuoco', 3); G.ring[i].slot = i; }
+  O.recalcRing(false);
+  G.charge = 1; G.culm = 0;
+  let html = '';
+  const fx = { style: { setProperty() {}, removeProperty() {} }, set innerHTML(v) { html = v; }, get innerHTML() { return html; },
+    className: '', offsetWidth: 1, clientWidth: 400, querySelector: () => ({ scrollWidth: 10 }) };
+  ok(O.attivaCulmine(), 'il Culmine si accende');
+  ok(G.hitstop > .2, 'con un fermo immagine vero (' + G.hitstop.toFixed(2) + 's)');
+  ok(G.zones.filter(z => z.k === 'ring').length >= 3, 'e piu’ di un’onda (' + G.zones.filter(z => z.k === 'ring').length + ')');
+  ok(G.flashC === '#ffe9b0', 'e il velo d’oro, che non e’ ne’ il rosa del male ne’ il bianco della spazzata');
+}
+
+sez('il lessico dice tutto quello che il gioco nomina');
+/* «Un giocatore vede apparire scritte e nomi di cose che accadono ma non ne
+   capisce il significato.» Ogni nome proprio del gioco compariva dentro un
+   avviso di due secondi in mezzo all'azione, e la sua spiegazione — quando
+   c'era — stava nella guida, nel menu, raggiungibile solo abbandonando la
+   partita. Il lessico si apre DALLA PAUSA, ed e' l'unico posto in cui si
+   possa cercare una parola mentre la partita e' ferma.                    */
+{
+  O.reset('vega', 921, 'corsa', false); G.state = 'play';
+  const voci = [];
+  for (const g of O.lessico()) for (const v of g.v) voci.push(v);
+  ok(voci.length >= 35, 'il lessico ha ' + voci.length + ' voci');
+  ok(voci.every(v => v[0] && v[1] && v[1].length > 20), 'ognuna ha un nome e una spiegazione');
+  /* le cose che il gioco NOMINA a schermo ci devono essere tutte */
+  const testo = voci.map(v => v[0] + ' ' + v[1]).join(' ');
+  const attese = ['Risveglio', 'Risonanza', 'Catena', 'Culmine', 'Ritempra', 'Dissolvi', 'Ascesi',
+                  'Eccesso', 'Iride', 'Corazza elementale', 'Dissonante', 'Nodo', 'Congiunzione',
+                  'Semenza', 'Ascensione', 'Scrigno', 'Temprato', 'Trasformazione'];
+  const mancano = attese.filter(n => testo.indexOf(n) < 0);
+  ok(mancano.length === 0, 'e nomina ' + attese.length + ' meccaniche' + (mancano.length ? ', tranne: ' + mancano.join(', ') : ''));
+  /* e i cinque nomi dei Risvegli escono dai dati, non da una copia */
+  O.UI.lessicoApri('pause');
+  const h = O.schermo();
+  for (const e of ['fuoco', 'gelo']) ok(h.indexOf(O.EL[e].aw) >= 0, 'la schermata nomina ' + O.EL[e].aw);
+  ok(h.indexOf(O.EL.fuoco.awd[0]) >= 0, 'e dice cosa fa');
+  ok(/data-a="lesback"/.test(h), 'e da qui si torna indietro');
+  /* si apre dalla pausa senza buttare fuori dalla corsa */
+  ok(G.state === 'play' || G.state === 'pause', 'aprirlo non abbandona la partita (' + G.state + ')');
+}
+
+sez('il Dissonante e la corazza si spiegano la prima volta');
+/* Sono le due regole che, non capite, si leggono come un difetto del gioco:
+   una runa che smette di sparare da sola, e un guardiano che incassa il
+   doppio senza motivo visibile. Il Dissonante aveva un avviso di due secondi
+   alla comparsa, cioe' lontano dal momento in cui zittisce la runa; la
+   corazza aveva scritto «Corazza di Gelo» e mai cosa volesse dire.        */
+{
+  ok(!!O.BRIEFING.dissonante && !!O.BRIEFING.corazza, 'i due briefing esistono');
+  for (const id of ['dissonante', 'corazza']) {
+    const b = O.BRIEFING[id];
+    ok(b.p.length >= 2 && b.p.join(' ').length > 120, id + ': dice cos’e’ e cosa fare');
+  }
+  ok(/meta. danno|metà danno/.test(O.BRIEFING.corazza.p[0]), 'la corazza dice che dimezza');
+  /* e scattano davvero: il Dissonante quando zittisce, non quando compare */
+  O.importSave(b64({ shards: 0 }));
+  S().visti = [];
+  O.reset('vega', 922, 'corsa', false); G.state = 'play';
+  gioca(3);
+  G.ring[0].mutata = 0;
+  G.enemies.length = 0;
+  const e = { type: 'dissonante', x: G.p.x + 300, y: G.p.y, vx: 0, vy: 0, r: 14, c: '#e0d0ff', hp: 50, maxHp: 50,
+    spd: 90, slow: 0, slowT: 0, froze: 0, burn: 0, burnT: 0, flash: 0, kb: 0, dead: false, shape: 'diss', ten: 1 };
+  G.enemies.push(e);
+  G.briefing = null;
+  for (let i = 0; i < 240 && !G.briefing; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(G.briefing === 'dissonante', 'il Dissonante si spiega quando zittisce una runa (' + G.briefing + ')');
+}
+
+sez('la soglia della trasformazione non si confonde col livello massimo');
+/* «Non ho capito se la trasformazione e' a 6 o a 8.» Ed era colpa di due
+   segnali: la carta di potenziamento disegna OTTO pallini — il livello
+   massimo — e l'anello scriveva «MAX» sulla runa che ha raggiunto la SOGLIA,
+   che e' il 6. Due numeri diversi per due cose diverse, e nessun posto in
+   cui stesse scritto che sono due cose.                                   */
+{
+  O.importSave(b64({ shards: 0 }));
+  O.reset('vega', 923, 'corsa', false); G.state = 'play';
+  const t5 = O.UI.upgradeText('scintilla', 5), t4 = O.UI.upgradeText('scintilla', 4);
+  ok(/Livello 6 di 8/.test(t5), 'la carta dice «Livello 6 di 8», non solo 6');
+  ok(/soglia della trasformazione/i.test(t5), 'e che il 6 e’ la soglia della trasformazione');
+  ok(!/soglia della trasformazione/i.test(t4), 'solo su quel livello');
+  /* i pallini: quello della soglia e' marcato */
+  O.UI.choices = [{ t: 'rup', id: 'scintilla' }];
+  const card = O.UI.cardHTML({ t: 'rup', id: 'scintilla' }, 0);
+  ok((card.match(/<i class="[^"]*sog[^"]*">/g) || []).length === 1, 'e un pallino su otto porta il segno della soglia');
+  /* l'anello non dice piu' MAX */
+  const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shell.html'), 'utf8');
+  ok(!/\.slot\.vicino::after\{content:"MAX"/.test(ui), 'e l’anello non scrive piu’ MAX su una runa al livello 6');
+}
+
+sez('il traguardo della Corsa si vede');
+/* L'ultimo guardiano e' la condizione di vittoria del formato e la sua barra
+   in cima allo schermo era identica a quella degli altri quattro; passati i
+   venti minuti perfino l'orologio smetteva di mostrare il traguardo. Chi lo
+   teneva a distanza per tre minuti e poi smetteva non aveva modo di sapere di
+   aver lasciato li' la vittoria.                                          */
+{
+  O.reset('vega', 924, 'corsa', false); G.state = 'play';
+  gioca(3);
+  const nb = G.roster[G.bossIdx];
+  ok(/\d/.test(O.UI.obiettivo().h), 'prima dice quanto manca al prossimo guardiano: ' +
+     O.UI.obiettivo().h.replace(/<[^>]+>/g, ''));
+  /* l'ultimo guardiano in campo */
+  const b = { boss: { n: 'ECLISSI', fine: 1, c: '#ff3d6e' }, c: '#ff3d6e', hp: 100, maxHp: 100, x: G.p.x, y: G.p.y, r: 40 };
+  G.bosses.length = 0; G.bosses.push(b); G.boss = b; G.bossIdx = G.roster.length;
+  const o1 = O.UI.obiettivo();
+  ok(/ULTIMO/.test(o1.h) && /VINTO/.test(o1.h), 'con l’ultimo in campo dice che abbatterlo e’ la vittoria');
+  /* e uno non finale non lo dice */
+  b.boss.fine = 0;
+  ok(!/ULTIMO/.test(O.UI.obiettivo().h), 'e non lo dice degli altri quattro');
+  b.boss.fine = 1;
+  /* dopo la vittoria, nel senza fine, dice che la corsa e’ gia’ vinta */
+  G.victory = true;
+  ok(/VINTA/.test(O.UI.obiettivo().h), 'e nel senza fine dice che la corsa e’ vinta');
+  G.victory = false;
+  O.render();
+  ok(true, 'e la barra dei guardiani si disegna senza lanciare');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
