@@ -752,6 +752,23 @@ const SFIDE = [
    guida se l'era riscritto a mano e raccontava le soglie di due versioni
    fa — «a cinque il secondo grado, a sette il terzo» — cioe' sette rune in
    fila su un anello che ne tiene sei. */
+/* ── un livello per volta ─────────────────────────────────────────
+   `gainXP` saliva di TUTTI i livelli che l'esperienza appena raccolta
+   copriva, dentro un `while`: una gemma fusa in fondo alla partita ne vale
+   qualche migliaio, e i settecento punti di un guardiano arrivano tutti in un
+   istante, quindi tre livelli potevano scattare nello stesso fotogramma.
+   Misurato col bot: al minuto 5 di un'Incursione SEI livelli in un minuto, e
+   pile di quattro carte in attesa.
+   Tre carte di fila non sono tre momenti: sono un momento sommerso da se
+   stesso. Si scelgono senza guardarle, ed e' la schermata su cui il gioco
+   chiede la sua unica decisione.
+   Adesso un livello alla volta, e in mezzo un po' di partita: l'esperienza in
+   eccesso NON si perde — resta nella barra, che si vede piena — e il livello
+   dopo arriva dopo LV_PAUSA secondi di gioco vero. La pausa scorre solo
+   giocando: la schermata delle carte ferma il tempo, quindi fra un livello e
+   il successivo c'e' sempre del gioco, non un altro pannello. */
+const LV_PAUSA = 1.2;
+
 const CATENA_BASE = 3;
 const NUM_IT = ['zero', 'una', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto'];
 const Cap = s => s.charAt(0).toUpperCase() + s.slice(1);

@@ -239,6 +239,22 @@ un'altra», «Livello 30».
 Misurato: una gemma da settemila punti esperienza al livello 20 produce esattamente tre carte,
 e le tre schermate adesso dicono tre cose diverse.
 
+### Un livello per volta
+
+`gainXP` saliva di **tutti** i livelli che l'esperienza appena raccolta copriva, dentro un
+`while`: una gemma fusa in fondo alla partita ne vale qualche migliaio e i settecento punti di un
+guardiano arrivano tutti in un istante, quindi tre livelli scattavano nello stesso fotogramma. Il
+risultato erano tre schermate di carte una dietro l'altra — e tre carte di fila non sono tre
+momenti, sono un momento sommerso da se stesso: si premono senza guardarle, ed è la schermata su
+cui il gioco chiede la sua unica decisione.
+
+Ora un livello alla volta, e in mezzo un po' di partita. **L'esperienza in eccesso non si perde**:
+resta nella barra — che si vede piena e pulsa, perché una barra piena e ferma si legge come un
+inceppamento — e il livello dopo arriva dopo `LV_PAUSA` secondi di **gioco vero**. La pausa scorre
+solo giocando, e la schermata delle carte ferma il tempo: fra un livello e il successivo c'è
+sempre partita, non un altro pannello. Un livello non parte nemmeno se c'è già una carta in attesa,
+quindi uno scrigno raccolto un istante prima non diventa una pila.
+
 ### Quante volte la partita si ferma
 
 Ogni carta è una schermata, e ogni schermata è il gioco che si ferma. Metà del conto sono i
@@ -247,26 +263,33 @@ sorgenti che non si parlano fra loro**: i cinque guardiani, gli elite (uno ogni 
 circa) e quattro eventi d'arena su cinque. `npm run misura -- scrigni` le conta tutte, una corsa
 intera, minuto per minuto.
 
+Prima, con i livelli che arrivavano a pacchetti:
+
 ```
-— corsa —            43 carte: 24 livelli + 19 scrigni · una schermata ogni 27,5s · pila max 3
-  minuto:    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
+— corsa —       43 carte: 24 livelli + 19 scrigni · una ogni 27,5s · pila max 3
   livelli:   2  3  2  3  1  0  3  1  0  0  3  1  0  1  1  1  1  0  0  1
   scrigni:   1  0  0  2  2  0  1  1  1  0  3  0  0  2  1  1  1  1  1  1
-
-— incursione —       24 carte: 18 livelli + 6 scrigni · una schermata ogni 20s · pila max 4
-  minuto:    0  1  2  3  4  5  6  7
-  livelli:   4  4  2  1  0  6  0  1
-  scrigni:   0  1  2  0  0  2  0  1
+— incursione —  24 carte: 18 livelli + 6 scrigni · una ogni 20s · pila max 4
+  insieme:   4  5  4  1  0  8  0  2
 ```
 
-Il verdetto: **gli scrigni non sono in eccesso**, e sono la parte *regolare* del conto — uno al
-minuto nella Corsa, sei in tutta l'Incursione, e la riga non ha picchi. Quello che si accumula
-sono i **livelli**: tre insieme al minuto 10 della Corsa, **sei** al minuto 5 dell'Incursione,
-perché le gemme lontane si fondono in gemme grosse e i 700 punti di un guardiano arrivano tutti
-in un istante. È da lì che nasce la pila di tre o quattro carte di fila — non dagli scrigni.
+Dopo, con un livello per volta — **stessi totali, pila massima 1**:
 
-E una sorgente che pagasse uno scrigno **per ogni fotogramma** in cui la sua condizione è vera
-non si vedrebbe in nessuna media: si vedrebbe solo come «arrivano troppi scrigni». Le quattro
+```
+— corsa —       43 carte: 24 livelli + 19 scrigni · una ogni 25,7s · pila max 1
+  livelli:   2  3  2  3  2  1  1  1  1  1  0  2  1  1  0  1  0  0  1  1
+  scrigni:   1  0  0  2  0  1  2  0  0  1  4  0  3  1  2  0  1  1  1  2
+— incursione —  23 carte: 18 livelli + 5 scrigni · una ogni 19,4s · pila max 1
+  insieme:   6  3  2  1  3  5  1  2
+```
+
+Il verdetto sugli scrigni, che era la domanda: **non sono in eccesso**, e sono la parte *regolare*
+del conto — uno al minuto nella Corsa, cinque o sei in tutta l'Incursione. Quello che si
+accumulava erano i livelli, e adesso non si accumula più niente: nessuna pila, nessuna carta
+persa, gli stessi quarantatré momenti spalmati su venti minuti.
+
+E una sorgente che pagasse uno scrigno **per ogni fotogramma** in cui la sua condizione è vera non
+si vedrebbe in nessuna media: si vedrebbe solo come «arrivano troppi scrigni». Le quattro
 condizioni degli eventi restano vere finché l'evento esiste, quindi ognuna chiude con
 `G.ev = null; return;` — e ora c'è un controllo per ciascuna: togliendo quel `return` alla
 Fermata, la sua riga conta **30 scrigni invece di 1**.

@@ -53,6 +53,13 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
    un secondo e mezzo. Serve a chiudere il nesso — hai toccato quel puntino
    verde, si e' mosso QUESTO — che a parole richiederebbe una schermata. */
 #xpline.primo{height:6px;background:rgba(111,242,196,.22);animation:xpPrimo 1.6s ease-out}
+/* La barra piena con un livello ancora da consegnare: i livelli arrivano uno
+   per volta e l'eccesso resta nella barra, quindi per un momento e' piena e
+   ferma — e una barra piena e ferma si legge come un inceppamento. */
+#xpline.carico{background:rgba(111,242,196,.3)}
+#xpline.carico #xpfill{animation:xpCarico .7s ease-in-out infinite}
+@keyframes xpCarico{0%,100%{box-shadow:0 0 12px rgba(111,242,196,.75)}
+  50%{box-shadow:0 0 22px rgba(111,242,196,1),0 0 40px rgba(111,242,196,.6)}}
 @keyframes xpPrimo{0%,100%{box-shadow:none}
   20%,60%{box-shadow:0 0 26px rgba(111,242,196,.9)}}
 #topbar{display:flex;align-items:flex-start;gap:10px;padding:calc(10px + var(--sat)) 12px 0;pointer-events:none}

@@ -1573,25 +1573,56 @@ sez('la prima barra piena spiega che gli atti sono due');
   ok(G.briefing === null, 'una volta sola');
 }
 
-sez('due livelli insieme sono due carte diverse, non la stessa due volte');
+sez('un livello per volta, con un po’ di partita in mezzo');
 /* «Ho fatto il livello 20 e tre o quattro volte di fila mi ha detto che il
-   nucleo cresce.» Non era un avviso ripetuto: erano tre carte vere, una per
-   livello. Ma gainXP sale di TUTTI i livelli in un colpo — una gemma fusa in
-   fondo alla partita ne vale qualche migliaio e il `while` gira due o tre
-   volte nello stesso fotogramma — e la schermata scriveva `G.level`, cioe' il
-   livello di ARRIVO: salendo dal 20 al 23 usciva «Livello 23» tre volte
-   identiche. Una scritta che torna uguale e' indistinguibile da un difetto, e
-   infatti e' stata segnalata come tale.
-   Rimettendo indietro la correzione le tre righe leggono tutte 23.        */
+   nucleo cresce.» Erano tre carte vere: gainXP saliva di TUTTI i livelli che
+   l'esperienza appena raccolta copriva, dentro un `while`. Una gemma fusa in
+   fondo alla partita ne vale qualche migliaio e i settecento punti di un
+   guardiano arrivano in un istante, quindi tre livelli scattavano nello stesso
+   fotogramma — misurato col bot: sei livelli nel minuto 5 di un'Incursione, e
+   pile di quattro carte. Tre carte di fila non sono tre momenti: sono un
+   momento sommerso da se stesso, e si premono senza guardarle.
+   Adesso un livello alla volta. L'esperienza in eccesso NON si perde: resta
+   nella barra, e il livello dopo arriva dopo un po' di gioco vero.
+   Rimettendo indietro la correzione la prima riga conta tre carte.        */
 {
   S().visti = TUTTI_I_BRIEFING();
   O.reset('vega', 940, 'corsa', false); G.state = 'play';
-  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.chests = 0;
-  /* una gemma fusa da tremila e passa: tre livelli in un fotogramma */
+  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.chests = 0; G.lvCd = 0;
+  /* una gemma fusa da settemila: con il vecchio `while` erano tre livelli */
   G.gems.push({ x: G.p.x, y: G.p.y, v: 7000 / P.xpMul, k: 0, t: 1, vx: 0, vy: 0, big: 1 });
   for (let i = 0; i < 30; i++) O.step(1 / 60);
-  ok(G.level === 23 && G.pending === 3, 'una gemma sola puo’ valere tre livelli (livello ' + G.level + ', ' + G.pending + ' carte)');
+  ok(G.pending === 1, 'una gemma da tre livelli consegna UNA carta (' + G.pending + ')');
+  ok(G.level === 21, 'e un livello solo (' + G.level + ')');
+  ok(G.xp >= G.xpNeed, 'l’eccesso resta nella barra, non si perde (' + Math.round(G.xp) + ' su ' + G.xpNeed + ')');
+  /* il livello dopo non arriva finche' la carta e' in attesa */
+  for (let i = 0; i < 120; i++) O.step(1 / 60);
+  ok(G.pending === 1 && G.level === 21, 'e con la carta in attesa non ne arrivano altri');
+  /* consumata la carta, il prossimo arriva dopo un po' di gioco, non subito */
+  G.pending = 0;
+  O.step(1 / 60);
+  ok(G.level === 21, 'nemmeno il fotogramma dopo: in mezzo ci va della partita');
+  for (let i = 0; i < 90; i++) { O.step(1 / 60); if (G.pending > 0) break; }
+  ok(G.level === 22 && G.pending === 1, 'poi arriva, uno solo (livello ' + G.level + ', ' + G.pending + ' carta)');
+  /* e il conto torna: niente esperienza sparita per strada */
+  const speso = 2024 + 2248;
+  ok(Math.abs(G.xp - (7000 - speso)) < 2, 'e l’esperienza spesa e’ esattamente quella dei due livelli');
+}
+
+sez('una pila di carte dice il livello di ognuna, non quello di arrivo');
+/* La schermata scriveva `G.level`, cioe' il livello di ARRIVO — che a pila
+   piena li ha gia' assorbiti tutti — quindi tre carte dicevano tre volte
+   «Livello 23». Una scritta che torna uguale e' indistinguibile da un
+   inceppamento, e infatti e' stata segnalata come un difetto.
+   Adesso i livelli si consegnano uno per volta, quindi una pila cosi' la
+   fanno solo un salvataggio ripreso (`riprendiCorsa` rimette `pend`) e la
+   Semenza; la regola resta scritta qui perche' la schermata la deve sapere.
+   Rimettendo indietro la correzione le tre righe leggono tutte 23.        */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 941, 'corsa', false); G.state = 'play';
   const occhiello = () => { O.UI.levelup(); const m = O.schermo().match(/class="eyebrow">([^<]*)</); return m ? m[1] : ''; };
+  G.level = 23; G.pending = 3; G.chests = 0;
   const righe = [];
   for (let k = 0; k < 3; k++) { righe.push(occhiello()); G.pending--; }
   ok(/Livello 21/.test(righe[0]) && /Livello 22/.test(righe[1]) && /Livello 23/.test(righe[2]),

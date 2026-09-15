@@ -70,6 +70,9 @@ function step(dt) {
   updateZones(dt);
   updateEnemies(dt);
   updateGems(dt);
+  /* i livelli si consegnano uno per volta, e da qui: non piu' dentro a
+     gainXP, che ne dava tutti quelli coperti nello stesso istante */
+  avanzaLivello(dt);
   updateParts(dt);
   updateEventi(dt);
   updateSpawns(dt);

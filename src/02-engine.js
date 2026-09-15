@@ -650,6 +650,8 @@ const G = {
   enemies: [], bullets: [], ebul: [], gems: [], zones: [], parts: [], floats: [], drops: [],
   cam: { x: 0, y: 0 }, shake: 0,
   level: 1, xp: 0, xpNeed: 12, kills: 0, shards: 0, dmgDone: 0, pending: 0, chests: 0,
+  /* quanto manca al prossimo livello: vedi avanzaLivello in 03-systems */
+  lvCd: 0,
   awaken: { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 },
   /* awk = Risvegli EFFETTIVI (base + il grado in più del Culmine): è questo
      che legge tutto ciò che infligge danno. */

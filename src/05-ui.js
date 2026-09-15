@@ -191,6 +191,12 @@ const UI = {
     }
     elLv.textContent = G.level;
     elXp.style.width = (clamp(G.xp / G.xpNeed, 0, 1) * 100) + '%';
+    /* La barra puo' essere piena con un livello ancora da consegnare: i
+       livelli arrivano uno per volta (vedi avanzaLivello) e l'eccesso resta
+       qui. Una barra piena e ferma si legge come un inceppamento, quindi lo
+       dice: pulsa finche' non ha finito di consegnare. */
+    const carico = G.xp >= G.xpNeed && G.state === 'play';
+    if (carico !== this._carico) { this._carico = carico; elXpLine.classList.toggle('carico', carico); }
     const f = clamp(P.hp / P.maxHp, 0, 1);
     elHpF.style.transform = 'scaleX(' + f + ')';
     elHpG.style.transform = 'scaleX(' + f + ')';
@@ -2172,7 +2178,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.passives = {};
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
-  G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
+  G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0; G.lvCd = 0;
   G.dmgDone = 0; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.eliteT = ELITE_T; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.evUltimo = null; G.form = null; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
