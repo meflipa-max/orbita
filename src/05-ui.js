@@ -1317,8 +1317,29 @@ const UI = {
      Rilancio gratis e infinito accanto a un bottone Rilancia che ne
      concede due per partita. */
   levelup(riusa) {
-    const chest = Math.min(G.chests | 0, G.pending | 0) > 0;
+    const pila = G.pending | 0;
+    const scrigni = Math.min(G.chests | 0, pila);
+    const chest = scrigni > 0;
     this.chestMode = chest;
+    /* ── il livello di QUESTA carta, non quello a cui sei arrivato ──
+       «Ho fatto il livello 20 e tre o quattro volte di fila mi ha detto che
+       il nucleo cresce.» Non era un avviso ripetuto: erano tre carte vere,
+       una per livello. Ma `gainXP` sale di tutti i livelli in un colpo —
+       una gemma fusa in fondo alla partita ne vale qualche migliaio, e il
+       `while` gira due o tre volte nello stesso fotogramma — e questa
+       schermata scriveva `G.level`, cioe' il livello di ARRIVO. Salendo dal
+       20 al 23 usciva quindi «Livello 23» tre volte di seguito, identica:
+       non un livello dopo l'altro, la stessa scritta che torna. Uguale al
+       cartello che si ripete e' indistinguibile da un difetto — e infatti
+       e' stato segnalato come tale.
+       Le carte si consumano in ordine e gli scrigni per primi (vedi `chest`
+       qui sopra e consumaCarta), quindi quella in cima e' la piu' vecchia:
+       il suo livello e' quello di arrivo meno le carte di livello che
+       restano. E dire quante ne restano toglie l'ultimo dubbio, perche'
+       una fila di schermate senza preavviso si legge come un inceppamento. */
+    const lvCarte = pila - scrigni;
+    const lvQui = Math.max(1, G.level - lvCarte + 1);
+    const altre = Math.max(0, pila - 1);
     /* Ventaglio: quattro carte invece di tre, ma solo nei primi tre livelli.
        È lì che la scelta conta di più — decide le prime due catene — ed è lì
        che un pescato brutto costa una partita intera. Dopo tornano tre: una
@@ -1328,7 +1349,8 @@ const UI = {
     this.choices = ch;
     const cards = ch.map((c, i) => this.cardHTML(c, i)).join('');
     this.open('level',
-      '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + G.level) + '</div>' +
+      '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + lvQui) +
+      (altre ? (altre === 1 ? ' · poi un’altra' : ' · poi altre ' + altre) : '') + '</div>' +
       '<h2 class="ttl">' + (chest ? 'Un dono dal vuoto' : 'Il nucleo cresce') + '</h2>' +
       /* La domanda che questa schermata pone è "questa runa si incastra?", e
          si poneva tenendo l'anello fuori vista, dietro un altro tocco. */

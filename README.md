@@ -222,6 +222,23 @@ soglia della trasformazione**». L'anello non scrive più MAX ma **SOGLIA OK**, 
 vuol dire: il livello c'è, manca altro. Il massimo stava scritto a mano in due punti e adesso
 si chiama `RUNE_MAX`.
 
+### «Il nucleo cresce», tre volte di fila
+
+Segnalato come un bug, e lo era — ma non quello che sembrava. Le tre schermate erano **tre
+carte vere**, una per livello: `gainXP` sale di *tutti* i livelli in un colpo, e una gemma fusa
+in fondo alla partita ne vale qualche migliaio, quindi il `while` gira due o tre volte nello
+stesso fotogramma. Il difetto stava nel numero: la schermata scriveva `G.level`, cioè il
+livello di **arrivo**. Salendo dal 20 al 23 usciva «Livello 23» tre volte identiche — non un
+livello dopo l'altro, la stessa scritta che torna.
+
+Ora ogni carta porta **il proprio** livello — 21, 22, 23 — e dice quante ne restano dopo di
+lei: *«Livello 21 · poi altre 2»*. Gli scrigni si servono per primi e non rubano un numero di
+livello, quindi una pila mista legge «Scrigno stellare · poi altre 2», «Livello 29 · poi
+un'altra», «Livello 30».
+
+Misurato: una gemma da settemila punti esperienza al livello 20 produce esattamente tre carte,
+e le tre schermate adesso dicono tre cose diverse.
+
 ### Culmine
 
 Un indicatore che si riempie **uccidendo**. Quando è pieno, `Spazio` (o il tasto in basso a

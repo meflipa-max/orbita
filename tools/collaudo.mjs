@@ -1573,5 +1573,39 @@ sez('la prima barra piena spiega che gli atti sono due');
   ok(G.briefing === null, 'una volta sola');
 }
 
+sez('due livelli insieme sono due carte diverse, non la stessa due volte');
+/* «Ho fatto il livello 20 e tre o quattro volte di fila mi ha detto che il
+   nucleo cresce.» Non era un avviso ripetuto: erano tre carte vere, una per
+   livello. Ma gainXP sale di TUTTI i livelli in un colpo — una gemma fusa in
+   fondo alla partita ne vale qualche migliaio e il `while` gira due o tre
+   volte nello stesso fotogramma — e la schermata scriveva `G.level`, cioe' il
+   livello di ARRIVO: salendo dal 20 al 23 usciva «Livello 23» tre volte
+   identiche. Una scritta che torna uguale e' indistinguibile da un difetto, e
+   infatti e' stata segnalata come tale.
+   Rimettendo indietro la correzione le tre righe leggono tutte 23.        */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 940, 'corsa', false); G.state = 'play';
+  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.chests = 0;
+  /* una gemma fusa da tremila e passa: tre livelli in un fotogramma */
+  G.gems.push({ x: G.p.x, y: G.p.y, v: 7000 / P.xpMul, k: 0, t: 1, vx: 0, vy: 0, big: 1 });
+  for (let i = 0; i < 30; i++) O.step(1 / 60);
+  ok(G.level === 23 && G.pending === 3, 'una gemma sola puo’ valere tre livelli (livello ' + G.level + ', ' + G.pending + ' carte)');
+  const occhiello = () => { O.UI.levelup(); const m = O.schermo().match(/class="eyebrow">([^<]*)</); return m ? m[1] : ''; };
+  const righe = [];
+  for (let k = 0; k < 3; k++) { righe.push(occhiello()); G.pending--; }
+  ok(/Livello 21/.test(righe[0]) && /Livello 22/.test(righe[1]) && /Livello 23/.test(righe[2]),
+     'le tre carte dicono tre livelli diversi (' + righe.map(r => r.split(' · ')[0]).join(', ') + ')');
+  ok(/poi altre 2/.test(righe[0]) && /poi un/.test(righe[1]) && righe[2].indexOf('poi') < 0,
+     'e ognuna dice quante ne restano dopo di lei');
+  /* gli scrigni si servono per primi, e non rubano un numero di livello */
+  G.level = 30; G.pending = 3; G.chests = 1;
+  const r2 = [];
+  for (let k = 0; k < 3; k++) { r2.push(occhiello()); G.pending--; if (G.chests > 0) G.chests--; }
+  ok(/Scrigno/.test(r2[0]), 'lo scrigno in pila resta uno scrigno');
+  ok(/Livello 29/.test(r2[1]) && /Livello 30/.test(r2[2]),
+     'e le due carte di livello contano solo i livelli (' + r2.slice(1).map(r => r.split(' · ')[0]).join(', ') + ')');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
