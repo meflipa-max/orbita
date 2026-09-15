@@ -312,7 +312,7 @@ Ventuno modelli, valutati con lo stesso oggetto di statistiche delle sfide.
 
 Il capitolo caro dell'Osservatorio, e l'unico dove ogni voce è **una regola invece di una
 percentuale**: Semenza (inizi con un livello già preso), Mercante (dissolvere rende il doppio),
-Richiamo (eventi il 35% più spessi), Avanzo (saltare cura il doppio e dà 120 frammenti),
+Richiamo (eventi il 35% prima), Avanzo (saltare cura il doppio e dà 120 frammenti),
 Bussola (un Nodo è sempre sintonizzato sulla tua apertura), Crogiolo (trasformazioni al livello
 5 invece che al 6), Coro di stelle (+7% danno per ogni Risveglio acceso), Respiro (una volta per partita,
 scendere sotto un quarto di vita ti cura e ti rende intoccabile per tre secondi).
@@ -352,7 +352,8 @@ tocca la rete, quindi il codice di backup se lo porta dietro.
 Sei nuclei, e ognuno oltre alle statistiche porta **una regola**. Due riscrivono l'anello,
 che è il gioco: **Nadir** fa risuonare le rune anche saltando un alloggiamento (anelli
 alternati impossibili per chiunque altro), **Lyra** ha l'anello dimezzato ma ogni runa conta
-doppia per le catene — due rune bastano per un Risveglio.
+doppia per le catene — due rune bastano per un Risveglio, tre per il secondo grado, quattro
+per il terzo.
 
 Il nucleo dice *che regola* giochi. Da *dove parti* è una scelta a parte: l'**apertura**
 decide la prima runa dell'anello, cioè la tua prima catena e il primo Risveglio a cui punti.
@@ -560,9 +561,13 @@ non prendeva niente da nessuno.** Il Nodo dà +35% di danno alle rune del suo el
 +35% guarda `d.el`, che per l'Iride vale `iride` e mai un elemento vero — più una runa alla
 catena, che con la sola Iride resta comunque a zero perché `maxRun` vuole almeno una runa
 dell'elemento. Adesso l'Iride non conta per accendere un Nodo, anche se continua a contare
-nelle catene. La seconda: il cartello scriveva `+35% danno · catena +1` sempre, ma **con una
-runa sola la catena non fa niente** — uno più uno fa due, e il Risveglio ne vuole tre. Con una
-runa il cartello dice solo il +35%, che invece è verissimo: è il 35% di tutto il tuo danno.
+nelle catene. La seconda: il cartello scriveva `+35% danno · catena +1` sempre, ma **quella runa in più
+serve a una cosa sola**, alzare il grado del Risveglio, e quasi sempre non lo alzava. Il primo
+criterio era «ho almeno due rune di questo elemento», che sbaglia in tutti e due i versi: due
+rune *lontane* fra loro non fanno catena (uno più uno fa due, e il Risveglio ne vuole tre), e
+con l'Eco o con Lyra i conti cambiano ancora. Adesso il cartello lo chiede a chi lo sa — il
+grado con il Nodo contro il grado senza — e quando sono uguali promette solo il +35%, che
+invece è verissimo: è il 35% di tutto il tuo danno.
 
 **Gli eventi d'arena.** Una breccia sembra una decorazione, una marea sembra sfortuna, il
 Corriere sembra un nemico che non muore. L'avviso in alto durava due secondi e passava mentre
@@ -840,6 +845,64 @@ fotogramma in tredici situazioni diverse: con un guardiano, con ogni evento d'ar
 formazioni, con i doni a terra, dentro e fuori da un Nodo, durante il Culmine, nella vetrina
 del menu.
 
+### Quello che la scheda prometteva e il gioco non manteneva
+
+Stessa famiglia di sopra, vista dall'altra parte: non una regola scritta due volte nel codice,
+ma una regola scritta una volta **nel codice** e una volta **nella scheda che la vende**. La
+seconda non si sbaglia mai da sola: si sbaglia quando la prima cambia e nessuno torna a
+rileggere l'altra.
+
+**Il Presagio ritardava il primo elite di trentaquattro secondi.** È il terzo potenziamento del
+negozio, 160 frammenti, e la scheda dice *«il primo elite arriva al primo minuto»* — cioè il
+primo scrigno, cioè la prima carta in più. Il numero però stava scritto a mano in tre posti: la
+base in due (lo stato iniziale e `resetRun`) e quello del Presagio in un terzo, fisso a 60.
+Quando la base è scesa a 26 — *«l'apertura era troppo tranquilla: a mezzo minuto c'erano undici
+nemici e il primo livello arrivava dopo venti secondi di niente»* — quel 60 è rimasto dov'era.
+Da allora si pagava per **peggiorare**: misurato, primo elite al secondo 26 senza e al secondo
+60 con. Adesso i due numeri stanno uno accanto all'altro in `01-data` (26 e 13), la riga del
+negozio se li scrive da sola, e il controllo verifica che il potenziamento anticipi invece di
+ritardare — non che valga 13, che è un numero e può cambiare.
+
+**Lyra saltava il primo grado di Risveglio.** La sua regola è *«anello dimezzato, ma ogni runa
+conta doppia per le catene»*, e ovunque fosse scritta — nel commento del codice, nella guida,
+in questo README — diceva «due rune bastano per un Risveglio, tre per il secondo grado».
+L'implementazione raddoppiava però la **lunghezza** della catena lasciando i gradi a un passo
+di uno: con due rune Lyra prendeva direttamente il **secondo** grado, con tre il **terzo** —
+quello che a chiunque altro ne costa cinque — e il primo grado, per lei, non esisteva proprio.
+Il passo fra un grado e l'altro adesso segue la runa e non il punteggio: 0 · I · II · III da una
+a quattro rune, che è la scala che tutti e tre i testi raccontavano già.
+
+Con la correzione la lunghezza della catena e il grado che ne esce stanno in tre funzioni sole
+(`catenaDi`, `catenaRichiesta`, `gradoCatena`) invece che sparse: la lunghezza era scritta due
+volte — nel motore e nell'interfaccia, che dice «Fuoco 2/3» e «spostala nell'alloggiamento 3» —
+e il requisito **cinque** volte.
+
+**La guida raccontava una soglia di trasformazione che metà dei giocatori non ha.** «Una runa a
+livello 6»: il numero era scritto a mano, mentre la soglia la spostano il Crogiolo (reliquia da
+2600 frammenti, la porta a 5) e la congiunzione Fornace. `sogliaEvo()` è l'unico posto che lo
+sa e la scheda delle forme glielo chiedeva già; la guida no.
+
+**Una carta che il gioco sapeva disegnare e non poteva pescare.** «120 frammenti» era il
+pavimento del mazzo prima che l'Ascesi ne prendesse il posto, ed è rimasta disegnata da
+`cardHTML`, applicata da `applyChoice` e cercata in tre punti come *la carta meno preziosa da
+sacrificare* — senza che nessuno la mettesse più nel mazzo. Misurato: zero su dodicimila carte
+pescate. Adesso un controllo confronta i tipi di carta che l'interfaccia sa gestire con quelli
+che `rollChoices` sa produrre, come quello che accoppia bottoni e gestori.
+
+**Due regole che dicevano metà della verità.** La *Ritempra* prometteva «l'elemento di una
+vicina», e fra i candidati c'è anche l'elemento della tua **apertura**: con un'Iride di fianco —
+che un elemento suo non ce l'ha — la runa cambiava verso un elemento che nessuna vicina porta.
+E la regola di *Sirio*, «ogni critico accorcia di 0,04s la ricarica di tutte le rune», taceva la
+pausa obbligata che la tiene in piedi: senza, con sei rune in mezzo alla folla i critici sono
+centinaia al secondo e l'anello sparerebbe a ogni fotogramma (misurato prima che la pausa
+esistesse: 45 uccisioni al secondo contro le 17 di Vega, stessa build). Adesso la scheda dice
+anche «fino a cinque volte al secondo», e il numero esce dalla costante che lo applica.
+
+**E una riga della guida che si leggeva al contrario.** «Con Nadir le rune risuonano anche
+saltando un alloggiamento, quindi *alternare funziona*»: l'eco lunga tocca la **risonanza** (il
++30% di danno), non la catena, che resta fatta di rune una accanto all'altra. Chi ci costruiva
+sopra un anello alternato restava senza nemmeno un Risveglio e non aveva modo di sapere perché.
+
 ### Tre cose che il gioco sa e non diceva
 
 L'orologio diceva da quanto stai giocando, mai **quanto manca**: una Corsa dura venti minuti e
@@ -954,12 +1017,14 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `GROWTH` | `02-engine.js` | quanto cresce una runa per livello — meno livelli, ognuno più pesante |
 | `hpScale` | `02-engine.js` → `spawnEnemy` | crescita dei nemici, proporzionata a quella del giocatore |
 | `rate` / `maxE` | `03-systems.js` → `updateSpawns` | ritmo di comparsa e tetto di nemici vivi |
-| `G.eliteT` | `03-systems.js` → `updateSpawns` | frequenza degli elite, cioè degli scrigni |
+| `ELITE_T` / `ELITE_T_PRESAGIO` | `01-data.js` | quando arriva il primo elite, cioè il primo scrigno, senza e con il Presagio |
+| `G.eliteT` | `03-systems.js` → `updateSpawns` | ogni quanto ne arriva un altro |
 | `rincorsa` | `03-systems.js` → `bossAI` | elastico del boss: accelera quanto più resta indietro |
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
 | `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
 | `CONGIUNZIONI` | `01-data.js` | le undici regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa quanto tre delle altre |
 | `EVENTI` | `03-systems.js` | i cinque eventi d'arena, e il ritmo con cui si aprono (`G.evT`) |
+| `CATENA_BASE` | `01-data.js` | quante rune in fila accendono un Risveglio; `catenaDi`, `catenaRichiesta` e `gradoCatena` in `02-engine.js` sono gli unici tre posti che lo applicano |
 | `EVO_LV` | `01-data.js` | la soglia della trasformazione, e il gradino che il Crogiolo le toglie |
 | `SBLOCCHI` | `01-data.js` | quale runa entra nel mazzo per quale traguardo, in ordine |
 | `CONTRATTI` | `01-data.js` | i ventuno obiettivi che si rinnovano, e il loro premio base |

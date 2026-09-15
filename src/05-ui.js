@@ -230,7 +230,7 @@ const UI = {
        Stava solo nella schermata delle carte, a gioco fermo. Una targhetta
        sola e tratteggiata, e solo quando manca davvero una runa: due o tre
        sarebbero rumore. */
-    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+    const c0 = catenaRichiesta();
     let quasi = null, lung = 0;
     for (const e of ELKEYS) {
       if (G.awaken[e]) continue;
@@ -404,7 +404,12 @@ const UI = {
       '<div class="frame clip guide"><div class="inner clip">' +
 
       sec('Comandi',
-        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> per la pausa. Le rune sparano da sole: tu schivi, e decidi <b>quando scatenare il Culmine</b>.')) +
+        /* <kbd>P</kbd> mette in pausa come <kbd>Esc</kbd>, e <kbd>R</kbd> sulla
+           schermata di fine fa ripartire senza passare da nessun menu — il
+           tempo fra una morte e la partita dopo e' la leva di ritenzione piu'
+           forte del genere. Erano due tasti che il gioco ascoltava e che non
+           stavano scritti in nessun punto dell'interfaccia. */
+        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> o <kbd>P</kbd> per la pausa, <kbd>Spazio</kbd> per il Culmine, <kbd>R</kbd> sulla schermata di fine per ripartire subito. Le rune sparano da sole: tu schivi, e decidi <b>quando scatenare il Culmine</b>.')) +
 
       sec('Il Culmine',
         p('In basso a destra c’è un anello che si riempie <b>uccidendo</b>. Quando è pieno, premi <kbd>Spazio</kbd> (o toccalo) e per cinque secondi e mezzo succede tutto insieme: l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>.') +
@@ -431,13 +436,23 @@ const UI = {
         '<li><b>Chi sta in mezzo conta.</b> In una catena di tre, solo quella centrale ottiene risonanza da entrambi i lati. Mettici la runa che vuoi trasformare, o quella che picchia di più.</li>' +
         '<li><b>L’Iride dipende da cosa vuoi.</b> Sul confine fra due gruppi accende un secondo Risveglio, utile contro la folla. Dentro il tuo gruppo principale fa più danno puro, meglio contro i guardiani.</li>' +
         '<li><b>Riordinare è gratis</b>, dalla pausa, in qualsiasi momento. È spesso l’unica cosa che manca perché una runa si trasformi: l’anello ti dice <em>in quale alloggiamento spostarla</em>.</li>' +
-        '<li><b>L’anello non è mai congelato.</b> Tre carte lo rimettono in gioco anche quando è pieno: <b>Dissolvi</b> libera un alloggiamento, <b>Ritempra</b> riaccorda una runa all’elemento di una vicina conservandone forma e livello, e una runa nuova può <em>prendere il posto</em> di una che non regge nessun Risveglio.</li>' +
+        '<li><b>L’anello non è mai congelato.</b> Tre carte lo rimettono in gioco anche quando è pieno: <b>Dissolvi</b> libera un alloggiamento, <b>Ritempra</b> riaccorda una runa all’elemento di una vicina — o a quello della tua apertura — conservandone forma e livello, e una runa nuova può <em>prendere il posto</em> di una che non regge nessun Risveglio.</li>' +
         '<li><b>Non sei obbligato a prendere.</b> Se nessuna delle tre carte ti convince, <b>Rilancia</b> per pescarne altre tre, o <b>Salta</b>: rinunci al potenziamento ma recuperi vita e frammenti. Una runa che non vuoi ti costa un alloggiamento per sempre, quindi saltare spesso è la scelta giusta.</li>' +
-        '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune risuonano anche saltando un alloggiamento, quindi alternare funziona. Con Lyra ogni runa conta doppia: due bastano per un Risveglio.</li>' +
+        /* «Con Nadir alternare funziona» si legge come «alternare accende i
+           Risvegli», e non e' vero: l'eco lunga tocca la RISONANZA (il +30%
+           danno), non la catena — che resta fatta di rune una accanto
+           all'altra. Chi ci costruiva sopra un anello alternato restava
+           senza nemmeno un Risveglio e non poteva sapere perche'. */
+        '<li><b>Nadir e Lyra ribaltano le regole.</b> Con Nadir le rune <em>risuonano</em> anche saltando un alloggiamento, quindi anche una runa isolata prende il +30%: la catena però resta fatta di rune vicine. Con Lyra ogni runa conta doppia nella catena: <b>due</b> bastano per un Risveglio, <b>tre</b> per il secondo grado.</li>' +
         '</ol>') +
 
       sec('Trasformazioni',
-        p('Una runa a <b>livello 6</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. Ne ha una <b>ognuna delle sedici rune</b>, e l’anello dice sempre cosa manca — compreso in quale alloggiamento spostarla.') +
+        /* Il numero era scritto a mano: 6. Ma la soglia la spostano il
+           Crogiolo (reliquia) e la Fornace (congiunzione), e sogliaEvo()
+           e' l'unico posto che lo sa — la scheda delle forme lo chiedeva
+           gia' a lui, la guida no. Chi aveva comprato il Crogiolo leggeva
+           quindi una soglia che il suo gioco non usava piu'. */
+        p('Una runa a <b>livello ' + sogliaEvo() + '</b>, che risuona da <b>entrambi</b> i lati e il cui elemento è <b>risvegliato</b>, si trasforma in qualcosa di diverso. Ne ha una <b>ognuna delle sedici rune</b>, e l’anello dice sempre cosa manca — compreso in quale alloggiamento spostarla.') +
         p('L’Iride fa eccezione, perché non ha un elemento suo: si trasforma quando fa il mestiere per cui esiste, cioè quando è il <b>ponte fra due Risvegli</b> accesi insieme.')) +
 
       sec('Chi ti viene addosso',
@@ -477,7 +492,7 @@ const UI = {
         '</ul>') +
 
       sec('Congiunzioni',
-        p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, il doppio degli asteroidi, i Risvegli che chiedono una runa in meno, i guardiani quaranta secondi prima, il Culmine che dura il doppio. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
+        p('Ogni corsa ne sorteggia una, ed è <b>scritta prima di partire</b>: nemici molti di più e più fragili, metà vita ma più danno, asteroidi molto più fitti, i Risvegli che chiedono una runa in meno, i guardiani quaranta secondi prima, il Culmine che dura il doppio. Una corsa su quattro è <b>Quiete</b>, cioè nessuna.') +
         p('Non è una difficoltà in più: è una domanda diversa. La stessa semenza dà sempre la stessa congiunzione, quindi «ripeti questa semenza» ripete anche quella.')) +
 
       sec('Il mazzo cresce',
@@ -960,7 +975,7 @@ const UI = {
   /* Chi era a una runa dal momento più importante della partita non lo sapeva:
      l'interfaccia mostrava soltanto i Risvegli GIÀ accesi. */
   catenaLine() {
-    const c0 = Math.max(2, G.asc.chain + G.cg.chain), parts = [];
+    const c0 = catenaRichiesta(), parts = [];
     for (const e of ELKEYS) {
       if (G.awaken[e]) continue;
       const run = catenaDi(e);
@@ -1130,7 +1145,13 @@ const UI = {
       return '<button class="card rit clip" data-a="pick" data-i="' + i + '" style="--c:#ff7de3"><span class="face">' +
         '<span class="ico clip">' + svg('iride') + '</span><span class="body">' +
         '<span class="kicker">Anello</span><h3>Ritempra</h3>' +
-        '<p>Riaccorda una runa <em>all’elemento di una vicina</em>. Conserva forma e livello: cambia solo con chi risuona.</p>' +
+        /* Diceva «all'elemento di una vicina», e i candidati sono anche
+           l'elemento della tua APERTURA: con un'Iride di fianco — che un
+           elemento suo non ce l'ha — la runa cambiava verso un elemento
+           che nessuna vicina porta, cioe' la carta faceva una cosa che la
+           carta stessa escludeva. L'anello, quando la giochi, dice gia' su
+           ogni runa verso che elemento andrebbe. */
+        '<p>Riaccorda una runa a un altro elemento — quello di una <em>vicina</em>, o quello della tua <em>apertura</em>. Conserva forma e livello: cambia solo con chi risuona.</p>' +
         '</span></span></button>';
     }
     if (c.t === 'diss') {
@@ -1146,12 +1167,6 @@ const UI = {
         '<span class="ico clip">' + svg('orbita') + '</span><span class="body">' +
         '<span class="kicker">Ascesi · ' + na + '</span><h3>Ascesi</h3>' +
         '<p><em>+5% danno, +4% vita massima, +3% area.</em> Si accumula senza limite.</p>' +
-        '</span></span></button>';
-    }
-    if (c.t === 'gold') {
-      return '<button class="card clip" data-a="pick" data-i="' + i + '" style="--c:#ffc857"><span class="face">' +
-        '<span class="ico clip">' + svg('frammento') + '</span><span class="body">' +
-        '<span class="kicker">Tesoro</span><h3>Frammenti</h3><p>Ottieni <em>120 frammenti</em> da spendere nell’Osservatorio.</p>' +
         '</span></span></button>';
     }
     if (c.t === 'pas') {
@@ -1348,7 +1363,7 @@ const UI = {
   /* Una diagnosi sola, la più utile, presa dai contatori della partita. */
   diagnosi(win) {
     const acceso = ELKEYS.filter(e => G.awaken[e]).length;
-    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+    const c0 = catenaRichiesta();
     if (!acceso) {
       let best = null, bl = 0;
       for (const e of ELKEYS) { const n = catenaDi(e); if (n > bl) { bl = n; best = e; } }
@@ -1482,18 +1497,10 @@ function runeSbloccate() {
    Funzioni pure: rispondono a "quanto sarebbe lunga la catena SE…" senza
    toccare lo stato. Servono a tre cose che prima non esistevano — non
    proporre mai tre carte che non possono sbloccare niente, sapere quando la
-   Ritempra ha senso, e dire DOVE spostare una runa perché si trasformi. */
-function catenaDi(el, ovr) {
-  const n = G.slots, R = G.ring;
-  const ok = new Array(n), isE = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const e = (ovr && ovr.i === i) ? ovr.el : (R[i] ? R[i].el : null);
-    ok[i] = !!e && (e === el || e === 'iride');
-    isE[i] = e === el;
-  }
-  const rule = G.char && G.char.rule;
-  return maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1) + (G.nodo === el ? 1 : 0);
-}
+   Ritempra ha senso, e dire DOVE spostare una runa perché si trasformi.
+   La catena la misura catenaDi() in 02-engine, lo stesso che la trasforma
+   in gradi: qui ce n'era una seconda copia, e una seconda copia della
+   stessa regola prima o poi racconta quella sbagliata. */
 /* quali rune, riaccordate, allungherebbero una catena — e verso quale elemento */
 function bersagliRitempra() {
   const out = [], n = G.slots, R = G.ring;
@@ -1539,7 +1546,7 @@ function resInPosizione(arr, i) {
 function sacrificabile(i) {
   const r = G.ring[i];
   if (!r) return false;
-  const c0 = Math.max(2, G.asc.chain + G.cg.chain);
+  const c0 = catenaRichiesta();
   for (const e of ELKEYS) {
     if (!G.awaken[e]) continue;
     if (catenaDi(e, { i, el: null }) < c0) return false;
@@ -1629,7 +1636,12 @@ function rollChoices(n) {
     else if (lv < max + ECCESSO_MAX) pool.push({ t: 'pas', id, w: .8 });
   }
   /* Ascesi: piccola, ripetibile all'infinito, sempre valida. È il pavimento
-     della pool — con questa nessuna schermata può ridursi a un riempitivo. */
+     della pool — con questa nessuna schermata può ridursi a un riempitivo.
+     Il pavimento di prima era una carta «120 frammenti», e quando l'Ascesi
+     l'ha sostituita e' rimasta disegnata, applicabile e cercata in tre
+     punti senza che nulla la mettesse piu' nel mazzo: una carta che il
+     gioco sapeva fare e non poteva pescare. Vedi il controllo «ogni carta
+     che si sa disegnare si sa anche pescare» in tools/collaudo.mjs. */
   pool.push({ t: 'ascesi', w: pool.length <= 4 ? 9 : 1.2 });
   const out = [];
   let total = 0; for (const o of pool) total += o.w;
@@ -1650,8 +1662,7 @@ function rollChoices(n) {
     const nuove = runeSbloccate().filter(id => !inRing.some(r => r.id === id));
     if (nuove.length) {
       /* sacrifica la carta meno preziosa, mai una trasformazione */
-      let k = out.findIndex(o => o.t === 'gold');
-      if (k < 0) k = out.findIndex(o => o.t === 'pas');
+      let k = out.findIndex(o => o.t === 'pas');
       if (k < 0) k = out.findIndex(o => o.t === 'rup');
       if (k < 0) k = out.length - 1;
       out[k] = { t: 'rnew', id: nuove[(nextRand() * nuove.length) | 0] };
@@ -1669,8 +1680,7 @@ function rollChoices(n) {
       const pref = utili.filter(c => c.t === 'rnew' && RUNES[c.id].el === SAVE.apertura);
       const src = pref.length ? pref : utili;
       src.sort((a, b) => b.w - a.w);
-      let k = out.findIndex(o => o.t === 'gold');
-      if (k < 0) k = out.findIndex(o => o.t === 'pas');
+      let k = out.findIndex(o => o.t === 'pas');
       if (k < 0) k = out.length - 1;
       out[k] = src[0];
     }
@@ -1716,7 +1726,6 @@ function applyChoice(c) {
     UI.toast('ASCESI ' + G.ascesi, '+5% danno · +4% vita · +3% area', '#bff6ff');
     return false;
   }
-  if (c.t === 'gold') { G.shards += 120; UI.toast('+120', 'Frammenti', '#ffc857'); return false; }
   if (c.t === 'pas') {
     G.passives[c.id] = (G.passives[c.id] | 0) + 1;
     recalc(); UI.toast(PASSIVES[c.id].n, PASSIVES[c.id].d, PASSIVES[c.id].c);
@@ -1796,7 +1805,7 @@ function resetRun(charId, seed, modoId, giorno) {
   G.enemies.length = 0; G.bullets.length = 0; G.ebul.length = 0; G.gems.length = 0;
   G.zones.length = 0; G.parts.length = 0; G.floats.length = 0; G.drops.length = 0;
   G.t = 0; G.level = 1; G.xp = 0; G.xpNeed = xpFor(1); G.kills = 0; G.shards = 0;
-  G.dmgDone = 0; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.eliteT = 26; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
+  G.dmgDone = 0; G.pending = 0; G.chests = 0; G.spawnAcc = 0; G.eliteT = ELITE_T; G.bossIdx = 0; G.boss = null; G.bosses.length = 0; G.eliteHint = 0;
   G.diff = 0; G.gemT = 1.5; G.ev = null; G.evT = 70; G.evUltimo = null; G.form = null; G.shake = 0; G.cadT = 0; G.dissolto = 0; G.maxT = 0; G.maxHint = 0;
   G.nodo = null; G.nodoK = null; G.biasX = 0; G.biasY = 0;
   G.evoCount = 0; G.reorders = 0; G.awakeMax = 0; G.awakeAt = 0; G.lowHp = 0; G.pieno = 0; G.tier3 = 0; G.hitstop = 0; G.victory = false; G.healCd = 0; G.ringRot = 0;
@@ -1826,9 +1835,11 @@ function resetRun(charId, seed, modoId, giorno) {
   G.demo = false;
   hideMoveHint();
   /* Presagio: il primo elite, cioè il primo scrigno, cioè la prima carta
-     in più, arriva al minuto invece che a un minuto e mezzo. È la spesa da
-     160 frammenti che si vede alla prima partita dopo averla fatta. */
-  if (mlv('presagio')) G.eliteT = 60;
+     in più, arriva in metà tempo. È la spesa da 160 frammenti che si vede
+     alla prima partita dopo averla fatta — e per tre versioni ha fatto
+     l'opposto, perché il numero era scritto a mano qui (60) mentre quello
+     base scendeva altrove (da 90 a 26). Vedi ELITE_T in 01-data. */
+  if (mlv('presagio')) G.eliteT = ELITE_T_PRESAGIO;
   /* Un pavimento al 30%: l'ascensione 8 parte a metà vita e la congiunzione
      Vetro pure, e moltiplicate darebbero un quarto — cioè una partita già
      persa prima del primo nemico, per una regola che non hai scelto. */

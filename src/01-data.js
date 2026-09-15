@@ -109,6 +109,30 @@ const CULM_DUR = 5.5;
 const CULM_CD = 1.85;
 function culmineCost(t) { return 42 + t * .085; }
 
+/* ── il primo elite ─────────────────────────────────────────────
+   E' il primo scrigno, cioe' la prima carta in piu', e il Presagio esiste
+   per anticiparlo. I due numeri stavano in tre posti diversi e in nessuno
+   accanto all'altro: il valore base in due (lo stato iniziale e resetRun)
+   e quello del Presagio in un terzo, fisso a 60. Quando la base e' scesa
+   a 26 — «l'apertura era troppo tranquilla» — quel 60 e' rimasto li', e da
+   allora un potenziamento da 160 frammenti RITARDAVA il primo elite di
+   trentaquattro secondi: si pagava per peggiorare, e la scheda del
+   negozio prometteva una cosa che il gioco faceva gia' da solo. Adesso i
+   due numeri stanno uno accanto all'altro e la riga del negozio si scrive
+   da sola con questi.                                                   */
+const ELITE_T = 26, ELITE_T_PRESAGIO = 13;
+
+/* ── Sirio: quanto spesso un critico accorcia la ricarica ───────
+   La regola dice «ogni critico», ma con sei rune in mezzo alla folla i
+   critici sono centinaia al secondo: senza una pausa obbligata il taglio
+   supera la ricarica che si accumula e l'anello spara a ogni fotogramma
+   (misurato: 45 uccisioni al secondo contro le 17 di Vega, stessa build).
+   La pausa c'era gia' in _hit, ma non era scritta da nessuna parte per
+   chi gioca, quindi la regola del nucleo prometteva una valanga che il
+   gioco non fa. Sta qui perche' la leggono in due: il codice che la
+   applica e la scheda che la spiega.                                    */
+const CADENZA_CD = .18, CADENZA_TAGLIO = .04;
+
 const APERTURE = [
   { el: 'fuoco',   id: 'scintilla' },
   { el: 'gelo',    id: 'scheggia' },
@@ -509,7 +533,7 @@ const CHARS = [
     rule: 'contraccolpo', ruleD: 'Ogni ferita che subisci scatena una Nova.' },
   { id: 'sirio',   n: 'Sirio',   c: '#ffe9b0', cost: 1600,
     d: '+15% critico · +40% danno critico · −18% vita', mod: { crit: .15, critD: .4, hp: .82 },
-    rule: 'cadenza', ruleD: 'Ogni critico accorcia di 0,04s la ricarica di tutte le rune.' },
+    rule: 'cadenza', ruleD: 'Ogni critico accorcia di ' + String(CADENZA_TAGLIO).replace('.', ',') + 's la ricarica di tutte le rune, fino a ' + Math.floor(1 / CADENZA_CD) + ' volte al secondo.' },
   { id: 'nadir',   n: 'Nadir',   c: '#b06bff', cost: 2600,
     d: '+25% esperienza · −8% danno', mod: { xp: 1.25, dmg: .92 },
     rule: 'ecoLunga', ruleD: 'Le rune risuonano anche saltando un alloggiamento.' },
@@ -566,7 +590,7 @@ const META = [
   /* la prima spesa possibile, e cambia la partita invece di ritoccarla:
      l'apertura a livello 3 vuol dire che il primo Risveglio arriva prima */
   { id: 'innesco',   n: 'Innesco',        max: 1,  c: 110,  step: 1,    ico: 'innesco',    d: 'La runa d’apertura parte al livello 3' },
-  { id: 'presagio',  n: 'Presagio',       max: 1,  c: 160,  step: 1,    ico: 'presagio',   d: 'Il primo elite arriva al primo minuto' },
+  { id: 'presagio',  n: 'Presagio',       max: 1,  c: 160,  step: 1,    ico: 'presagio',   d: 'Il primo elite arriva in metà tempo: ' + ELITE_T_PRESAGIO + 's invece di ' + ELITE_T },
   { id: 'ventaglio', n: 'Ventaglio',      max: 1,  c: 230,  step: 1,    ico: 'ventaglio',  d: 'Quattro carte nei primi tre livelli' },
   /* è il potenziamento che sblocca la libertà di build: con sei alloggiamenti
      la runa iniziale ti obbliga a usare il suo elemento. Costava 700, cioè
@@ -824,7 +848,7 @@ const contrattoPremio = (c) => Math.round(c.r * (1 + (SAVE.asc | 0) * .12));
 const RELIQUIE = [
   { id: 'semenza',   n: 'Semenza',        c: 1400, ico: 'innesco',   d: 'Inizi ogni partita con un livello già preso.' },
   { id: 'mercante',  n: 'Mercante',       c: 1600, ico: 'frammento', d: 'Dissolvere una runa rende il doppio dei frammenti.' },
-  { id: 'richiamo',  n: 'Richiamo',       c: 1800, ico: 'orbita',    d: 'Gli eventi d’arena arrivano il 35% più spesso.' },
+  { id: 'richiamo',  n: 'Richiamo',       c: 1800, ico: 'orbita',    d: 'Gli eventi d’arena arrivano il 35% prima.' },
   { id: 'avanzo',    n: 'Avanzo',         c: 1900, ico: 'linfa',     d: 'Saltare una carta cura il doppio e dà 120 frammenti.' },
   { id: 'bussola',   n: 'Bussola',        c: 2300, ico: 'magnete',   d: 'Un Nodo dell’arena è sempre sintonizzato sulla tua apertura.' },
   { id: 'crogiolo',  n: 'Crogiolo',       c: 2600, ico: 'cometa',    d: 'Le trasformazioni arrivano al livello ' + EVO_LV_CROGIOLO + ' invece che al ' + EVO_LV + '.' },

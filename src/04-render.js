@@ -231,17 +231,24 @@ function drawRocce() {
       const dentro = G.nodoK === k;
       const titolo = 'NODO DI ' + EL[k.nodo].n.toUpperCase();
       const nome = EL[k.nodo].n.toLowerCase();
-      /* Quante rune di questo elemento hai davvero. Serve a non promettere
-         la metà del bonus che non sta ancora funzionando: con una runa
-         sola il +35% si applica eccome — è il 35% di tutto il tuo danno —
-         ma «catena +1» non fa niente, perché una catena di uno più uno fa
-         due e il Risveglio ne vuole tre. Scriverlo lo stesso è una bugia
-         piccola, e questo è il cartello che deve insegnare la regola. */
-      let mie = 0;
-      for (let q = 0; q < G.slots; q++) if (G.ring[q] && G.ring[q].el === k.nodo) mie++;
+      /* «catena +1» si annuncia solo quando quel +1 sta facendo qualcosa.
+         Il +35% si applica sempre — con una runa sola è il 35% di tutto il
+         tuo danno — ma la runa in più alla catena serve a una cosa sola:
+         alzare il grado del Risveglio. Il criterio era «ho almeno due rune
+         di questo elemento», che è un'approssimazione sbagliata in
+         entrambi i versi: due rune LONTANE fra loro non fanno catena (uno
+         più uno fa due, e il Risveglio ne vuole tre), e con l'Eco o con
+         Lyra i conti cambiano ancora. Adesso lo chiede a chi lo sa: il
+         grado con il Nodo contro il grado senza. Se sono uguali, il
+         cartello promette solo quello che sta davvero dando. */
+      let alza = false;
+      if (dentro) {
+        const c0 = catenaRichiesta(), lung = catenaDi(k.nodo);
+        alza = gradoCatena(lung, c0) > gradoCatena(lung - passoCatena(), c0);
+      }
       const sotto = !utile ? 'ti serve una runa di ' + nome
         : !dentro ? 'entra per potenziare il ' + nome
-        : mie >= 2 ? '+35% danno · catena +1'
+        : alza ? '+35% danno · catena +1'
         : '+35% danno alle tue rune di ' + nome;
       ctx.globalCompositeOperation = 'source-over';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
