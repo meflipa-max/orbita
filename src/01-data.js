@@ -134,10 +134,20 @@ const PERI_R = 26;        /* e quello serrato: dentro ci sta il nucleo e basta *
 const PERI_ASS_MAX = 40;
 const PERI_TICK = .3;     /* ogni quanto un nemico tenuto vale un punto */
 const PERI_C = '#9ec6ff'; /* il colore del riparo: gia' quello dell'asteroide che assorbe un colpo */
-/* L'onda del rilascio. Tarata per restituire meno di quello che il buco nel
-   danno e' costato: il Perigeo deve convenire per quello che EVITA, non per
-   quello che fa. Se convenisse anche come attacco, il Culmine sparirebbe. */
-const PERI_ONDA = 24, PERI_ONDA_ASS = 16;
+/* ── quanto restituisce l'onda ───────────────────────────────────
+   Una quota di quello che l'anello AVREBBE sparato nei due secondi in cui e'
+   stato chiuso, in proporzione a quanto ha tenuto: a tetto pieno ripaga
+   PERI_QUOTA del buco, a mani vuote niente.
+   Erano due numeri fissi — 24 piu' 16 per punto — moltiplicati per P.dmgMul.
+   Ma il danno di un anello cresce anche col LIVELLO delle rune, che dmgMul non
+   vede: misurato col banco, l'onda piena ripagava il 35% del buco al quinto
+   minuto e l'11% al quindicesimo, cioe' il premio per aver tenuto duro
+   svaniva proprio quando tenere duro costa di piu'. Una quota dichiarata non
+   puo' andare fuori taratura da sola.
+   Resta sotto il buco, e questo e' il punto: il Perigeo deve convenire per
+   quello che EVITA, non per quello che fa. Se convenisse anche come attacco,
+   il Culmine sparirebbe. */
+const PERI_QUOTA = .6;
 /* Quante uccisioni riempiono l'indicatore, al secondo `t`.
    ── era acceso un quarto della partita ────────────────────────────
    Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in
@@ -166,8 +176,9 @@ function culmDurataIt() {
 }
 
 /* ── il primo elite ─────────────────────────────────────────────
-   E' il primo scrigno, cioe' la prima carta in piu', e il Presagio esiste
-   per anticiparlo. I due numeri stavano in tre posti diversi e in nessuno
+   E' il primo premio d'arena — esperienza e frammenti, da quando la carta la
+   paga solo il guardiano (vedi XP_ELITE) — e il Presagio esiste per
+   anticiparlo. I due numeri stavano in tre posti diversi e in nessuno
    accanto all'altro: il valore base in due (lo stato iniziale e resetRun)
    e quello del Presagio in un terzo, fisso a 60. Quando la base e' scesa
    a 26 — «l'apertura era troppo tranquilla» — quel 60 e' rimasto li', e da
@@ -713,18 +724,25 @@ const metaCost = (m, lv) => Math.round(m.c * Math.pow(m.step, lv));
    chi gioca: sale col tetto dei nemici e con la durata, non con la
    costruzione dell'anello. Adesso pesa meno di un sesto, e il traguardo —
    vincere — pesa di piu' di quanto pesava.
-   Misurato dopo: 2850 per una Corsa vinta, cioe' il negozio in QUATTORDICI
-   partite invece di cinque, e la prima corsa (cinque minuti, persa) paga
-   ancora abbastanza per le prime due regole del negozio — 110 e 160 — che
-   e' la promessa su cui il negozio e' costruito.
-   `npm run misura -- soldi` rimisura tutto questo in un colpo.        */
-const PAGA = { kill: .08, sec: .35, lv: 10, vittoria: 800 };
+   Misurato dopo, e poi RIMISURATO quando il banco ha smesso di giocare male:
+   il bot prendeva una runa nuova a ogni occasione anche ad anello pieno, cioe'
+   se le sostituiva addosso, e una corsa faceva 6832 uccisioni invece di 11066.
+   Con lo strumento sano la stessa corsa pagava 3757 — il negozio in dieci
+   partite — quindi i pesi sono scesi ancora. Misurato adesso: 3121 e 3164 per
+   una Corsa vinta, cioe' il negozio in DODICI partite e mezza. Ricalcolando i
+   pesi di partenza sulla stessa corsa, senza il bot che giocava male, erano
+   dodicimila frammenti: TRE partite e il negozio era finito.
+   L'altro capo resta fermo: la prima corsa (cinque minuti, persa) paga ancora
+   abbastanza per le prime due regole del negozio — 110 e 160 — che e' la
+   promessa su cui il negozio e' costruito.
+   `npm run misura -- soldi` rimisura tutti e due i capi in un colpo.    */
+const PAGA = { kill: .05, sec: .35, lv: 10, vittoria: 700 };
 /* Quanto valgono i frammenti raccolti in campo. Erano un terzo di tutto
    l'incasso di una corsa (2780 su 8106) e passavano dal payout senza mai
    comparire a schermo, quindi nessuno poteva accorgersene: il gocciolio del
    5% su ogni nemico ne faceva mille da solo. I numeri stanno scritti dove
    cadono — killEnemy, gli eventi d'arena — e questa e' la loro scala. */
-const FRAM_RESA = .34;
+const FRAM_RESA = .26;
 const fram = v => Math.max(1, Math.round(v * FRAM_RESA));
 
 /* ── sfide ──────────────────────────────────────────────────────
@@ -769,6 +787,30 @@ const SFIDE = [
    il successivo c'e' sempre del gioco, non un altro pannello. */
 const LV_PAUSA = 1.2;
 
+/* ── un rubinetto solo per la crescita ───────────────────────────
+   La crescita del nucleo usciva da OTTO sorgenti che non si parlavano fra
+   loro: i livelli, sei che pagano uno scrigno — i cinque guardiani, gli elite
+   ogni ottanta secondi, e quattro eventi d'arena su cinque — piu' la Semenza
+   e il Ventaglio. Ognuna difendibile da sola; nessuno aveva mai sommato il
+   totale. Misurato: 43 carte in venti minuti, una ogni ventisei secondi.
+   Il guaio non era il numero, era la COMPOSIZIONE. I livelli decelerano come
+   devono (da tre al minuto a uno); gli scrigni no — elite, eventi e guardiani
+   arrivano a orologio per sempre. Quindi la quota di crescita che viene dagli
+   scrigni passa dal 20% dei primi cinque minuti al 71% dei minuti 10-14: nella
+   seconda meta' della corsa il nucleo cresceva PER OROLOGIO, non per merito, e
+   due terzi delle carte arrivavano da timer che non sanno niente di come stia
+   andando la partita. E' questo che si sente come «e' troppo facile far
+   crescere il nucleo».
+   Adesso la carta la paga solo il traguardo: il GUARDIANO. Elite ed eventi
+   pagano in esperienza — una gemma sola, grossa e visibile — e in frammenti:
+   restano ricompense, ma rientrano nell'unico rubinetto che decelera e che
+   dipende da quanto stai uccidendo.
+   Le quote sono frazioni del livello CORRENTE, non numeri fissi: un premio
+   tarato sul minuto tre al minuto diciotto non si vedrebbe nemmeno. Come ogni
+   gemma passano dai moltiplicatori di esperienza del giocatore, quindi Avidita'
+   e Sapienza valgono anche qui. */
+const XP_ELITE = .30, XP_EVENTO = .45;
+
 const CATENA_BASE = 3;
 const NUM_IT = ['zero', 'una', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto'];
 const Cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -780,7 +822,9 @@ const Cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const ASC = [
   { d: 'La corsa base, senza modifiche.' },
   { d: 'I nemici hanno il 25% di vita in più.', hp: 1.25 },
-  { d: 'Gli scrigni danno frammenti, non potenziamenti.', noChest: 1 },
+  /* Da quando la carta la paga solo il guardiano (vedi XP_ELITE), questa
+     ascensione tocca lui: prima diceva «gli scrigni», che erano sei sorgenti. */
+  { d: 'I guardiani danno frammenti, non una carta.', noChest: 1 },
   { d: 'I nemici si muovono il 12% più veloci.', spd: 1.12 },
   { d: 'I guardiani arrivano 30 secondi prima.', boss: -30 },
   { d: 'Un alloggiamento in meno nell’anello.', slots: -1 },
@@ -1014,7 +1058,7 @@ function semeDelGiorno(iso) {
 const BRIEFING = {
   breccia: {
     n: 'Breccia', k: 'Evento d’arena', ico: 'orbita', c: '#b06bff',
-    p: ['Un varco si è aperto da qualche parte. Raggiungilo prima che si chiuda: dentro c’è uno <b>scrigno</b>, cioè una carta in più.',
+    p: ['Un varco si è aperto da qualche parte. Raggiungilo prima che si chiuda: dentro c’è un <b>premio</b> — un blocco di esperienza e una manciata di frammenti.',
         'Segui il <b>faro</b>, o la freccia sul bordo dello schermo. Hai <b>22 secondi</b>.']
   },
   marea: {
@@ -1041,12 +1085,12 @@ const BRIEFING = {
   allineamento: {
     n: 'Allineamento', k: 'Evento d’arena', ico: 'congiunzione', c: '#ff7de3',
     p: ['Tre <b>sigilli</b> si accendono intorno a te. Passaci sopra per prenderli: il tratteggio li unisce, le tre frecce sul bordo dicono dove sono.',
-        'Non si spengono insieme: <b>a turno</b>, e l’arco di ciascuno dice quanto gli resta. Il più vicino non è quasi mai il primo da prendere — <b>tre su tre</b> valgono uno scrigno.']
+        'Non si spengono insieme: <b>a turno</b>, e l’arco di ciascuno dice quanto gli resta. Il più vicino non è quasi mai il primo da prendere — <b>tre su tre</b> valgono il premio pieno.']
   },
   fermata: {
     n: 'Fermata', k: 'Evento d’arena', ico: 'presagio', c: '#6ff2c4',
     p: ['Un cerchio turchese. Finché ci <b>stai dentro</b> si riempie, e mentre si riempie i nemici arrivano <b>da tutte le parti</b>.',
-        'Uscire non azzera: <b>mette in pausa</b>. Il cerchio è largo abbastanza per girarci dentro — non chiede di stare fermo, chiede di restare. Pieno vale uno scrigno e un po’ di vita.']
+        'Uscire non azzera: <b>mette in pausa</b>. Il cerchio è largo abbastanza per girarci dentro — non chiede di stare fermo, chiede di restare. Pieno vale un blocco di <b>esperienza</b>, frammenti e un po’ di vita.']
   },
   nodo: {
     n: 'Nodo elementale', k: 'Il terreno conta', ico: 'magnete', c: '#ffe14f',
@@ -1121,12 +1165,12 @@ function lessico() {
       ['Raffica', 'Stai uccidendo molto in fretta. È solo un contatore: dice il ritmo, non aggiunge regole.'],
       ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere.'],
       ['Frammenti', 'La valuta che <b>resta fra una partita e l’altra</b>. Si spende nell’Osservatorio.'],
-      ['Scrigno', 'Una carta in più, subito. La lasciano i guardiani e gli eventi d’arena.'],
+      ['Scrigno', 'Una carta in più, subito. <b>La lascia solo un guardiano abbattuto</b>: è l’unico traguardo che vale una schermata. Elite ed eventi d’arena pagano invece in esperienza e frammenti.'],
       ['Annichilimento', 'La bomba a terra non colpisce i dintorni: <b>uccide ogni nemico della mappa</b>, guardiani esclusi.'],
       ['Respiro', 'Tre secondi di invulnerabilità per uscire da dove ti sei incastrato. Arriva quando stai per cedere.'],
       ['Rinascita', 'Il nucleo si riaccende: hai speso una vita in più — le danno certe reliquie e certe ascensioni.'],
       ['Temprato', 'Nemico col <b>bordo caldo</b>: il gioco ha visto che li disintegri prima che ti arrivino addosso, e li rende più duri. Meno nemici, ognuno che vale di più.'],
-      ['Elite', 'Un nemico comune ingrandito, con la <b>barra della vita</b> sopra la testa. Vale molto di più.'],
+      ['Elite', 'Un nemico comune ingrandito, con la <b>barra della vita</b> sopra la testa. Abbatterlo lascia una <b>gemma grossa</b>: vale quasi un terzo di livello.'],
       ['Guardiano', 'Il boss. Ne arrivano cinque in una Corsa, tre in un’Incursione, e <b>l’ultimo è la vittoria</b>: la barra in cima allo schermo è la sua vita.'],
       ['Corazza elementale', 'Il cerchio tratteggiato attorno a un guardiano: i colpi di <b>quell’elemento gli fanno metà danno</b>.'],
       ['Dissonante', 'Non punta alla tua vita: <b>aggancia una runa e la tiene zitta</b>, col filo che si vede. Tiene le distanze, quindi va inseguito.'],

@@ -1517,14 +1517,12 @@ function updateEventi(dt) {
     const dx = G.p.x - v.x, dy = G.p.y - v.y;
     if (!v.preso && dx * dx + dy * dy < v.r * v.r) {
       v.preso = 1;
-      /* uno scrigno, non due: ogni scrigno e' una schermata di carte, e fra
-         eventi, elite e guardiani le interruzioni erano una ogni sedici
-         secondi per tutta la partita. Il valore che tolgo torna in gemme. */
-      if (G.asc.noChest) { addGem(v.x, v.y, fram(220), 1); }
-      else G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
+      /* Il premio di un evento e' esperienza e frammenti, non una carta: la
+         carta la paga solo il guardiano. Vedi XP_EVENTO in 01-data. */
+      premioEsperienza(XP_EVENTO, v.x, v.y);
       addGem(v.x, v.y, fram(240), 1);
       G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 460, t: 0, dur: .7, c: '#b06bff' });
-      UI.toast('BRECCIA APERTA', 'Ricompensa raccolta', '#b06bff');
+      UI.toast('BRECCIA APERTA', 'Esperienza e frammenti', '#b06bff');
       AU.play('buy'); G.shake = Math.max(G.shake, 10);
       G.ev = null; return;
     }
@@ -1546,14 +1544,13 @@ function updateEventi(dt) {
       }
     }
     if (v.presi >= 3) {
-      /* tutti e tre: lo scrigno. Due su tre pagano comunque in schegge,
+      /* tutti e tre: il premio pieno. Due su tre pagano comunque in schegge,
          perche' un evento che da' zero a chi ci e' quasi riuscito insegna
          solo a non provarci. */
-      if (!G.asc.noChest) G.drops.push({ x: G.p.x, y: G.p.y, k: 'chest', t: 0 });
-      else addGem(G.p.x, G.p.y, fram(220), 1);
+      premioEsperienza(XP_EVENTO, G.p.x, G.p.y);
       addGem(G.p.x, G.p.y, fram(240), 1);
       G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 520, t: 0, dur: .8, c: '#ff7de3' });
-      UI.toast('ALLINEAMENTO COMPLETO', 'Tre su tre', '#ff7de3');
+      UI.toast('ALLINEAMENTO COMPLETO', 'Tre su tre · esperienza e frammenti', '#ff7de3');
       AU.play('buy'); G.shake = Math.max(G.shake, 12);
       G.ev = null; return;
     }
@@ -1587,13 +1584,12 @@ function updateEventi(dt) {
       }
     }
     if (v.carica >= 1) {
-      if (!G.asc.noChest) G.drops.push({ x: v.x, y: v.y, k: 'chest', t: 0 });
-      else addGem(v.x, v.y, fram(220), 1);
+      premioEsperienza(XP_EVENTO, v.x, v.y);
       addGem(v.x, v.y, fram(260), 1);
       P.hp = Math.min(P.maxHp, P.hp + P.maxHp * .2);
       addFloat(G.p.x, G.p.y - 34, '+VITA', '#6ff2c4', true);
       G.zones.push({ k: 'ring', x: v.x, y: v.y, r0: 10, r1: 620, t: 0, dur: .9, c: '#6ff2c4' });
-      UI.toast('FERMATA TENUTA', 'Scrigno e respiro', '#6ff2c4');
+      UI.toast('FERMATA TENUTA', 'Esperienza, frammenti e respiro', '#6ff2c4');
       AU.play('buy'); G.shake = Math.max(G.shake, 12);
       G.ev = null; return;
     }
@@ -1611,9 +1607,9 @@ function updateEventi(dt) {
   } else if (v.k === 'caccia') {
     const e = v.e;
     if (!e || e.hp <= 0) {
-      if (!G.asc.noChest) G.drops.push({ x: e ? e.x : G.p.x, y: e ? e.y : G.p.y, k: 'chest', t: 0 });
+      premioEsperienza(XP_EVENTO, e ? e.x : G.p.x, e ? e.y : G.p.y);
       addGem(e ? e.x : G.p.x, e ? e.y : G.p.y, fram(160), 1);
-      UI.toast('CORRIERE ABBATTUTO', 'Bottino recuperato', '#6ff2c4');
+      UI.toast('CORRIERE ABBATTUTO', 'Bottino: esperienza e frammenti', '#6ff2c4');
       AU.play('buy'); G.ev = null; return;
     }
     /* Fugge da solo (vedi updateEnemies): qui resta solo il guinzaglio
@@ -1833,11 +1829,11 @@ function updateSpawns(dt) {
   }
   G.eliteT -= dt;
   if (G.eliteT <= 0) {
-    /* Lo scrigno di un elite vale una carta, esattamente come un livello.
-       Con gli elite che acceleravano (da uno ogni 70s a uno ogni 44) mentre
-       i livelli rallentavano, il totale delle interruzioni non calava mai:
-       una schermata di carte ogni tredici-diciotto secondi per mezz'ora.
-       Adesso la cadenza degli elite resta ferma. */
+    /* La cadenza degli elite resta ferma: acceleravano (da uno ogni 70s a uno
+       ogni 44) mentre i livelli rallentavano, quindi il totale delle
+       interruzioni non calava mai. Da quando l'elite paga in esperienza e non
+       in carte (vedi XP_ELITE) non e' piu' un'interruzione affatto, ma la
+       cadenza ferma resta giusta: e' un avversario, non un orologio. */
     G.eliteT = Math.max(78, 88 - tc / 50);
     const e = spawnRing(pick(pool), { elite: true, rMul: 1.55, spdMul: .88 });
     if (e) { e.c = '#ffc857'; }

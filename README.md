@@ -43,12 +43,19 @@ il danno al secondo di un anello vero e quello che l'onda restituisce:
 
 | minuto | danno/s | il buco (2,2 s) | onda a 40 punti | ripaga |
 |---|---|---|---|---|
-| 5 | 429 | 943 | 664 | 70% |
-| 10 | 571 | 1257 | 664 | 53% |
-| 15 | 823 | 1811 | 664 | 37% |
+| 5 | 866 | 1905 | 1143 | 60% |
+| 10 | 1724 | 3792 | 2275 | 60% |
+| 15 | 2653 | 5837 | 3502 | 60% |
 
-L'onda resta sempre **sotto** il buco che lascia, e la distanza cresce con la build: il Perigeo
-conviene per quello che **evita**, mai per quello che fa. Ed è la ragione per cui il Culmine non
+L'onda restituisce **una quota di quello che l'anello avrebbe sparato** nei due secondi in cui è
+stato chiuso, in proporzione a quanto ha tenuto: a tetto pieno il 60% del buco, a mani vuote
+niente. Erano due numeri fissi moltiplicati per il moltiplicatore di danno del giocatore — che non
+vede il *livello* delle rune — e misurandolo con un banco che gioca bene ripagavano il 35% al
+quinto minuto e l'**11%** al quindicesimo: il premio per aver tenuto duro svaniva proprio quando
+tenere duro costa di più. Una quota dichiarata non può andare fuori taratura da sola.
+
+L'onda resta sempre **sotto** il buco che lascia: il Perigeo conviene per quello che **evita**,
+mai per quello che fa. Ed è la ragione per cui il Culmine non
 diventa mai la scelta sbagliata — 5,5 secondi a cadenza quasi doppia con ogni Risveglio di un
 grado più alto valgono molto più di 664 — quindi ogni barra piena è davvero una domanda:
 *apro o chiudo?*
@@ -203,10 +210,14 @@ raccolti in campo, di cui mille dal solo gocciolio del 5% su ogni nemico.
 
 Ora i quattro pesi stanno in un posto solo (`PAGA`) e i frammenti che cadono hanno una scala
 sola (`FRAM_RESA`), così i numeri che gli avvisi promettono restano quelli che finiscono nel
-borsello. Misurato con lo stesso banco e gli stessi semi: **2940 e 2852 per una Corsa vinta, cioè il
-negozio in tredici partite invece di cinque**, e la prima corsa — cinque minuti, persa, mazzo base — ne paga ancora 575, che basta
-per le prime due regole del negozio (110 e 160). Un'economia si sbaglia in due modi, e quello
-è l'altro. `npm run misura -- soldi` rimisura le due cose insieme.
+borsello. Misurato, e poi **rimisurato** quando il banco ha smesso di giocare male — il bot prendeva una
+runa nuova a ogni occasione anche ad anello pieno, cioè se le sostituiva addosso, e una corsa
+faceva 6832 uccisioni invece di 11066. Con lo strumento sano i pesi sono scesi ancora: **3121 e
+3164 per una Corsa vinta, cioè il negozio in dodici partite e mezza**. Ricalcolando i pesi di
+partenza sulla stessa corsa, senza il bot che giocava male, erano dodicimila frammenti: **tre
+partite** e il negozio era finito. E la prima corsa — cinque minuti, persa, mazzo base — ne paga
+ancora 469-579, che basta per le prime due regole del negozio (110 e 160). Un'economia si sbaglia
+in due modi, e quello è l'altro. `npm run misura -- soldi` rimisura i due capi insieme.
 
 ### Sei o otto
 
@@ -264,73 +275,89 @@ comune a quel minuto.
 
 ```
 minuto  liv  potenza  vita comune  nemici/s   rune (livelli)   passivi
-1        3     214         32        6,7      4 rune: 1111        0
-5       13    1089        101       10,8      6 rune: 312223      3
-10      20    1579        194        8,1      6 rune: 333225     11
-15      23    2873       1407        2,0      6 rune: 343245     13
-19      27    3665        719        5,1      6 rune: 354446     13
+1        4     324         12       26,0      4 rune: 1111        0
+5       13     940         98        9,6      6 rune: 113232      2
+10      21    1762        361        4,9      6 rune: 234343      5
+15      25    1867        607        3,1      6 rune: 334343      9
+19      31    3978       1863        2,1      6 rune: 454544      9
 ```
 
 Due cose che questa tabella dice e che nessuno aveva misurato:
 
-- **la potenza cresce diciassette volte** in diciannove minuti, e la vita dei nemici ventidue: il
-  rapporto resta grosso modo piatto. Il gioco **non** si fa più facile mentre va avanti;
-- ma **la build ha ancora posto**: a fine corsa le rune stanno fra il 3 e il 6 su 8, e i passivi a
-  13 livelli su 47. Quarantatré carte ci stanno dentro — quindi il problema non è la capienza.
+- la potenza cresce **dodici volte** in diciannove minuti e la vita dei nemici **centocinquanta**:
+  il rapporto *scende*. Il gioco non si fa più facile mentre va avanti — si fa più duro, ed è il
+  direttore che lo decide (vedi «Il campo si adatta a te»);
+- ma **la build ha ancora posto**: a fine corsa le rune stanno fra il 3 e il 5 su 8, i passivi a 9
+  livelli su 47. Le carte ci stanno dentro, quindi il problema non era la capienza.
 
 E una terza, la più scomoda, che si vede solo confrontando due corse identiche in cui cambia solo
 il giocatore (stesso seme, nessuno dei due muore):
 
 ```
                  tempo  livello  uccisioni  carte  scrigni  potenza  vinta
-bot che gioca     1101     40      14184      52      13      4514    sì
-bot immobile      1128     23      10017      28       6       933    sì
+bot che gioca     1092     29       9650      32       4      3937    sì
+bot immobile      1181     22       7360      24       3       539    sì
 ```
 
-Giocare raddoppia le carte e moltiplica per cinque la potenza — quindi la crescita **è** premio
-del gioco. Ma il **pavimento è alto**: chi non si muove mai, non raccoglie mai niente, non
-insegue un evento e non schiva, arriva comunque a 28 carte, al livello 23 e **abbatte l'ultimo
-guardiano**. L'anello gioca da solo; quello che fa il giocatore è un moltiplicatore sopra un
-pavimento che già basta.
+Giocare vale **sette volte la potenza** — quindi la crescita è premio del gioco. Ma il
+**pavimento è alto**: chi non si muove mai, non raccoglie mai niente, non insegue un evento e non
+schiva, arriva comunque a 24 carte e **abbatte l'ultimo guardiano**. L'anello gioca da solo.
 
-### Quante volte la partita si ferma
-
-Ogni carta è una schermata, e ogni schermata è il gioco che si ferma. Metà del conto sono i
-livelli; l'altra metà gli **scrigni**, che non li decide la curva dell'esperienza ma **sei
-sorgenti che non si parlano fra loro**: i cinque guardiani, gli elite (uno ogni ottanta secondi
-circa) e quattro eventi d'arena su cinque. `npm run misura -- scrigni` le conta tutte, una corsa
-intera, minuto per minuto.
-
-Prima, con i livelli che arrivavano a pacchetti:
+E qui una cosa che sembrava ovvia e la misura ha **smentito**. L'idea era: se le gemme lontane
+scadessero, la crescita chiederebbe di andare a prenderla. Misurato su una corsa da fermo:
 
 ```
-— corsa —       43 carte: 24 livelli + 19 scrigni · una ogni 27,5s · pila max 3
-  livelli:   2  3  2  3  1  0  3  1  0  0  3  1  0  1  1  1  1  0  0  1
+raggio di raccolta: 78 px
+esperienza raccolta da fermo: 376
+  nata già a tiro (meno di ,35s):  376  (100%) · 256 gemme
+  ha viaggiato fino a te:            0  (  0%) ·   0 gemme
+```
+
+**Il 100% dell'esperienza che raccoglie chi sta fermo nasce già dentro il raggio di raccolta**: i
+nemici gli muoiono addosso. Nessuna gemma viaggia — una gemma lontana non si muove finché non ti
+avvicini. Quindi far scadere le gemme lontane non toccherebbe il pavimento di un millimetro:
+punirebbe *solo* chi si muove e rimanda la raccolta, cioè l'opposto dell'intenzione. Il pavimento
+non è nelle gemme lontane, è nel fatto che l'orda si consegna da sola — e quello è il patto del
+genere.
+
+### La carta la paga solo il guardiano
+
+Ogni carta è una schermata, e ogni schermata è il gioco che si ferma. La crescita del nucleo
+usciva da **otto sorgenti che non si parlavano fra loro**: i livelli, sei che pagavano uno scrigno
+— i cinque guardiani, gli elite ogni ottanta secondi, quattro eventi d'arena su cinque — più la
+Semenza e il Ventaglio. Ognuna difendibile da sola; nessuno aveva mai sommato il totale.
+
+Il guaio non era il numero, era la **composizione**. I livelli decelerano come devono, da tre al
+minuto a uno; gli scrigni no, perché elite, eventi e guardiani arrivano a orologio per sempre.
+Quindi la quota di crescita che veniva dagli scrigni passava dal **20%** dei primi cinque minuti al
+**71%** dei minuti 10-14: nella seconda metà della corsa il nucleo cresceva *per orologio*, non per
+merito, e due terzi delle carte arrivavano da timer che non sanno niente di come stia andando la
+partita. È questo che si sente come «è troppo facile far crescere il nucleo».
+
+Adesso la carta la paga **solo il traguardo: il guardiano**. Elite ed eventi pagano in esperienza —
+una gemma sola, grossa e visibile, che vale una quota del livello *corrente*, così resta un premio
+anche al diciottesimo minuto — e in frammenti. Restano ricompense, ma rientrano nell'unico
+rubinetto che decelera e che dipende da quanto stai uccidendo.
+
+`npm run misura -- scrigni` conta tutto, minuto per minuto. Prima e dopo, stesso seme:
+
+```
+— prima —      43 carte: 24 livelli + 19 scrigni · una ogni 27,5s
   scrigni:   1  0  0  2  2  0  1  1  1  0  3  0  0  2  1  1  1  1  1  1
-— incursione —  24 carte: 18 livelli + 6 scrigni · una ogni 20s · pila max 4
-  insieme:   4  5  4  1  0  8  0  2
+— dopo —       32 carte: 28 livelli +  4 scrigni · una ogni 35,0s
+  scrigni:   0  0  1  0  0  0  1  0  0  1  0  0  0  0  1  0  0  0  0
 ```
 
-Dopo, con un livello per volta — **stessi totali, pila massima 1**:
-
-```
-— corsa —       43 carte: 24 livelli + 19 scrigni · una ogni 25,7s · pila max 1
-  livelli:   2  3  2  3  2  1  1  1  1  1  0  2  1  1  0  1  0  0  1  1
-  scrigni:   1  0  0  2  0  1  2  0  0  1  4  0  3  1  2  0  1  1  1  2
-— incursione —  23 carte: 18 livelli + 5 scrigni · una ogni 19,4s · pila max 1
-  insieme:   6  3  2  1  3  5  1  2
-```
-
-Il verdetto sugli scrigni, che era la domanda: **non sono in eccesso**, e sono la parte *regolare*
-del conto — uno al minuto nella Corsa, cinque o sei in tutta l'Incursione. Quello che si
-accumulava erano i livelli, e adesso non si accumula più niente: nessuna pila, nessuna carta
-persa, gli stessi quarantatré momenti spalmati su venti minuti.
+Gli scrigni scendono dal **44% al 13%** della crescita, le interruzioni da una ogni 27 secondi a
+una ogni 35, e la corsa resta vinta su tutti e quattro i semi del banco. I livelli *salgono* da 24
+a 28, perché l'esperienza degli elite e degli eventi rientra da lì: il totale scende di undici
+carte, non di quindici, e la potenza a fine corsa non cambia. Cambia da dove viene.
 
 E una sorgente che pagasse uno scrigno **per ogni fotogramma** in cui la sua condizione è vera non
 si vedrebbe in nessuna media: si vedrebbe solo come «arrivano troppi scrigni». Le quattro
 condizioni degli eventi restano vere finché l'evento esiste, quindi ognuna chiude con
-`G.ev = null; return;` — e ora c'è un controllo per ciascuna: togliendo quel `return` alla
-Fermata, la sua riga conta **30 scrigni invece di 1**.
+`G.ev = null; return;` — e c'è un controllo per ciascuna: togliendo quel `return` alla Fermata, la
+sua riga conta **30 premi invece di 1**.
 
 ### Culmine
 

@@ -536,10 +536,10 @@ const UI = {
       sec('Eventi d’arena',
         p('Ogni novanta secondi succede qualcosa che <b>ha un luogo</b>, e non capita mai due volte di fila la stessa cosa.') +
         '<ul class="lista">' +
-        '<li><b>Breccia</b> — un varco da raggiungere prima che si chiuda. Dentro c’è uno scrigno.</li>' +
+        '<li><b>Breccia</b> — un varco da raggiungere prima che si chiuda. Dentro c’è un premio d’esperienza.</li>' +
         '<li><b>Marea</b> — i nemici arrivano tutti da una parte sola. Il lato opposto resta sgombro.</li>' +
         '<li><b>Corriere</b> — un nemico turchese carico di bottino che <em>scappa</em>, un filo più veloce di te: tagliagli la strada.</li>' +
-        '<li><b>Allineamento</b> — tre sigilli che si spengono <b>a turno</b>: il più vicino non è quasi mai il primo da prendere. Tre su tre valgono uno scrigno.</li>' +
+        '<li><b>Allineamento</b> — tre sigilli che si spengono <b>a turno</b>: il più vicino non è quasi mai il primo da prendere. Tre su tre valgono il premio pieno.</li>' +
         '<li><b>Fermata</b> — un cerchio da tenere mentre arrivano da tutte le parti. Uscire non azzera, mette in pausa.</li>' +
         '</ul>') +
 
@@ -554,7 +554,7 @@ const UI = {
         p('Tre obiettivi sempre in corso, e appena ne completi uno ne arriva un altro. Pagano in frammenti, e il premio cresce con l’ascensione più alta che hai raggiunto. Servono a dare una direzione alla partita di stasera quando le dodici <b>sfide</b> — che invece si prendono una volta sola — sono finite.')) +
 
       sec('Sopravvivere',
-        p('I guardiani hanno un conto alla rovescia in alto a destra. <b>Identità e pattern ruotano a ogni partita</b>, i numeri no: puoi trovarti le cariche del Titano al secondo minuto senza che il secondo minuto sia più duro. Gli scrigni dorati regalano potenziamenti, e ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
+        p('I guardiani hanno un conto alla rovescia in alto a destra. <b>Identità e pattern ruotano a ogni partita</b>, i numeri no: puoi trovarti le cariche del Titano al secondo minuto senza che il secondo minuto sia più duro. Un guardiano abbattuto lascia uno <b>scrigno</b> — l’unica cosa che vale una carta in più — ed elite ed eventi pagano in esperienza; ogni novanta secondi succede qualcosa in un punto preciso della mappa.') +
         p('A terra cadono anche <b>cuori</b> (vita) e <b>bombe</b>: la bomba non colpisce i dintorni, <b>uccide ogni nemico della mappa</b> tranne i guardiani. Il dono più vicino porta scritto cos’è.') +
         p('I nemici con una <b>barra sopra la testa</b> — elite dorati, corrieri e guardiani — sono quelli che vale la pena finire: quella barra è la loro <b>vita</b>. La scia bianca è il danno appena inflitto, e il colore vira al rosso quando stanno per cedere. In cima allo schermo c’è la barra dei guardiani: se ne hai addosso più d’uno — gemelli compresi — si <b>divide in un tratto per ciascuno</b>, largo quanto la sua stazza, col nome dello stesso colore.') +
         p('I frammenti restano fra una partita e l’altra: spendili nell’Osservatorio in potenziamenti permanenti, nuclei e <b>reliquie</b> — quelle sono care, ma ognuna è una regola invece di una percentuale.')) +

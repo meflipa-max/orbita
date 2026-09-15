@@ -601,6 +601,47 @@ function joyEnd(e) {
   if (e.pointerId !== IN.touchId) return;
   IN.touchId = null; IN.ax = IN.ay = 0; joyEl.classList.remove('on'); joyEl.classList.remove('max');
 }
+/* ── i due pulsanti d'azione si premono alzando il dito ──────────
+   Culmine e Perigeo stanno nei due angoli in basso, cioe' esattamente dove il
+   pollice si appoggia per cominciare a trascinare — e la levetta nasce sotto il
+   dito, ovunque. Attivandosi al `pointerdown` succedeva questo: il dito scende
+   nell'angolo per muoversi e invece spende la carica. Con un pulsante solo era
+   un angolo sfortunato; con due, entrambi gli angoli bassi erano una trappola.
+   Adesso l'attivazione sta sul dito che SI ALZA, e solo se non ha viaggiato:
+   · scende sul pulsante → non succede niente, il tocco resta in sospeso;
+   · si muove piu' di TAP_MOSSA → non era un tocco, e' una levetta che
+     comincia li': la si accende all'origine vera e l'angolo resta buono per
+     muoversi (se no sarebbero due pezzi di schermo morti);
+   · si alza senza essersi mosso → allora sì, la skill parte.
+   Nessun limite di tempo: tenere premuto un istante di troppo nel momento
+   teso e vedere la skill NON partire sarebbe un difetto peggiore di quello
+   che si sta correggendo. */
+const TAP_MOSSA = 14;
+function tastoAzione(el, azione) {
+  let tap = null;
+  el.addEventListener('pointerdown', e => {
+    e.stopPropagation(); e.preventDefault();
+    AU.init();
+    tap = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  /* su window e non sul pulsante: appena la levetta prende il pointer lo
+     cattura sul canvas, quindi gli eventi non passano piu' da qui */
+  addEventListener('pointermove', e => {
+    if (!tap || e.pointerId !== tap.id) return;
+    if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) <= TAP_MOSSA) return;
+    const t = tap; tap = null;
+    joyStart({ pointerId: t.id, clientX: t.x, clientY: t.y });
+    joyMove(e);
+  });
+  addEventListener('pointerup', e => {
+    if (!tap || e.pointerId !== tap.id) return;
+    const fermo = Math.hypot(e.clientX - tap.x, e.clientY - tap.y) <= TAP_MOSSA;
+    tap = null;
+    if (fermo) azione();
+  });
+  addEventListener('pointercancel', e => { if (tap && e.pointerId === tap.id) tap = null; });
+  el.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
+}
 cv.addEventListener('pointerdown', joyStart);
 cv.addEventListener('pointermove', joyMove);
 cv.addEventListener('pointerup', joyEnd);
@@ -1000,8 +1041,16 @@ function addFloat(x, y, txt, color, big) {
   if (G.floats.length > (G.chiarezza < .7 && !big ? 8 : 24)) return;
   G.floats.push({ x: x + crand(14, -14), y, t: 0, txt, c: color, big: !!big });
 }
-function addGem(x, y, v, kind) {
-  G.gems.push({ x, y, v, k: kind || 0, t: 0, vx: rand(90, -90), vy: rand(90, -90) });
+function addGem(x, y, v, kind, big) {
+  G.gems.push({ x, y, v, k: kind || 0, t: 0, vx: rand(90, -90), vy: rand(90, -90), big: big ? 1 : 0 });
+}
+/* ── la ricompensa che prima era una carta ───────────────────────
+   Una gemma sola, grossa, che vale una quota del livello corrente: e' il modo
+   di pagare un elite o un evento d'arena senza fermare la partita con una
+   schermata. Vedi XP_ELITE in 01-data per il perche'. Grossa apposta: deve
+   dire «questo e' il premio», non sembrare una scheggia in mezzo alle altre. */
+function premioEsperienza(quota, x, y) {
+  addGem(x, y, Math.max(1, Math.round(G.xpNeed * quota)), 0, 1);
 }
 
 function spawnEnemy(type, x, y, opts) {
@@ -1353,7 +1402,11 @@ function killEnemy(e, opt) {
      tenerlo fuori anche dai sorteggi di cuore e bomba, che sono roba da
      nemici comuni. */
   if (e.boss) { /* vedi sotto */ }
-  else if (e.elite) { if (G.asc.noChest) addGem(e.x, e.y, fram(45), 1); else G.drops.push({ x: e.x, y: e.y, k: 'chest', t: 0 }); }
+  /* L'elite pagava una carta. Adesso paga esperienza: e' un nemico, e i nemici
+     pagano in esperienza. (Ne dava anche prima, ma la stessa di un nemico
+     comune divisa in nove gemme: `e.xp` non ha nessun moltiplicatore da
+     elite, quindi il suo premio era tutto nello scrigno.) */
+  else if (e.elite) premioEsperienza(XP_ELITE, e.x, e.y);
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.012)) G.drops.push({ x: e.x, y: e.y, k: 'cuore', t: 0 });
   else if (!G.asc.noDrops && !G.cg.noDrops && chance(.006)) G.drops.push({ x: e.x, y: e.y, k: 'bomba', t: 0 });
   /* il gocciolio su ogni nemico: tre frammenti sul 5% delle uccisioni
@@ -1466,9 +1519,22 @@ function attivaPerigeo() {
   return true;
 }
 /* Riaprendosi, l'anello restituisce quello che ha tenuto fuori. */
+/* Quanto sparerebbe l'anello in un secondo, adesso. E' l'indice che misura il
+   buco che il Perigeo lascia, quindi anche quello che l'onda restituisce: per
+   le rune che orbitano e per i fari `cd` non e' la cadenza di tiro, quindi e'
+   una stima — ma e' la stessa stima su tutti e due i piatti della bilancia. */
+function dpsAnello() {
+  let d = 0;
+  for (const r of G.ring) {
+    if (!r) continue;
+    const s = runeStats(r);
+    d += s.dmg * Math.max(1, s.count || 1) / Math.max(.1, s.cd || .5);
+  }
+  return d;
+}
 function rilasciaPerigeo() {
   const n = Math.min(PERI_ASS_MAX, G.periAss | 0);
-  const dmg = (PERI_ONDA + PERI_ONDA_ASS * n) * P.dmgMul;
+  const dmg = PERI_QUOTA * dpsAnello() * PERI_DUR * (n / PERI_ASS_MAX);
   const r1 = (150 + n * 9) * P.areaMul;
   G.zones.push({ src: 'perigeo', k: 'nova', x: G.p.x, y: G.p.y, r0: G.ringR, r1,
     t: 0, dur: .45, dmg, hit: new Set(), c: PERI_C, kb: 380 });

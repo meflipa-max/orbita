@@ -696,16 +696,19 @@ sez('la Fermata paga chi resta');
   G.drops.length = 0;
   P.hp = P.maxHp * .5;
   const feriti = P.hp;
-  let scrigno = false;
+  let premio = 0;
   /* intoccabile: restare fermi in mezzo alla folla costa vita per davvero
      — e' il punto dell'evento — e qui si sta misurando la cura, non lei */
   for (let i = 0; i < 60 * 14 && G.ev; i++) {
     G.p.x = v.x; G.p.y = v.y; G.p.inv = 9;
+    const gemmePrima = G.gems.filter(g => g.big && g.k === 0).length;
     O.step(1 / 60);
-    if (G.drops.some(d => d.k === 'chest')) scrigno = true;
+    premio += G.gems.filter(g => g.big && g.k === 0).length - gemmePrima;
   }
   ok(!G.ev, 'piena, l’evento si chiude');
-  ok(scrigno, 'e lascia uno scrigno');
+  /* la carta la paga solo il guardiano: un evento paga una gemma grossa
+     d'esperienza — vedi XP_EVENTO in 01-data */
+  ok(premio >= 1, 'e lascia un premio d’esperienza (' + premio + ' gemma grossa)');
   ok(P.hp > feriti, 'e un po’ di vita (' + Math.round(feriti) + ' → ' + Math.round(P.hp) + ')');
 }
 
@@ -1531,26 +1534,43 @@ sez('il Perigeo tiene la folla, non i guardiani');
   ok(P.hp < v2, 'un guardiano passa lo stesso: il Perigeo non e’ invulnerabilita’');
 }
 
-sez('l’onda del rilascio vale quanto ha tenuto');
-/* Premere appena si ha paura deve rendere poco; resistere dentro al mucchio
-   deve rendere molto. E il tetto esiste perche' in mezzo a trecento nemici
-   l'onda sarebbe una bomba. */
+sez('l’onda del rilascio vale quanto ha tenuto, e quanto vale l’anello');
+/* Premere appena si ha paura deve rendere niente; resistere dentro al mucchio
+   deve rendere. E il tetto esiste perche' in mezzo a trecento nemici l'onda
+   sarebbe una bomba.
+   L'onda restituisce una quota di quello che l'anello AVREBBE sparato nei due
+   secondi in cui e' stato chiuso. Prima erano due numeri fissi moltiplicati per
+   P.dmgMul, che non vede il livello delle rune: misurato col banco, l'onda
+   piena ripagava il 35% del buco al quinto minuto e l'11% al quindicesimo —
+   il premio per aver tenuto duro svaniva proprio quando tenere duro costa di
+   piu'. Rimettendo indietro la correzione, l'ultima riga legge due onde uguali
+   su due anelli di forza diversa.                                         */
 {
-  const onda = ass => {
-    S().visti = TUTTI_I_BRIEFING();
-  O.reset('vega', 935, 'corsa', false); G.state = 'play';
+  S().visti = TUTTI_I_BRIEFING();
+  const onda = (ass, lv) => {
+    O.reset('vega', 935, 'corsa', false); G.state = 'play';
     G.enemies.length = 0; G.zones.length = 0;
+    G.ring = new Array(G.slots).fill(null);
+    for (let i = 0; i < 3; i++) {
+      G.ring[i] = { id: ['scintilla', 'sciame', 'prisma'][i], el: ['fuoco', 'vuoto', 'luce'][i], lv, cd: 0, res: 0, slot: i, st: {} };
+    }
+    O.recalcRing(false);
     G.charge = 1; O.attivaPerigeo();
     G.periAss = ass; G.peri = .001;
     O.step(1 / 60);
     const z = G.zones.find(x => x.src === 'perigeo');
     return z ? { dmg: z.dmg, r: z.r1 } : { dmg: 0, r: 0 };
   };
-  const vuoto = onda(0), pieno = onda(30), oltre = onda(500);
-  ok(vuoto.dmg > 0 && pieno.dmg > vuoto.dmg * 8, 'chi ha tenuto trenta colpi rilascia molto piu’ di chi non ha tenuto niente (' +
-     Math.round(vuoto.dmg) + ' → ' + Math.round(pieno.dmg) + ')');
-  ok(pieno.r > vuoto.r * 1.8, 'e l’onda e’ anche piu’ larga (' + Math.round(vuoto.r) + ' → ' + Math.round(pieno.r) + 'px)');
-  ok(oltre.dmg === onda(40).dmg, 'oltre il tetto non cresce piu’: in mezzo a trecento nemici sarebbe una bomba');
+  const vuoto = onda(0, 4), mezzo = onda(20, 4), pieno = onda(40, 4), oltre = onda(500, 4);
+  ok(vuoto.dmg === 0, 'chi non ha tenuto niente non rilascia niente: premerlo per paura non paga');
+  ok(pieno.dmg > 0 && Math.abs(mezzo.dmg * 2 - pieno.dmg) < 1,
+     'e il rilascio e’ proporzionale a quanto ha tenuto (' + Math.round(mezzo.dmg) + ' a venti, ' + Math.round(pieno.dmg) + ' a quaranta)');
+  ok(pieno.r > vuoto.r * 1.8, 'l’onda e’ anche piu’ larga (' + Math.round(vuoto.r) + ' → ' + Math.round(pieno.r) + 'px)');
+  ok(oltre.dmg === pieno.dmg, 'oltre il tetto non cresce piu’: in mezzo a trecento nemici sarebbe una bomba');
+  /* e segue la forza dell'anello, non solo i moltiplicatori del giocatore */
+  const debole = onda(40, 1), forte = onda(40, 7);
+  ok(forte.dmg > debole.dmg * 2.5,
+     'e un anello piu’ forte rilascia molto di piu’ (' + Math.round(debole.dmg) + ' a livello 1, ' + Math.round(forte.dmg) + ' a livello 7)');
 }
 
 sez('la prima barra piena spiega che gli atti sono due');
@@ -1638,56 +1658,121 @@ sez('una pila di carte dice il livello di ognuna, non quello di arrivo');
      'e le due carte di livello contano solo i livelli (' + r2.slice(1).map(r => r.split(' · ')[0]).join(', ') + ')');
 }
 
-sez('nessuna sorgente paga più di uno scrigno');
-/* Ogni scrigno e' una schermata di carte, cioe' il gioco che si ferma: sei
-   sorgenti diverse ne pagano uno — i cinque guardiani, gli elite, e quattro
-   eventi d'arena su cinque — e nessuna delle sei sa delle altre. Se una di
-   loro lo pagasse per ogni fotogramma in cui la sua condizione e' vera,
-   nella media di una corsa non si vedrebbe: si vedrebbe soltanto che «arrivano
-   troppi scrigni». Le quattro condizioni degli eventi sono vere finche'
-   l'evento esiste, quindi ognuna chiude con `G.ev = null; return;` — e questo
-   controllo e' li' per quel `return`: togliendone uno, la sua riga conta
-   decine di scrigni invece di uno.
-   Misurato su una corsa intera (`npm run misura -- scrigni`): 19 scrigni in
-   venti minuti, uno al minuto, contro 24 livelli. */
+sez('la carta la paga solo il guardiano');
+/* Ogni carta e' una schermata, cioe' il gioco che si ferma, e la crescita del
+   nucleo usciva da OTTO sorgenti che non si parlavano fra loro: i livelli, sei
+   che pagavano uno scrigno — i cinque guardiani, gli elite ogni ottanta
+   secondi, quattro eventi d'arena su cinque — piu' la Semenza e il Ventaglio.
+   Misurato: 43 carte in venti minuti, e la quota che veniva dagli scrigni
+   passava dal 20% dei primi cinque minuti al 71% dei minuti 10-14, perche' i
+   livelli decelerano e i timer no. Nella seconda meta' della corsa il nucleo
+   cresceva per orologio invece che per merito.
+   Adesso la carta la paga solo il traguardo. Elite ed eventi pagano in
+   esperienza — una gemma grossa che vale una quota del livello corrente — e in
+   frammenti: restano premi, ma rientrano nell'unico rubinetto che decelera.
+   Rimettendo indietro la correzione, le prime cinque righe contano uno
+   scrigno ciascuna.                                                       */
 {
   S().visti = TUTTI_I_BRIEFING();
-  const scrigniIn = f => {
+  const premi = f => {
     O.reset('vega', 950, 'corsa', false); G.state = 'play';
-    G.drops.length = 0; G.chests = 0; G.pending = 0;
+    G.drops.length = 0; G.gems.length = 0; G.chests = 0; G.pending = 0;
     f();
-    /* trenta fotogrammi: se la condizione paga a ripetizione, qui si vede.
-       Gli scrigni cadono ai piedi del nucleo e vengono raccolti subito, quindi
-       il conto e' quelli raccolti PIU' quelli ancora a terra. */
-    for (let i = 0; i < 30; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; }
-    return (G.chests | 0) + G.drops.filter(d => d.k === 'chest').length;
+    /* trenta fotogrammi: se una condizione pagasse a ripetizione, qui si
+       vedrebbe — le quattro degli eventi restano vere finche' l'evento esiste */
+    let big = 0;
+    for (let i = 0; i < 30; i++) {
+      const prima = G.gems.filter(g => g.big && g.k === 0).length;
+      O.step(1 / 60); G.pending = 0; P.hp = P.maxHp;
+      big += Math.max(0, G.gems.filter(g => g.big && g.k === 0).length - prima);
+    }
+    /* gli scrigni cadono ai piedi del nucleo e si raccolgono subito: il conto
+       e' quelli raccolti piu' quelli ancora a terra */
+    return { carte: (G.chests | 0) + G.drops.filter(d => d.k === 'chest').length, xp: big };
   };
-  /* i quattro eventi che pagano uno scrigno */
-  const breccia = scrigniIn(() => { G.ev = { k: 'breccia', x: G.p.x, y: G.p.y, t: 1, dur: 22, r: 70, preso: 0 }; });
-  ok(breccia === 1, 'la breccia raggiunta ne paga uno (' + breccia + ')');
-  const allin = scrigniIn(() => {
-    G.ev = { k: 'allineamento', t: 1, dur: 23, r: 72, presi: 3, sig: [
+  const nomi = ['la breccia raggiunta', 'l’allineamento completo', 'la fermata tenuta', 'il corriere abbattuto'];
+  const eventi = [
+    () => { G.ev = { k: 'breccia', x: G.p.x, y: G.p.y, t: 1, dur: 22, r: 70, preso: 0 }; },
+    () => { G.ev = { k: 'allineamento', t: 1, dur: 23, r: 72, presi: 3, sig: [
       { x: G.p.x, y: G.p.y, dur: 11, preso: 1, morto: 0 },
       { x: G.p.x, y: G.p.y, dur: 17, preso: 1, morto: 0 },
-      { x: G.p.x, y: G.p.y, dur: 23, preso: 1, morto: 0 }] };
-  });
-  ok(allin === 1, 'l’allineamento completo ne paga uno (' + allin + ')');
-  const ferm = scrigniIn(() => { G.ev = { k: 'fermata', x: G.p.x, y: G.p.y, t: 5, dur: 21, r: 168, carica: 1, acc: 0 }; });
-  ok(ferm === 1, 'la fermata tenuta ne paga uno (' + ferm + ')');
-  const cacc = scrigniIn(() => { G.ev = { k: 'caccia', t: 1, dur: 26, e: null }; });
-  ok(cacc === 1, 'il corriere abbattuto ne paga uno (' + cacc + ')');
-  /* e la marea, che non ne paga */
-  const marea = scrigniIn(() => { G.ev = { k: 'marea', t: 1, dur: 18, a: 0 }; });
-  ok(marea === 0, 'la marea non ne paga nessuno (' + marea + ')');
-  /* un elite e un guardiano: uno a testa, e non uno per colpo che lo finisce */
-  /* un elite lasciato uccidere dall'anello: uno scrigno, non uno per colpo */
-  const elite = scrigniIn(() => {
+      { x: G.p.x, y: G.p.y, dur: 23, preso: 1, morto: 0 }] }; },
+    () => { G.ev = { k: 'fermata', x: G.p.x, y: G.p.y, t: 5, dur: 21, r: 168, carica: 1, acc: 0 }; },
+    () => { G.ev = { k: 'caccia', t: 1, dur: 26, e: null }; }
+  ];
+  for (let i = 0; i < eventi.length; i++) {
+    const r = premi(eventi[i]);
+    ok(r.carte === 0 && r.xp === 1, nomi[i] + ': nessuna carta, un premio d’esperienza (' +
+       r.carte + ' carte, ' + r.xp + ' gemme grosse)');
+  }
+  /* un elite lasciato uccidere dall'anello */
+  const elite = premi(() => {
     G.enemies.length = 0;
     G.enemies.push({ type: 'vagante', x: G.p.x + 40, y: G.p.y, vx: 0, vy: 0, r: 13, c: '#fff', shape: 'dia',
       hp: 1, maxHp: 30, spd: 0, dmg: 0, xp: 2, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0,
       froze: 0, kb: 0, kbx: 0, kby: 0, elite: true, boss: null, ten: 1, dead: false });
   });
-  ok(elite === 1, 'un elite abbattuto ne paga uno, non uno per colpo (' + elite + ')');
+  ok(elite.carte === 0 && elite.xp === 1, 'un elite abbattuto: nessuna carta, un premio d’esperienza (' +
+     elite.carte + ' carte, ' + elite.xp + ' gemme grosse)');
+  /* la marea non paga niente, e il guardiano paga la carta */
+  const marea = premi(() => { G.ev = { k: 'marea', t: 1, dur: 18, a: 0 }; });
+  ok(marea.carte === 0 && marea.xp === 0, 'la marea non paga niente (' + marea.carte + ', ' + marea.xp + ')');
+  const guard = premi(() => {
+    G.enemies.length = 0; G.bosses.length = 0;
+    const b = { type: 'boss', x: G.p.x + 40, y: G.p.y, vx: 0, vy: 0, r: 40, c: '#f00', shape: 'boss',
+      hp: 1, maxHp: 900, spd: 0, passo: .8, dmg: 0, xp: 700, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0,
+      froze: 0, kb: 0, kbx: 0, kby: 0, elite: false, ten: 1, dead: false, ph: 0, atk: 99, atk2: 99,
+      charge: 0, cdir: 0, mod: { spd: 1 }, corazza: null, boss: { n: 'PROVA', c: '#f00', pat: 'summon', fine: 0, r: 40, dmg: 0 } };
+    G.enemies.push(b); G.bosses.push(b); G.boss = b;
+  });
+  ok(guard.carte === 1, 'un guardiano abbattuto paga la carta, e una sola (' + guard.carte + ')');
+  /* e la quota e' una frazione del livello corrente, non un numero fisso */
+  O.reset('vega', 951, 'corsa', false); G.state = 'play';
+  G.level = 3; G.xpNeed = 100; G.gems.length = 0;
+  G.enemies.length = 0;
+  /* la gemma del premio e' quella grossa: gli altri nemici ne lasciano
+     intorno delle normali, e l'ultima dell'elenco non e' detto sia la sua */
+  const grossa = () => (G.gems.filter(g => g.big && g.k === 0)[0] || { v: 0 }).v;
+  premioProva();
+  const piccolo = grossa();
+  G.level = 20; G.xpNeed = 2024; G.gems.length = 0;
+  premioProva();
+  const grande = grossa();
+  ok(grande > piccolo * 15, 'il premio segue il livello: ' + piccolo + ' al terzo, ' + grande + ' al ventesimo');
+  function premioProva() {
+    /* la stessa funzione che paga elite ed eventi */
+    G.ev = { k: 'breccia', x: G.p.x, y: G.p.y, t: 1, dur: 22, r: 70, preso: 0 };
+    for (let i = 0; i < 4 && G.ev; i++) O.step(1 / 60);
+  }
+}
+
+sez('i due pulsanti d’azione si premono alzando il dito');
+/* Culmine e Perigeo stanno nei due angoli in basso, cioe' dove il pollice si
+   appoggia per cominciare a trascinare — e la levetta nasce sotto il dito,
+   ovunque. Attivandosi al `pointerdown` il dito che scendeva nell'angolo per
+   muoversi spendeva invece la carica: con un pulsante solo era un angolo
+   sfortunato, con due erano entrambi gli angoli bassi.
+   Gli eventi del puntatore il banco non li puo' simulare — il DOM finto non
+   registra nessun gestore — quindi questo controllo legge il sorgente, come
+   quello dei bottoni senza gestore: costa niente e quella classe di errore
+   (riattaccare l'azione al pointerdown) non passa piu'.                  */
+{
+  const dir = dirname(fileURLToPath(import.meta.url));
+  const eng = readFileSync(join(dir, '..', 'src', '02-engine.js'), 'utf8');
+  const main = readFileSync(join(dir, '..', 'src', '06-main.js'), 'utf8');
+  ok(/function tastoAzione\(/.test(eng), 'esiste un solo posto che decide come si premono');
+  ok(/tastoAzione\(\$\('#culm'\), attivaCulmine\)/.test(main) &&
+     /tastoAzione\(\$\('#peri'\), attivaPerigeo\)/.test(main),
+     'e i due pulsanti passano tutti e due da li’');
+  /* l'azione non deve stare in un gestore di pointerdown */
+  const giu = main.match(/pointerdown[^;]*attiva(Culmine|Perigeo)/);
+  ok(!giu, 'nessuno dei due si attiva quando il dito scende' + (giu ? ': ' + giu[0] : ''));
+  /* dentro tastoAzione: l'azione parte dal pointerup, e solo se il dito e’ fermo */
+  const corpo = eng.slice(eng.indexOf('function tastoAzione('), eng.indexOf('cv.addEventListener(\'pointerdown\', joyStart)'));
+  const su = corpo.indexOf("'pointerup'");
+  ok(su > 0 && /if \(fermo\) azione\(\)/.test(corpo), 'l’azione parte dal dito che si alza, e solo se e’ fermo');
+  ok(/TAP_MOSSA/.test(corpo) && /joyStart\(/.test(corpo),
+     'e un tocco che si muove diventa la levetta invece di perdersi');
 }
 
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));

@@ -344,17 +344,12 @@ function boot() {
   /* e comunque ogni pochi secondi, perché una chiusura brusca non avvisa */
   setInterval(salvaCorsa, 4000);
   $('#btnPause').addEventListener('click', e => { e.stopPropagation(); AU.init(); UI.togglePause(); });
-  /* il Culmine su schermo tattile: pointerdown, non click — con la levetta
-     che nasce sotto il dito un tap lungo non deve perdersi */
-  const bCulm = $('#culm');
-  bCulm.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); AU.init(); attivaCulmine(); });
-  bCulm.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
-  /* Il Perigeo nell'angolo opposto: due atti contrari, due angoli contrari.
-     Come il Culmine, esiste solo da carico — se no sarebbe un pezzo di
-     schermo in cui non si puo' cominciare a trascinare. */
-  const bPeri = $('#peri');
-  bPeri.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); AU.init(); attivaPerigeo(); });
-  bPeri.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
+  /* I due atti, nei due angoli opposti. Entrambi esistono solo da carichi —
+     se no sarebbero pezzi di schermo in cui non si puo' cominciare a
+     trascinare — e si premono ALZANDO il dito: vedi tastoAzione in 02-engine,
+     che e' li' perche' un tocco che si muove deve diventare la levetta. */
+  tastoAzione($('#culm'), attivaCulmine);
+  tastoAzione($('#peri'), attivaPerigeo);
   /* handle di debug: utile per collaudo e bilanciamento */
   window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, META, CHARS, SFIDE, ASC, EVO, lessico, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, congMods, rosterGuardiani, metaCost, culmineCost, contrattoPremio, attivaPerigeo, statoPartita, semeDelGiorno, tettoNemici, attivaCulmine, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, runeStats, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave,
     /* cosa c'e' davvero scritto sullo schermo: serve al collaudo, che

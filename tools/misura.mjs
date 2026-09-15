@@ -66,7 +66,17 @@ function scegli() {
   let giri = 0;
   while (G.pending > 0 && giri++ < 40) {
     const ch = O.roll(3);
-    const c = ch.find(x => x.t === 'evo') || ch.find(x => x.t === 'rnew')
+    /* ── una runa nuova solo se c'e' posto ──────────────────────────
+       Le rune nuove stavano subito dopo le trasformazioni, quindi ad anello
+       pieno le prendeva comunque — e ad anello pieno prendere una runa nuova
+       SOSTITUISCE una runa che c'era. Misurato: 36 carte su 43 erano rune
+       nuove, l'anello restava a livello 1-2 per tutta la corsa e la potenza
+       non cresceva mai. Nessuno gioca cosi', quindi il banco misurava una
+       build che nessuno costruisce: le tabelle di bilanciamento lette prima
+       di questa riga vanno prese per quello che erano. */
+    const vuoto = G.ring.some((r, i) => !r && i < G.slots);
+    const c = ch.find(x => x.t === 'evo')
+           || (vuoto ? ch.find(x => x.t === 'rnew') : null)
            || ch.find(x => x.t === 'rup') || ch.find(x => x.t === 'pas') || ch[0];
     const serve = O.apply(c);
     G.pending--;
@@ -246,7 +256,9 @@ function bancoPerigeo() {
     passo(600);
     const dps = (G.dmgDone - d0) / (G.t - t0);
     const buco = dps * 2.2;
-    const onda = n => Math.round((24 + 16 * Math.min(40, n)) * P.dmgMul);
+    /* la stessa formula del gioco: una quota di quello che l'anello avrebbe
+       sparato, in proporzione a quanto ha tenuto */
+    const onda = n => Math.round(.6 * dps * 2.2 * Math.min(40, n) / 40);
     console.log(String(Math.round(t / 60)).padEnd(8), String(Math.round(dps)).padEnd(9),
       String(Math.round(buco)).padEnd(16), String(onda(0)).padEnd(10), String(onda(20)).padEnd(6),
       String(onda(40)).padEnd(6), (onda(40) / buco * 100).toFixed(0) + '%');
@@ -337,14 +349,7 @@ function bancoCrescita() {
     let giri = 0;
     while (G.pending > 0 && giri++ < 40) {
       const ch = O.roll(3);
-      /* ── come scegliere come un giocatore ────────────────────────
-         `scegli()`, il criterio condiviso degli altri banchi, mette le rune
-         nuove subito dopo le trasformazioni: ad anello pieno le prende
-         comunque, e ogni presa SOSTITUISCE una runa. Misurato: 36 carte su
-         43 erano rune nuove, l'anello restava a livello 1-2 per tutta la
-         corsa e la potenza non cresceva. E' un difetto dello strumento, non
-         del gioco — nessuno gioca cosi'. Qui una runa nuova la si prende
-         solo se c'e' un alloggiamento libero. */
+      /* lo stesso criterio di scegli(), piu' il conteggio per tipo */
       const vuoto = G.ring.some((r, i) => !r && i < G.slots);
       const c = ch.find(x => x.t === 'evo')
              || (vuoto ? ch.find(x => x.t === 'rnew') : null)

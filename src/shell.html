@@ -263,7 +263,9 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   width:74px;height:74px;--cut:14px;pointer-events:none;cursor:pointer;display:none;
   place-items:center;background:none;border:0;padding:0;color:#9ec6ff;--f:0;z-index:6}
 #peri.on{display:grid}
-#peri.pronto,#peri.attivo{pointer-events:auto}
+/* solo da carico: da chiuso non c'e' niente da premere, e l'angolo deve
+   restare buono per trascinare */
+#peri.pronto{pointer-events:auto}
 #peri>*{grid-area:1/1}
 #peri .halo{width:136%;height:136%;border-radius:50%;opacity:0;mix-blend-mode:screen;
   background:radial-gradient(circle,rgba(158,198,255,.6) 0 26%,rgba(120,170,255,.26) 48%,transparent 68%);
