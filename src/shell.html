@@ -71,8 +71,8 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   padding:5px 9px;--cut:6px}
 .lvchip b{font:700 14px/1 var(--disp);color:#fff}
 /* I livelli gia' pagati e non ancora consegnati: la barra e' piena e
-   pulsa, ma «piena» non dice QUANTI ne aspettano. Con la pausa di dieci
-   secondi fra un livello e l'altro (vedi LV_PAUSA) possono essere due o
+   pulsa, ma «piena» non dice QUANTI ne aspettano. Con venti secondi di
+   pausa fra un livello e l'altro (`pausaLv` in MODI) possono essere due o
    tre, e un numero che scende a ogni carta dice che la fila si sta
    smaltendo — non che il gioco si e' inceppato. */
 .lvchip i{font:700 11px/1 var(--ui);font-style:normal;color:var(--xp);animation:lvPiu .7s ease-in-out infinite}

@@ -1190,12 +1190,13 @@ function updateGems(dt) {
 
 /* L'esperienza si accumula e basta: chi decide QUANDO diventa un livello e'
    avanzaLivello, una volta per fotogramma. Qui c'era un `while` che saliva di
-   tutti i livelli coperti insieme — vedi LV_PAUSA in 01-data. */
+   tutti i livelli coperti insieme — vedi «un livello per volta» in 01-data. */
 function gainXP(v) { G.xp += v * P.xpMul; }
 
 /* Un livello per volta, con un po' di partita in mezzo. Tre condizioni:
    la barra e' piena, non c'e' gia' una carta in attesa (uno scrigno raccolto
-   un istante prima non deve diventare una pila), ed e' passato LV_PAUSA di
+   un istante prima non deve diventare una pila), ed e' passata la pausa del
+   formato (`pausaLv`, in MODI) di
    gioco dall'ultimo livello. L'eccesso resta nella barra e non si perde. */
 function avanzaLivello(dt) {
   /* la carta in attesa ferma tutto, la pausa compresa: «un po' di partita in
@@ -1206,7 +1207,7 @@ function avanzaLivello(dt) {
   if (G.lvCd > 0) { G.lvCd -= dt; return; }
   if (G.xp < G.xpNeed) return;
   G.xp -= G.xpNeed; G.level++; G.xpNeed = xpFor(G.level); G.pending++;
-  G.lvCd = LV_PAUSA;
+  G.lvCd = G.modo.pausaLv;
   G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 190, t: 0, dur: .5, c: '#6ff2c4' });
 }
 

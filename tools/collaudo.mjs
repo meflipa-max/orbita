@@ -1622,45 +1622,64 @@ sez('un livello per volta, con un po’ di partita in mezzo');
   G.pending = 0;
   O.step(1 / 60);
   ok(G.level === 21, 'nemmeno il fotogramma dopo: in mezzo ci va della partita');
-  /* ── dieci secondi, non uno ──
+  /* ── venti secondi, non uno ──
      La pausa era 1,2 secondi: «in un minuto dieci schermate che mi
      propongono che il nucleo cresce». Un secondo di partita fra due carte
      non e' un momento, e' la stessa pila consegnata a rate. Misurato sul
      banco il minuto peggiore — non la media — di una corsa: 5 livelli in
      Corsa, 6 nell'Incursione, 8-10 con l'Avidita' comprata e le gemme
      lasciate indietro, a grappoli di quattro o cinque in pochi secondi.
-     Con dieci secondi di pausa non possono essere piu' di sei, e sono tre
-     o quattro.
+     Il primo valore, dieci secondi, ha avuto la stessa risposta («anche una
+     ogni dieci non e' troppo?»), e rendere i livelli piu' cari non e' una
+     leva: triplicando il costo una Corsa perde solo un terzo dei livelli,
+     perche' l'esperienza viene dalle uccisioni e le uccisioni dalla build.
+     Quindi venti secondi nella Corsa — mai piu' di tre al minuto — e dodici
+     nell'Incursione, che comprime tutto in otto minuti (vedi MODI).
      Rimettendo 1,2 la riga qui sotto conta il livello dopo un secondo e
-     mezzo, e quella successiva ne conta piu' di sette in un minuto.     */
+     mezzo, e quella successiva ne conta otto in un minuto.              */
+  ok(O.MODI.every(m => m.pausaLv >= 10), 'ogni formato dichiara la sua pausa: ' + O.MODI.map(m => m.n + ' ' + m.pausaLv + 's').join(', '));
   for (let i = 0; i < 90; i++) O.step(1 / 60);
   ok(G.level === 21, 'un secondo e mezzo dopo ancora niente: non e’ un momento, e’ una rata');
   let quando = 0;
-  for (let i = 0; i < 60 * 12; i++) { O.step(1 / 60); if (G.pending > 0) { quando = (i + 90) / 60; break; } }
-  ok(G.level === 22 && G.pending === 1 && quando >= 9.5 && quando <= 10.5,
-     'poi arriva, uno solo, dopo dieci secondi di partita (livello ' + G.level + ', a ' + quando.toFixed(1) + 's)');
+  for (let i = 0; i < 60 * 22; i++) { O.step(1 / 60); if (G.pending > 0) { quando = (i + 90) / 60; break; } }
+  ok(G.level === 22 && G.pending === 1 && quando >= 19.5 && quando <= 20.5,
+     'poi arriva, uno solo, dopo venti secondi di partita (livello ' + G.level + ', a ' + quando.toFixed(1) + 's)');
   /* e il conto torna: niente esperienza sparita per strada */
   const speso = 2024 + 2248;
   ok(Math.abs(G.xp - (7000 - speso)) < 2, 'e l’esperienza spesa e’ esattamente quella dei due livelli');
-  /* una barra che copre sei livelli li consegna a uno ogni dieci secondi:
-     in un minuto di partita non piu' di sette (il primo subito) */
+  /* una barra che copre otto livelli li consegna a uno ogni venti secondi:
+     in un minuto di partita tre (il primo subito) */
   G.pending = 0; G.lvCd = 0; G.xp = 30000; G.level = 22; G.xpNeed = 2248;
   let carte = 0;
   for (let i = 0; i < 60 * 60; i++) { O.step(1 / 60); if (G.pending > 0) { carte++; G.pending = 0; } }
-  ok(carte >= 6 && carte <= 7, 'trentamila punti in barra: ' + carte + ' carte in un minuto, non dieci');
-  ok(O.livelliInAttesa() >= 2, 'e il chip del livello sa quanti ne aspettano ancora: +' + O.livelliInAttesa());
-  /* e la schermata delle carte lo dice: chi la rivede dieci secondi dopo
+  ok(carte === 3, 'trentamila punti in barra: ' + carte + ' carte in un minuto, non dieci');
+  ok(O.livelliInAttesa() >= 4, 'e il chip del livello sa quanti ne aspettano ancora: +' + O.livelliInAttesa());
+  /* e la schermata delle carte lo dice: chi la rivede venti secondi dopo
      deve sapere che era previsto */
   G.level = 21; G.xp = 2248 + 2741 + 100; G.xpNeed = 2248; G.pending = 1; G.chests = 0;
   O.UI.levelup();
   const occ = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
-  ok(/Livello 21 · altri 2 in arrivo, uno ogni 10 s/.test(occ), 'e la carta dice quanti ne arrivano e ogni quanto: «' + occ + '»');
+  ok(/Livello 21 · altri 2 in arrivo, uno ogni 20 s/.test(occ), 'e la carta dice quanti ne arrivano e ogni quanto: «' + occ + '»');
   G.xp = 2300; O.UI.levelup();
   const occ1 = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
-  ok(/un altro fra 10 s/.test(occ1), 'al singolare quando e’ uno: «' + occ1 + '»');
+  ok(/un altro fra 20 s/.test(occ1), 'al singolare quando e’ uno: «' + occ1 + '»');
   G.xp = 100; O.UI.levelup();
   const occ0 = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
   ok(occ0 === 'Livello 21', 'e niente quando non ne aspetta nessuno: «' + occ0 + '»');
+  G.pending = 0; O.UI.close && O.UI.close();
+  /* l'Incursione ha la sua pausa, piu' corta: comprime tutto in otto minuti */
+  O.reset('vega', 940, 'incursione', false); G.state = 'play';
+  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.chests = 0; G.lvCd = 0;
+  G.gems.push({ x: G.p.x, y: G.p.y, v: 7000 / P.xpMul, k: 0, t: 1, vx: 0, vy: 0, big: 1 });
+  for (let i = 0; i < 30; i++) O.step(1 / 60);
+  G.pending = 0;
+  let quandoInc = 0;
+  for (let i = 0; i < 60 * 22; i++) { O.step(1 / 60); if (G.pending > 0) { quandoInc = i / 60; break; } }
+  ok(G.level === 22 && quandoInc >= 11.5 && quandoInc <= 12.5,
+     'nell’Incursione il livello dopo arriva a dodici secondi, non venti (a ' + quandoInc.toFixed(1) + 's)');
+  O.UI.levelup();
+  const occI = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
+  ok(/fra 12 s|ogni 12 s/.test(occI), 'e la carta lo dice con il numero del formato: «' + occI + '»');
   G.pending = 0; O.UI.close && O.UI.close();
 }
 

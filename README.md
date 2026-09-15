@@ -261,7 +261,8 @@ cui il gioco chiede la sua unica decisione.
 
 Ora un livello alla volta, e in mezzo un po' di partita. **L'esperienza in eccesso non si perde**:
 resta nella barra — che si vede piena e pulsa, perché una barra piena e ferma si legge come un
-inceppamento — e il livello dopo arriva dopo `LV_PAUSA` secondi di **gioco vero**. La pausa scorre
+inceppamento — e il livello dopo arriva dopo `pausaLv` secondi di **gioco vero** (sta in `MODI`,
+perché è diversa per formato: 20 nella Corsa, 12 nell'Incursione). La pausa scorre
 solo giocando, e la schermata delle carte ferma il tempo: fra un livello e il successivo c'è
 sempre partita, non un altro pannello. Un livello non parte nemmeno se c'è già una carta in attesa,
 quindi uno scrigno raccolto un istante prima non diventa una pila.
@@ -293,11 +294,18 @@ dieci coppie a meno di sei secondi in un'Incursione da venti carte.
 
 Le cause erano due, e una sola non basta.
 
-1. **La pausa.** È un tetto al ritmo, ma è un tetto vero solo se è lunga: `LV_PAUSA` passa da 1,2 a
-   **10 secondi**. Più di sei livelli al minuto non possono arrivare; in pratica sono tre o quattro.
-   Non di più, perché l'Incursione consegna un livello ogni quindici secondi *per formato*: a
-   sedici secondi la barra resta piena e i livelli arriverebbero dall'orologio invece che dalle
-   uccisioni.
+1. **La pausa.** È un tetto al ritmo, ma è un tetto vero solo se è lunga. Il primo valore, dieci
+   secondi, ha avuto la stessa risposta: «anche una ogni dieci secondi non è decisamente troppo?».
+   Ed è l'**unica** leva che garantisce qualcosa: rendere i livelli più cari non funziona. Misurato
+   su tre semi, *triplicando* il costo di ogni livello una Corsa passa da ~30 a ~21 livelli, perché
+   l'esperienza viene dalle uccisioni, le uccisioni dalla build e il direttore riadatta i nemici —
+   un circuito che si compensa da solo — e la variabilità fra un seme e l'altro (16-27 livelli con
+   la stessa curva) è più grande dell'effetto. Quindi la pausa, e **diversa per formato** (`pausaLv`
+   in `MODI`): **20 secondi nella Corsa** — mai più di tre livelli al minuto, che è il suo ritmo
+   naturale nei minuti pieni — e **12 nell'Incursione**, che comprime tutto in otto minuti e consegna
+   un livello ogni quindici secondi per costruzione: con venti anche lì la barra resterebbe piena
+   quasi sempre, i livelli arriverebbero dall'orologio invece che dalle uccisioni, e Sapienza, Nadir
+   e Avidità non conterebbero più niente.
 2. **La banca.** Le gemme lontane si fondono in poche gemme grosse, e quelle tenevano *tutto* quello
    che restava indietro, per sempre. Misurato: il **79%** dell'esperienza di una Corsa entra da lì,
    e una gemma sola arrivava a valere quattro o cinque livelli consegnati in un secondo — e con la
@@ -315,25 +323,27 @@ Dopo, stessi semi e stesso bot:
 
 ```
                                                    minuto peggiore  a meno di 6s  catena (<4s)  entrata max/1s  livello finale
-Corsa, bot                                                4              0             1         1,4 livelli     29 → 30
-Incursione, bot                                           6              0             1         1,5 livelli     19 → 22
-Incursione, lascia le gemme e torna a prenderle           6              0             1         1,2 livelli     21 → 19
-…con l'Avidità comprata al massimo (+32% esperienza)      6              0             1         2,5 livelli     21 → 23
+Corsa, bot                                                3              0             1         1,5 livelli     29 → 23
+Incursione, bot                                           5              0             1         2,3 livelli     19 → 27
+Incursione, lascia le gemme e torna a prenderle           5              0             1         1,4 livelli     21 → 19
+…con l'Avidità comprata al massimo (+32% esperienza)      5              0             1         2,5 livelli     21 → 23
 ```
 
-Nessuna catena: due livelli non arrivano mai a meno di dieci secondi l'uno dall'altro, per
-costruzione, e il minuto peggiore non supera il tetto della pausa. Il livello finale non cambia
-(29 → 30 nella Corsa): il tetto della banca toglie i lumpi, non la crescita — quello che una gemma
-grossa teneva oltre il livello e mezzo era esperienza che arrivava tutta insieme, non esperienza in
-più. L'Incursione resta fitta nei primi minuti — quattro carte al minuto — ma è il formato: un
-livello ogni quindici secondi *per costruzione*, e la manopola è `xp` in `MODI`, non la pausa.
-L'entrata da 2,5 livelli che resta è al secondo minuto, quando un livello costa quaranta punti:
-sono le gemme *vicine*, che non hanno tetto, ed è la pausa a consegnarle una per volta.
+Nessuna catena: due livelli non arrivano mai a meno di venti secondi l'uno dall'altro nella Corsa
+(dodici nell'Incursione), per costruzione, e il minuto peggiore è il tetto della pausa. La Corsa
+minuto per minuto legge `2 3 2 1 2 0 2 1 0 2 1 2 1 0 0 2 0 1 0`: mai più di tre, quasi sempre uno o
+due. Il livello finale della Corsa scende (29 → 23), perché i livelli rimandati nei minuti pieni
+sono build in meno nei minuti dopo, quindi meno uccisioni e meno esperienza: è il prezzo del tetto,
+ed è quello che si chiedeva. La scala delle ascensioni non si muove — rimisurata in Quiete, quattro
+semi: Corsa 4/4, 4/4, 0/4, 0/4 e Incursione 4/4, 4/4, 4/4, 1/4, contro 4/4, 4/4, 0/4, 0/4 e
+4/4, 4/4, 2/4, 0/4 di prima. L'entrata da 2,5 livelli che resta è al secondo minuto, quando un
+livello costa quaranta punti: sono le gemme *vicine*, che non hanno tetto, ed è la pausa a
+consegnarle una per volta.
 
 Siccome adesso la barra può restare piena per un po', lo dice in due posti: il chip del livello
 mostra **+N** (i livelli già pagati e non ancora consegnati, che scende a ogni carta), e la
-schermata delle carte scrive *«Livello 21 · altri 2 in arrivo, uno ogni 10 s»* — chi la rivede
-dieci secondi dopo deve sapere che era previsto.
+schermata delle carte scrive *«Livello 21 · altri 2 in arrivo, uno ogni 20 s»* — chi la rivede
+venti secondi dopo deve sapere che era previsto.
 
 ### Quanto cresce il nucleo, e da dove
 
@@ -1464,7 +1474,8 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `G.eliteT` | `03-systems.js` → `updateSpawns` | ogni quanto ne arriva un altro |
 | `rincorsa` | `03-systems.js` → `bossAI` | elastico del boss: accelera quanto più resta indietro |
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
-| `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
+| `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), quanta partita come minimo fra un livello e l'altro (`pausaLv`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
+| `BANCA_MAX` | `01-data.js` | quanti livelli valgono, insieme, le gemme lontane fuse: il tetto ai lumpi |
 | `CONGIUNZIONI` | `01-data.js` | le undici regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa quanto tre delle altre |
 | `EVENTI` | `03-systems.js` | i cinque eventi d'arena, e il ritmo con cui si aprono (`G.evT`) |
 | `CATENA_BASE` | `01-data.js` | quante rune in fila accendono un Risveglio; `catenaDi`, `catenaRichiesta` e `gradoCatena` in `02-engine.js` sono gli unici tre posti che lo applicano |

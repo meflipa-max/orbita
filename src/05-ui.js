@@ -1349,14 +1349,14 @@ const UI = {
     const lvCarte = pila - scrigni;
     const lvQui = Math.max(1, G.level - lvCarte + 1);
     const altre = Math.max(0, pila - 1);
-    /* I livelli gia' pagati e non ancora consegnati (vedi LV_PAUSA): non sono
-       una pila — arrivano uno ogni dieci secondi di partita — ma chi legge
-       «Livello 21» e dieci secondi dopo rivede questa schermata deve sapere
-       che era previsto, e quanti ne restano. Sulla carta di uno scrigno non
-       si dice: quella non e' un livello. */
+    /* I livelli gia' pagati e non ancora consegnati (vedi `pausaLv` in MODI):
+       non sono una pila — arrivano uno ogni venti secondi di partita, dodici
+       nell'Incursione — ma chi legge «Livello 21» e venti secondi dopo rivede
+       questa schermata deve sapere che era previsto, e quanti ne restano.
+       Sulla carta di uno scrigno non si dice: quella non e' un livello. */
     const inArrivo = (!chest && !altre) ? livelliInAttesa() : 0;
-    const arrivo = !inArrivo ? '' : inArrivo === 1 ? ' · un altro fra ' + LV_PAUSA + ' s'
-      : ' · altri ' + inArrivo + ' in arrivo, uno ogni ' + LV_PAUSA + ' s';
+    const arrivo = !inArrivo ? '' : inArrivo === 1 ? ' · un altro fra ' + G.modo.pausaLv + ' s'
+      : ' · altri ' + inArrivo + ' in arrivo, uno ogni ' + G.modo.pausaLv + ' s';
     /* Ventaglio: quattro carte invece di tre, ma solo nei primi tre livelli.
        È lì che la scelta conta di più — decide le prime due catene — ed è lì
        che un pescato brutto costa una partita intera. Dopo tornano tre: una

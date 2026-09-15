@@ -575,6 +575,7 @@ const BOSSES = [
 ];
 const RUN_LEN = 1200; /* 20 minuti: la Corsa. L'Incursione dura MODI[1].len */
 
+
 /* Chi arriva, quando, e con che pattern.
    Cinque guardiani sempre nello stesso ordine agli stessi secondi erano
    metà del motivo per cui la partita 2 era il copione della partita 1.
@@ -782,9 +783,10 @@ const SFIDE = [
    chiede la sua unica decisione.
    Adesso un livello alla volta, e in mezzo un po' di partita: l'esperienza in
    eccesso NON si perde — resta nella barra, che si vede piena — e il livello
-   dopo arriva dopo LV_PAUSA secondi di gioco vero. La pausa scorre solo
-   giocando: la schermata delle carte ferma il tempo, quindi fra un livello e
-   il successivo c'e' sempre del gioco, non un altro pannello.
+   dopo arriva dopo `pausaLv` secondi di gioco vero (sta in MODI, perche' e'
+   diversa per formato). La pausa scorre solo giocando: la schermata delle
+   carte ferma il tempo, quindi fra un livello e il successivo c'e' sempre
+   del gioco, non un altro pannello.
    ── quanto lunga, la pausa ──
    Era 1,2 secondi, e non bastava: «in un minuto dieci schermate che mi
    propongono che il nucleo cresce». Un secondo di partita fra due carte non
@@ -793,13 +795,23 @@ const SFIDE = [
    rassicurante: 5 livelli in Corsa, 6 nell'Incursione, 8 con l'Avidita'
    comprata e le gemme lasciate indietro per tornare a prenderle dopo, 10
    aggiungendoci la Sapienza — e a grappoli: quattro o cinque livelli a
-   meno di quattro secondi l'uno dall'altro. La pausa e' un tetto al
-   ritmo, ed e' un tetto vero solo se e' lunga: con dieci secondi non
-   possono essere piu' di sei al minuto, e in pratica sono tre o quattro.
-   Non piu' lunga, perche' l'Incursione consegna un livello ogni quindici
-   secondi per formato: a sedici la barra resta piena e i livelli arrivano
-   dall'orologio invece che dalle uccisioni. */
-const LV_PAUSA = 10;
+   meno di quattro secondi l'uno dall'altro.
+   La pausa e' un tetto al ritmo, ed e' un tetto vero solo se e' lunga. Il
+   primo valore, dieci secondi, ha avuto la stessa risposta: «anche una
+   ogni dieci secondi non e' decisamente troppo?». Ed e' l'UNICA leva che
+   garantisce qualcosa: rendere i livelli piu' cari non funziona — misurato,
+   TRIPLICANDO il costo di ogni livello una Corsa passa da ~30 a ~21 livelli,
+   perche' l'esperienza viene dalle uccisioni, le uccisioni dalla build e il
+   direttore riadatta i nemici, un circuito che si compensa da solo; e la
+   variabilita' fra un seme e l'altro (16-27 livelli con la stessa curva) e'
+   piu' grande dell'effetto.
+   Quindi la pausa, e diversa per formato: VENTI secondi nella Corsa — mai
+   piu' di tre livelli al minuto, che e' il suo ritmo naturale nei minuti
+   pieni — e DODICI nell'Incursione, che comprime tutto in otto minuti e
+   consegna un livello ogni quindici secondi per costruzione: con venti
+   anche li' la barra resterebbe piena quasi sempre, i livelli arriverebbero
+   dall'orologio invece che dalle uccisioni e Sapienza, Nadir e Avidita' non
+   conterebbero piu' niente. */
 
 /* ── il tetto della banca ────────────────────────────────────────
    Le gemme lontane si fondono in poche gemme grosse (vedi updateGems), e
@@ -900,15 +912,17 @@ function ascMods(lv) {
      onda   moltiplicatore del tempo per ondate e ritmo di comparsa
      tempra moltiplicatore del tempo per la crescita di vita dei nemici
      xp     quanto più in fretta sali di livello
+     pausaLv  quanta partita, come minimo, fra un livello e il successivo:
+              e' il tetto al ritmo delle carte (vedi «un livello per volta»)
      guardiani  quale slot di BOSSES, a che secondo, con quanta della sua vita */
 const MODI = [
   { id: 'corsa', n: 'Corsa', d: '20 minuti · cinque guardiani',
     sub: 'Il formato pieno: cinque guardiani, poi modalità senza fine.',
-    len: 1200, onda: 1, tempra: 1, xp: 1,
+    len: 1200, onda: 1, tempra: 1, xp: 1, pausaLv: 20,
     guardiani: null },
   { id: 'incursione', n: 'Incursione', d: '8 minuti · tre guardiani',
     sub: 'Una partita intera, vittoria compresa, nel tempo di un caffè.',
-    len: 480, onda: 2.15, tempra: 1.65, xp: 1.85, paga: .8,
+    len: 480, onda: 2.15, tempra: 1.65, xp: 1.85, paga: .8, pausaLv: 12,
     guardiani: [{ i: 0, t: 100, hp: .85 }, { i: 2, t: 245, hp: .5 }, { i: 4, t: 410, hp: .36 }] }
 ];
 const modoDi = id => MODI.find(m => m.id === id) || MODI[0];
@@ -1193,7 +1207,7 @@ function lessico() {
       ['Perigeo', 'L’altro modo di spendere <b>la stessa carica</b>: l’anello <b>si chiude</b> addosso a te e diventa un muro che spegne i colpi e respinge la folla — non i guardiani. Mentre è chiuso <b>non spari</b>, e il danno non lo fa: lo <b>accumula</b>. Riaprendosi restituisce tutto insieme quello che ha tenuto, quindi premerlo tardi rende più che premerlo per paura.'],
       ['Tenuti', 'Il numero sul pulsante del Perigeo: quanti colpi e quanti nemici l’anello ha tenuto fuori finora. È quello che decide l’onda del rilascio.'],
       ['Raffica', 'Stai uccidendo molto in fretta. È solo un contatore: dice il ritmo, non aggiunge regole.'],
-      ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere — <b>una ogni ' + LV_PAUSA + ' secondi</b> al massimo: quelle già pagate aspettano, ed è il <b>+N</b> accanto al livello.'],
+      ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere — al massimo <b>una ogni ' + modoDi('corsa').pausaLv + ' secondi nella Corsa, ' + modoDi('incursione').pausaLv + ' nell’Incursione</b>: quelle già pagate aspettano, ed è il <b>+N</b> accanto al livello.'],
       ['Gemma grossa', 'Le schegge che lasci <b>lontane</b> si fondono in poche gemme grosse, una per direzione. Insieme valgono <b>al massimo ' + String(BANCA_MAX).replace('.', ',') + ' livelli</b>: il resto si spegne. Quelle vicine, che raccogli combattendo, non hanno tetto.'],
       ['Frammenti', 'La valuta che <b>resta fra una partita e l’altra</b>. Si spende nell’Osservatorio.'],
       ['Scrigno', 'Una carta in più, subito. <b>La lascia solo un guardiano abbattuto</b>: è l’unico traguardo che vale una schermata. Elite ed eventi d’arena pagano invece in esperienza e frammenti.'],
