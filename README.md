@@ -107,6 +107,14 @@ e dalla carica del Culmine per la stessa ragione; il contatore del danno era l'u
 cui contava. Adesso vale un'invariante: **ogni punto di DANNO ha la sua riga**, misurato a zero
 su quattro corse da venti minuti.
 
+La **pausa** dice cosa fanno i Risvegli che hai acceso. Il nome e il grado si leggono
+dappertutto — la targhetta in basso a sinistra, la riga sotto le carte, l'anello — ma *cosa fa*
+il grado che hai adesso lo diceva un avviso di due secondi nell'istante in cui si è acceso, e
+poi più niente: la guida sta nel menu, mostra solo il primo grado, e dalla pausa non ci si
+arriva. Chi era a «Torpore II» non aveva nessun modo di sapere cosa volesse dire — ed è la
+regola su cui è costruito tutto il gioco. Il grado scritto è quello **effettivo**: durante il
+Culmine ognuno sale di uno, e leggere la riga del grado sotto sarebbe una bugia.
+
 ### Trasformazioni
 
 Una runa portata a livello 6 **mentre risuona da entrambi i lati e il suo elemento è
@@ -897,7 +905,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 150 controlli sul gioco vero, headless
+npm run collaudo       # 156 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna

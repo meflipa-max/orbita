@@ -864,5 +864,37 @@ sez('l’anello dice di chi sta parlando');
   O.UI.sel = -1;
 }
 
+sez('la pausa dice cosa fanno i Risvegli accesi');
+/* Il Risveglio e' la regola su cui e' costruito tutto il gioco, e il suo
+   nome col grado si legge dappertutto: la targhetta in basso a sinistra, la
+   riga sotto le carte, l'anello. Ma COSA FA il grado che hai adesso lo
+   diceva un avviso di due secondi nell'istante in cui si e' acceso, e poi
+   piu' niente — la guida sta nel menu, mostra solo il primo grado, e dalla
+   pausa non ci si arriva. Chi era a «Torpore II» non aveva nessun modo di
+   sapere cosa volesse dire.                                              */
+{
+  O.reset('vega', 71, 'corsa', false); G.state = 'play'; G.slots = 6;
+  const mk = (id, lv) => ({ id, el: O.RUNES[id].el, lv, cd: 0, res: 0, st: {} });
+  /* quattro di Fuoco in fila: Ardore di secondo grado */
+  G.ring = ['scintilla', 'pira', 'nova', 'cometa', null, null].map(x => x && mk(x, 4));
+  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+  O.recalcRing(false);
+  ok(G.awaken.fuoco === 2, 'quattro rune di Fuoco in fila: Ardore II');
+  O.UI.pause();
+  const h = O.schermo();
+  const g2 = O.EL.fuoco.awd[1];
+  ok(h.indexOf(g2) >= 0, 'la pausa scrive cosa fa il grado II: «' + g2 + '»');
+  ok(h.indexOf(O.EL.fuoco.awd[0]) < 0, 'e non quella del grado I');
+  /* col Culmine acceso il grado sale davvero: leggere quello sotto sarebbe
+     una bugia, ed e' lo stesso grado che la targhetta in campo mostra */
+  G.charge = 1;
+  ok(O.attivaCulmine(), 'il Culmine si accende');
+  O.UI.pause();
+  const h2 = O.schermo();
+  ok(h2.indexOf(O.EL.fuoco.awd[2]) >= 0, 'col Culmine la pausa passa al grado III');
+  ok(/culmine/i.test(h2), 'e dice che e’ il Culmine a portarcelo');
+  G.culm = 0;
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

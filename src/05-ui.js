@@ -1008,6 +1008,31 @@ const UI = {
     return parts.length ? '<br><span style="color:#6a6199">Verso il Risveglio: </span>' + parts.join(' · ') : '';
   },
 
+  /* ── cosa fanno i Risvegli che hai acceso ──────────────────────
+     Il nome e il grado si leggono dappertutto: la targhetta in basso a
+     sinistra, la riga sotto le carte, l'anello. COSA FA il grado che hai
+     adesso lo diceva un avviso di due secondi nell'istante in cui si e'
+     acceso, e poi piu' niente. La guida sta nel menu, mostra solo il primo
+     grado, e dalla pausa non ci si arriva: un giocatore a «Torpore II» non
+     aveva nessun modo di sapere che vuol dire — e il Risveglio e' la regola
+     su cui e' costruito tutto il gioco.
+     Sta in pausa e non nell'HUD perche' e' una cosa che si legge quando ci
+     si ferma a pensare, e l'HUD deve restare la cosa piu' sgombra dello
+     schermo. Il grado e' quello EFFETTIVO: durante il Culmine ognuno sale
+     di uno, e leggere la riga del grado sotto sarebbe una bugia. */
+  risvegliBlocco() {
+    const righe = [];
+    for (const e of ELKEYS) {
+      const base = G.awaken[e]; if (!base) continue;
+      const t = Math.max(base, G.awk[e] | 0);
+      righe.push('<div class="awrow" style="--c:' + EL[e].c + '">' +
+        '<span class="awn">' + EL[e].aw + '</span>' +
+        '<span class="awe">grado ' + 'I'.repeat(t) + (t > base ? ' · culmine' : '') + '</span>' +
+        '<span class="awd">' + EL[e].awd[t - 1] + '</span></div>');
+    }
+    return righe.length ? '<div class="awlist" style="max-width:360px;margin:10px auto 2px">' + righe.join('') + '</div>' : '';
+  },
+
   /* Il Risveglio a schermo intero. Era un avviso in alto: il momento attorno
      a cui è costruito tutto il gioco veniva trattato come la raccolta di una
      gemma. */
@@ -1281,7 +1306,8 @@ const UI = {
     this.open('pause',
       '<div class="eyebrow">Pausa</div><h2 class="ttl">' + fmtTime(G.t) + '</h2>' +
       this.ringHTML(false) +
-      '<div class="hint">' + this.awakeLine() + '</div>' +
+      '<div class="hint">' + this.awakeLine() + this.catenaLine() + '</div>' +
+      this.risvegliBlocco() +
       ((G.cong.id !== 'quiete' || G.ascLv > 0)
         ? '<div style="display:flex;flex-direction:column;gap:8px;max-width:340px;margin:0 auto 4px">' +
           this.ascCard(G.ascLv) +
