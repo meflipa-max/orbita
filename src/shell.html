@@ -102,8 +102,16 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 .iconbtn:hover,.iconbtn:focus-visible{color:#fff;border-color:var(--line-hot);background:rgba(40,32,86,.8)}
 .iconbtn svg{width:19px;height:19px}
 
-/* risvegli attivi */
-#awake{position:absolute;left:12px;bottom:calc(12px + var(--sab));display:flex;gap:6px;flex-wrap:wrap;max-width:60vw}
+/* risvegli attivi.
+   Stavano nell'angolo in basso a sinistra da prima che ci arrivasse il
+   Perigeo: il suo pulsante (74px, a 14px dal bordo) ci si e' appoggiato
+   sopra e le copriva — «Ardore» spariva dietro al pulsante, e di «Gelo 2/3»
+   restava mezza targhetta. Adesso partono dove il pulsante finisce, sulla
+   stessa linea di base, e la larghezza lascia libero anche l'angolo del
+   Culmine: sul telefono le due colonne dei pulsanti si toccano quasi. */
+#awake{position:absolute;left:calc(98px + env(safe-area-inset-left,0px));bottom:calc(18px + var(--sab));
+  display:flex;gap:6px;flex-wrap:wrap;
+  max-width:calc(100vw - 196px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
 .awchip{display:flex;align-items:center;gap:5px;padding:4px 7px;--cut:5px;
   font:600 10px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
   background:rgba(12,10,30,.78);border:1px solid currentColor;backdrop-filter:blur(4px);

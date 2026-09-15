@@ -1775,5 +1775,24 @@ sez('i due pulsanti d’azione si premono alzando il dito');
      'e un tocco che si muove diventa la levetta invece di perdersi');
 }
 
+sez('le targhette dei Risvegli non stanno sotto al Perigeo');
+/* Le targhette stavano nell'angolo in basso a sinistra da prima che ci
+   arrivasse il pulsante del Perigeo, che ci si e' appoggiato sopra: «Ardore»
+   spariva dietro al pulsante e di «Gelo 2/3» restava mezza targhetta. Il
+   banco non fa layout, quindi il controllo legge i numeri dal foglio di
+   stile: le targhette devono cominciare dove il pulsante finisce, e non
+   allargarsi fin dentro l'angolo del Culmine.                             */
+{
+  const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shell.html'), 'utf8');
+  const regola = id => { const m = css.match(new RegExp('\\n#' + id + '\\{([^}]*)\\}')); return m ? m[1] : ''; };
+  const px = (s, k) => { const m = s.match(new RegExp(k + ':(?:calc\\()?(\\d+)px')); return m ? +m[1] : NaN; };
+  const peri = regola('peri'), aw = regola('awake');
+  const largo = +(peri.match(/width:(\d+)px/) || [])[1];
+  ok(px(peri, 'left') + largo <= px(aw, 'left'),
+     'cominciano a ' + px(aw, 'left') + 'px, e il pulsante finisce a ' + (px(peri, 'left') + largo));
+  ok(px(aw, 'bottom') === px(peri, 'bottom'), 'sulla stessa linea di base del pulsante');
+  ok(/max-width:calc\(100vw - 196px/.test(aw), 'e la riga lascia libero anche l’angolo del Culmine');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
