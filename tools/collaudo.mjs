@@ -40,6 +40,25 @@ sez('ogni bottone ha il suo gestore');
   ok(morti.length === 0, casi.size + ' gestori, nessuno senza bottone' + (morti.length ? ': ' + morti.join(' ') : ''));
 }
 
+sez('ogni carta che si sa disegnare si sa anche pescare');
+/* Stessa famiglia del controllo qui sopra, e lo stesso difetto: la carta
+   «120 frammenti» era disegnata da cardHTML, applicata da applyChoice e
+   cercata in tre punti come «la carta meno preziosa da sacrificare», ma
+   nessuno la metteva piu' nel mazzo da quando l'Ascesi ne ha preso il
+   posto come pavimento della pool. Misurato: zero su dodicimila carte
+   pescate. Codice che finge di essere una funzione del gioco e' peggio di
+   codice morto, perche' chi lo legge ci costruisce sopra.               */
+{
+  const ui = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', '05-ui.js'), 'utf8');
+  const gestiti = new Set([...ui.matchAll(/[co]\.t === '([a-z]+)'/g)].map(m => m[1]));
+  const pescabili = new Set([...ui.matchAll(/\{ t: '([a-z]+)'/g)].map(m => m[1]));
+  const fantasmi = [...gestiti].filter(x => !pescabili.has(x));
+  ok(fantasmi.length === 0,
+     gestiti.size + ' tipi di carta, nessuno che il mazzo non possa produrre' +
+     (fantasmi.length ? ': ' + fantasmi.join(' ') : ''));
+  ok(pescabili.size >= 6, 'e il mazzo ne produce ' + pescabili.size);
+}
+
 sez('la corsa in sospeso');
 /* Su un telefono una partita da venti minuti finisce quando arriva una
    notifica, non quando decidi tu: perderla e' il modo piu' rapido di far
@@ -937,6 +956,82 @@ sez('la carta di potenziamento dice il gradino vero');
   const p1 = O.UI.upgradeText('scintilla', 1).match(/\+(\d+)% danno/);
   const p7 = O.UI.upgradeText('scintilla', 7).match(/\+(\d+)% danno/);
   ok(p1 && p7 && +p1[1] > +p7[1] + 20, 'il primo livello rende molto piu’ dell’ultimo (' + p1[1] + '% contro ' + p7[1] + '%)');
+}
+
+sez('il Presagio anticipa il primo elite invece di ritardarlo');
+/* Il primo elite e' il primo scrigno, cioe' la prima carta in piu', e il
+   Presagio costa 160 frammenti per farlo arrivare prima. Il numero pero'
+   stava scritto a mano in tre posti: la base in due (lo stato iniziale e
+   resetRun) e quello del Presagio in un terzo, fisso a 60. Quando la base
+   e' scesa a 26 — «l'apertura era troppo tranquilla» — quel 60 e' rimasto
+   li', quindi il potenziamento RITARDAVA il primo elite di trentaquattro
+   secondi: si pagava per peggiorare, e la scheda del negozio prometteva
+   una cosa che il gioco faceva gia' da solo.                            */
+{
+  const primoElite = meta => {
+    O.importSave(b64({ shards: 0, meta }));
+    S().visti = TUTTI_I_BRIEFING();
+    O.reset('vega', 4321, 'corsa', false); G.state = 'play';
+    for (let i = 0; i < 60 * 150; i++) {
+      O.step(1 / 60); P.hp = P.maxHp; G.pending = 0;
+      if (G.enemies.some(e => e.elite)) return G.t;
+    }
+    return 1e9;
+  };
+  const senza = primoElite({}), con = primoElite({ presagio: 1 });
+  ok(senza < 60, 'senza Presagio il primo elite arriva al secondo ' + senza.toFixed(0));
+  ok(con < senza, 'col Presagio arriva PRIMA (' + con.toFixed(0) + 's contro ' + senza.toFixed(0) + 's)');
+  /* e la riga del negozio non puo' piu' invecchiare da sola: i due numeri
+     li scrive la stessa costante che il gioco usa */
+  O.UI.hub('frammenti');
+  ok(new RegExp(con.toFixed(0) + 's invece di ' + senza.toFixed(0)).test(O.schermo()),
+     'e la scheda del negozio dice i due numeri veri (' + con.toFixed(0) + 's invece di ' + senza.toFixed(0) + ')');
+}
+
+sez('Lyra sale un grado alla volta come tutti');
+/* «Ogni runa conta doppia per le catene» era implementato raddoppiando la
+   LUNGHEZZA della catena e lasciando i gradi a un passo di uno: con due
+   rune Lyra saltava il primo grado e prendeva direttamente il SECONDO, e
+   con tre arrivava al TERZO — quello che a chiunque altro ne costa cinque.
+   Il primo grado, per lei, non esisteva proprio. La regola scritta nel
+   commento del codice, nella guida e nel README e' sempre stata «due
+   bastano per un Risveglio, tre per il secondo grado»: era l'unico posto
+   che contava — il gioco — a raccontarne un'altra.                      */
+{
+  const gradi = (char, n) => {
+    O.importSave(b64({ shards: 0, chars: ['vega', 'lyra'], char }));
+    S().visti = TUTTI_I_BRIEFING();
+    O.reset(char, 77, 'corsa', false);
+    const out = [];
+    for (let k = 1; k <= n; k++) {
+      G.ring = new Array(G.slots).fill(null);
+      for (let i = 0; i < k; i++) G.ring[i] = { id: 'scintilla', el: 'fuoco', lv: 1, cd: 0, res: 0, slot: i, st: {} };
+      O.recalcRing(false);
+      out.push(G.awaken.fuoco);
+    }
+    return out;
+  };
+  const lyra = gradi('lyra', 4), vega = gradi('vega', 5);
+  ok(G.slots === 6, 'Vega ha sei alloggiamenti');
+  ok(vega.join('') === '00123', 'e sale 0·0·I·II·III da una a cinque rune (' + vega.join('·') + ')');
+  ok(lyra.join('') === '0123', 'Lyra sale 0·I·II·III da una a quattro (' + lyra.join('·') + ')');
+  ok(lyra[1] === 1, 'due rune le accendono il PRIMO grado, non il secondo');
+  ok(lyra[2] === 2, 'tre il secondo, non il terzo');
+}
+
+sez('la guida dice la soglia che il gioco usa');
+/* Il numero della trasformazione era scritto a mano nella guida — «livello
+   6» — mentre la soglia la spostano il Crogiolo e la congiunzione Fornace,
+   e sogliaEvo() e' l'unico posto che lo sa. La scheda delle forme glielo
+   chiedeva gia', la guida no: chi aveva comprato il Crogiolo da 2600
+   frammenti leggeva quindi una soglia che il suo gioco non usava piu'. */
+{
+  O.importSave(b64({ shards: 0 }));
+  O.UI.guide();
+  ok(/<b>livello 6<\/b>/.test(O.schermo()), 'senza reliquie la guida dice livello 6');
+  O.importSave(b64({ shards: 0, reliquie: ['crogiolo'] }));
+  O.UI.guide();
+  ok(/<b>livello 5<\/b>/.test(O.schermo()), 'col Crogiolo dice livello 5, come la scheda delle forme');
 }
 
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));

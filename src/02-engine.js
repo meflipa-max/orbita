@@ -652,7 +652,7 @@ const G = {
   combo: 0, comboMax: 0, comboLv: 0, kb0: 0, kb1: 0, kbT: .5,
   /* consuntivo: quale runa ha fatto il danno, e chi ti ha ucciso */
   dmgSrc: {}, killer: null,
-  spawnAcc: 0, eliteT: 26, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
+  spawnAcc: 0, eliteT: ELITE_T, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
   starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, evUltimo: null, form: null, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2,
   /* il direttore: vedi updateSpawns. raggio = a che distanza muoiono i
@@ -789,6 +789,53 @@ function maxRun(ok, isE, n) {
   }
   return best;
 }
+
+/* ── la catena, in un posto solo ────────────────────────────────
+   Quanto e' lunga la catena di un elemento, quante rune ne servono per
+   accendere il Risveglio, e a che grado arriva. Le tre cose stavano
+   sparse: la lunghezza era scritta due volte (qui e nell'interfaccia, che
+   dice «Fuoco 2/3» e «spostala nell'alloggiamento 3»), il requisito
+   cinque volte, e il grado una sola ma con il passo sbagliato per Lyra.
+   Una regola, un posto solo: quando la stessa condizione e' scritta in
+   due punti, il secondo prima o poi racconta quella sbagliata.
+
+   `ovr` risponde a «quanto sarebbe SE nell'alloggiamento i ci fosse
+   l'elemento el» senza toccare l'anello: null vuol dire vuoto.          */
+function passoCatena() { return (G.char && G.char.rule === 'anelloCorto') ? 2 : 1; }
+/* Eco toglie una runa al requisito, ma mai sotto due: a uno ogni runa
+   isolata accenderebbe il suo Risveglio e la risonanza smetterebbe di
+   essere una decisione. */
+function catenaRichiesta() { return Math.max(2, G.asc.chain + G.cg.chain); }
+function catenaDi(el, ovr) {
+  const n = G.slots, R = G.ring;
+  const ok = new Array(n), isE = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const e = (ovr && ovr.i === i) ? ovr.el : (R[i] ? R[i].el : null);
+    ok[i] = !!e && (e === el || e === 'iride');
+    isE[i] = e === el;
+  }
+  /* Lyra: quattro alloggiamenti soli, ma ogni runa vale doppia nella
+     catena. Dentro un Nodo la catena del suo elemento conta UNA RUNA in
+     piu' — e per Lyra una runa e' due, se no il Nodo varrebbe mezza runa
+     proprio al nucleo che ne ha meno di tutti. */
+  const p = passoCatena();
+  return maxRun(ok, isE, n) * p + (G.nodo === el ? p : 0);
+}
+/* Gradi a 3 / 4 / 5 rune. Erano 3 / 5 / 7: con sei alloggiamenti il terzo
+   grado chiedeva sette rune in fila su un anello che ne tiene sei —
+   contenuto morto — e il secondo costava l'intero anello.
+   Il passo fra un grado e l'altro segue la runa, non il punteggio: con
+   Lyra, che conta doppio, un passo da uno solo faceva saltare il primo
+   grado per intero (due rune davano gia' il SECONDO) e regalava il terzo
+   a tre rune, cioe' la meta' delle cinque che serve a chiunque altro. La
+   regola scritta ovunque — nella scheda del nucleo, nella guida, nel
+   README — e' «due bastano per un Risveglio, tre per il secondo grado»:
+   adesso e' anche quella che il gioco applica. */
+function gradoCatena(run, c0) {
+  const p = passoCatena();
+  return run >= c0 + 2 * p ? 3 : run >= c0 + p ? 2 : run >= c0 ? 1 : 0;
+}
+
 function recalcRing(announce) {
   const n = G.slots, R = G.ring;
   const rule = G.char && G.char.rule;
@@ -805,27 +852,9 @@ function recalcRing(announce) {
       if (a && b && compat(a, b)) { a.res = Math.min(3, a.res + 1); b.res = Math.min(3, b.res + 1); }
     }
   }
-  const ok = new Array(n), isE = new Array(n);
+  const c0 = catenaRichiesta();
   for (const e of ELKEYS) {
-    for (let i = 0; i < n; i++) {
-      const r = R[i];
-      ok[i] = !!r && (r.el === e || r.el === 'iride');
-      isE[i] = !!r && r.el === e;
-    }
-    /* Lyra: quattro alloggiamenti soli, ma ogni runa vale doppia nella
-       catena — due rune bastano per un Risveglio, tre per il secondo grado */
-    /* dentro un Nodo, la catena del suo elemento conta una runa in più:
-       due rune adiacenti bastano ad accendere il Risveglio finché resti lì */
-    const run = maxRun(ok, isE, n) * (rule === 'anelloCorto' ? 2 : 1) + (G.nodo === e ? 1 : 0);
-    /* Eco toglie una runa al requisito, ma mai sotto due: a uno ogni runa
-       isolata accenderebbe il suo Risveglio e la risonanza smetterebbe di
-       essere una decisione. */
-    const c0 = Math.max(2, G.asc.chain + G.cg.chain);
-    /* Gradi a 3 / 4 / 5. Erano 3 / 5 / 7: con sei alloggiamenti il terzo grado
-       chiedeva sette rune in fila su un anello che ne tiene sei — contenuto
-       morto — e il secondo costava l'intero anello, cioè rinunciare a ogni
-       altra catena. */
-    const tier = run >= c0 + 2 ? 3 : run >= c0 + 1 ? 2 : run >= c0 ? 1 : 0;
+    const tier = gradoCatena(catenaDi(e), c0);
     const prev = G.awaken[e];
     G.awaken[e] = tier;
     if (tier && !G.awakeAt) G.awakeAt = G.t;
@@ -1100,8 +1129,8 @@ function _hit(e, amount, opt) {
        secondo contro le 17 di Vega, stessa build). Adesso conta un critico
        ogni .18s: il taglio non supera un quarto di secondo al secondo. */
     if (G.char.rule === 'cadenza' && G.cadT <= 0) {
-      G.cadT = .18;
-      for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - .04);
+      G.cadT = CADENZA_CD;
+      for (const rr of G.ring) if (rr) rr.cd = Math.max(0, rr.cd - CADENZA_TAGLIO);
     }
     burstPart(e.x, e.y, 4, '#fff', 190, 3, .28);
     if (G.awk.luce && G.healCd <= 0) {
