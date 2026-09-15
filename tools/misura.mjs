@@ -254,6 +254,61 @@ function bancoPerigeo() {
   console.log('\n(il bot non prende danno: qui si misura il prezzo, non quanto il Perigeo salvi)');
 }
 
+/* ── quante volte la partita si ferma ────────────────────────────
+   Ogni carta e' una schermata, e ogni schermata e' il gioco che si ferma. I
+   livelli sono la meta' del conto; l'altra meta' sono gli scrigni, e quelli
+   non li decide la curva dell'esperienza ma quattro sorgenti diverse che non
+   si parlano fra loro: gli elite (uno ogni ottanta secondi circa), i cinque
+   guardiani, e gli eventi d'arena che ne pagano uno a testa — breccia,
+   allineamento, fermata, corriere. Se la somma diventa una schermata ogni
+   quindici secondi, scegliere una carta smette di essere un momento e
+   diventa un intralcio, e le tre carte si premono senza guardarle.
+   Qui si contano davvero, una corsa intera, minuto per minuto.          */
+function bancoScrigni() {
+  for (const modo of ['corsa', 'incursione']) { console.log('— ' + modo + ' —'); unaCorsa(modo); console.log(''); }
+}
+function unaCorsa(modo) {
+  const S = O.save();
+  S.modo = modo; S.asc = S.ascSel = 0; S.runes = MAZZO_PIENO.slice();
+  S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
+  O.reset('vega', 1111, modo, false);
+  G.state = 'play';
+  const dt = 1 / 60;
+  let lv = G.level, scr = G.chests | 0;
+  let livelli = 0, scrigni = 0, pilaMax = 0;
+  const perMin = [];
+  for (let i = 0; i < 60 * 1300; i++) {
+    bot(dt); O.step(dt);
+    if (G.briefing) G.briefing = null;
+    if (G.level > lv) { const n = G.level - lv; livelli += n; segna(n, 0); lv = G.level; }
+    if ((G.chests | 0) > scr) { const n = (G.chests | 0) - scr; scrigni += n; segna(n, 1); }
+    if (G.pending > pilaMax) pilaMax = G.pending;
+    if (G.pending > 0) scegli();
+    scr = G.chests | 0;
+    G.state = 'play'; P.hp = P.maxHp;
+    if (G.victory) break;
+  }
+  function segna(n, tipo) {
+    const m = Math.floor(G.t / 60);
+    const o = perMin[m] || (perMin[m] = { l: 0, s: 0 });
+    if (tipo) o.s += n; else o.l += n;
+  }
+  const carte = livelli + scrigni;
+  console.log('corsa di ' + Math.round(G.t) + 's, livello ' + G.level + ', ' + G.kills + ' uccisioni\n');
+  console.log('  carte totali      ' + carte);
+  console.log('  di cui livelli    ' + livelli);
+  console.log('  di cui scrigni    ' + scrigni + '  (' + Math.round(scrigni / carte * 100) + '%)');
+  console.log('  guardiani abbattuti ' + G.bossKills);
+  console.log('  una schermata ogni ' + (G.t / carte).toFixed(1) + 's');
+  console.log('  pila massima      ' + pilaMax + ' carte insieme\n');
+  const mm = [];
+  for (let m = 0; m <= Math.floor(G.t / 60); m++) mm.push(perMin[m] || { l: 0, s: 0 });
+  console.log('  minuto:   ' + mm.map((o, i) => String(i).padStart(2)).join(' '));
+  console.log('  livelli:  ' + mm.map(o => String(o.l).padStart(2)).join(' '));
+  console.log('  scrigni:  ' + mm.map(o => String(o.s).padStart(2)).join(' '));
+  console.log('  insieme:  ' + mm.map(o => String(o.l + o.s).padStart(2)).join(' '));
+}
+
 const quale = process.argv[2] || 'base';
 console.log('— banco: ' + quale + ' —\n');
-({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo }[quale] || banchoBase)();
+({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo, scrigni: bancoScrigni }[quale] || banchoBase)();

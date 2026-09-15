@@ -1607,5 +1607,57 @@ sez('due livelli insieme sono due carte diverse, non la stessa due volte');
      'e le due carte di livello contano solo i livelli (' + r2.slice(1).map(r => r.split(' · ')[0]).join(', ') + ')');
 }
 
+sez('nessuna sorgente paga più di uno scrigno');
+/* Ogni scrigno e' una schermata di carte, cioe' il gioco che si ferma: sei
+   sorgenti diverse ne pagano uno — i cinque guardiani, gli elite, e quattro
+   eventi d'arena su cinque — e nessuna delle sei sa delle altre. Se una di
+   loro lo pagasse per ogni fotogramma in cui la sua condizione e' vera,
+   nella media di una corsa non si vedrebbe: si vedrebbe soltanto che «arrivano
+   troppi scrigni». Le quattro condizioni degli eventi sono vere finche'
+   l'evento esiste, quindi ognuna chiude con `G.ev = null; return;` — e questo
+   controllo e' li' per quel `return`: togliendone uno, la sua riga conta
+   decine di scrigni invece di uno.
+   Misurato su una corsa intera (`npm run misura -- scrigni`): 19 scrigni in
+   venti minuti, uno al minuto, contro 24 livelli. */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  const scrigniIn = f => {
+    O.reset('vega', 950, 'corsa', false); G.state = 'play';
+    G.drops.length = 0; G.chests = 0; G.pending = 0;
+    f();
+    /* trenta fotogrammi: se la condizione paga a ripetizione, qui si vede.
+       Gli scrigni cadono ai piedi del nucleo e vengono raccolti subito, quindi
+       il conto e' quelli raccolti PIU' quelli ancora a terra. */
+    for (let i = 0; i < 30; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; }
+    return (G.chests | 0) + G.drops.filter(d => d.k === 'chest').length;
+  };
+  /* i quattro eventi che pagano uno scrigno */
+  const breccia = scrigniIn(() => { G.ev = { k: 'breccia', x: G.p.x, y: G.p.y, t: 1, dur: 22, r: 70, preso: 0 }; });
+  ok(breccia === 1, 'la breccia raggiunta ne paga uno (' + breccia + ')');
+  const allin = scrigniIn(() => {
+    G.ev = { k: 'allineamento', t: 1, dur: 23, r: 72, presi: 3, sig: [
+      { x: G.p.x, y: G.p.y, dur: 11, preso: 1, morto: 0 },
+      { x: G.p.x, y: G.p.y, dur: 17, preso: 1, morto: 0 },
+      { x: G.p.x, y: G.p.y, dur: 23, preso: 1, morto: 0 }] };
+  });
+  ok(allin === 1, 'l’allineamento completo ne paga uno (' + allin + ')');
+  const ferm = scrigniIn(() => { G.ev = { k: 'fermata', x: G.p.x, y: G.p.y, t: 5, dur: 21, r: 168, carica: 1, acc: 0 }; });
+  ok(ferm === 1, 'la fermata tenuta ne paga uno (' + ferm + ')');
+  const cacc = scrigniIn(() => { G.ev = { k: 'caccia', t: 1, dur: 26, e: null }; });
+  ok(cacc === 1, 'il corriere abbattuto ne paga uno (' + cacc + ')');
+  /* e la marea, che non ne paga */
+  const marea = scrigniIn(() => { G.ev = { k: 'marea', t: 1, dur: 18, a: 0 }; });
+  ok(marea === 0, 'la marea non ne paga nessuno (' + marea + ')');
+  /* un elite e un guardiano: uno a testa, e non uno per colpo che lo finisce */
+  /* un elite lasciato uccidere dall'anello: uno scrigno, non uno per colpo */
+  const elite = scrigniIn(() => {
+    G.enemies.length = 0;
+    G.enemies.push({ type: 'vagante', x: G.p.x + 40, y: G.p.y, vx: 0, vy: 0, r: 13, c: '#fff', shape: 'dia',
+      hp: 1, maxHp: 30, spd: 0, dmg: 0, xp: 2, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0,
+      froze: 0, kb: 0, kbx: 0, kby: 0, elite: true, boss: null, ten: 1, dead: false });
+  });
+  ok(elite === 1, 'un elite abbattuto ne paga uno, non uno per colpo (' + elite + ')');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

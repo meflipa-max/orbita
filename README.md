@@ -239,6 +239,38 @@ un'altra», «Livello 30».
 Misurato: una gemma da settemila punti esperienza al livello 20 produce esattamente tre carte,
 e le tre schermate adesso dicono tre cose diverse.
 
+### Quante volte la partita si ferma
+
+Ogni carta è una schermata, e ogni schermata è il gioco che si ferma. Metà del conto sono i
+livelli; l'altra metà gli **scrigni**, che non li decide la curva dell'esperienza ma **sei
+sorgenti che non si parlano fra loro**: i cinque guardiani, gli elite (uno ogni ottanta secondi
+circa) e quattro eventi d'arena su cinque. `npm run misura -- scrigni` le conta tutte, una corsa
+intera, minuto per minuto.
+
+```
+— corsa —            43 carte: 24 livelli + 19 scrigni · una schermata ogni 27,5s · pila max 3
+  minuto:    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
+  livelli:   2  3  2  3  1  0  3  1  0  0  3  1  0  1  1  1  1  0  0  1
+  scrigni:   1  0  0  2  2  0  1  1  1  0  3  0  0  2  1  1  1  1  1  1
+
+— incursione —       24 carte: 18 livelli + 6 scrigni · una schermata ogni 20s · pila max 4
+  minuto:    0  1  2  3  4  5  6  7
+  livelli:   4  4  2  1  0  6  0  1
+  scrigni:   0  1  2  0  0  2  0  1
+```
+
+Il verdetto: **gli scrigni non sono in eccesso**, e sono la parte *regolare* del conto — uno al
+minuto nella Corsa, sei in tutta l'Incursione, e la riga non ha picchi. Quello che si accumula
+sono i **livelli**: tre insieme al minuto 10 della Corsa, **sei** al minuto 5 dell'Incursione,
+perché le gemme lontane si fondono in gemme grosse e i 700 punti di un guardiano arrivano tutti
+in un istante. È da lì che nasce la pila di tre o quattro carte di fila — non dagli scrigni.
+
+E una sorgente che pagasse uno scrigno **per ogni fotogramma** in cui la sua condizione è vera
+non si vedrebbe in nessuna media: si vedrebbe solo come «arrivano troppi scrigni». Le quattro
+condizioni degli eventi restano vere finché l'evento esiste, quindi ognuna chiude con
+`G.ev = null; return;` — e ora c'è un controllo per ciascuna: togliendo quel `return` alla
+Fermata, la sua riga conta **30 scrigni invece di 1**.
+
 ### Culmine
 
 Un indicatore che si riempie **uccidendo**. Quando è pieno, `Spazio` (o il tasto in basso a
