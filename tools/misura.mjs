@@ -309,6 +309,118 @@ function unaCorsa(modo) {
   console.log('  insieme:  ' + mm.map(o => String(o.l + o.s).padStart(2)).join(' '));
 }
 
+/* ── quanto cresce il nucleo, e se ha dove crescere ──────────────
+   Una corsa consegna 43 carte in venti minuti. La domanda non e' se siano
+   tante in se': e' se la build abbia POSTO per tenerle. Sei alloggiamenti per
+   otto livelli fanno 48 potenziamenti di runa, undici passivi per cinque ne
+   fanno 47: se le carte arrivano piu' in fretta di quanto la build le
+   assorba, il mazzo si svuota e le ultime carte non sono una scelta — sono
+   l'Ascesi, cioe' il pavimento messo li' apposta perche' non resti niente.
+   Quante Ascesi prende una corsa, e da che minuto, e' la misura di quanto
+   crescere sia troppo facile: ognuna e' una carta che il gioco ha dato
+   senza avere niente da offrire.
+   Accanto, l'indice di potenza dell'anello — la somma di danno×colpi/ricarica
+   di tutte le rune, coi moltiplicatori del giocatore dentro — contro la vita
+   di un nemico comune a quel minuto. Il rapporto dice quanti nemici al
+   secondo la build potrebbe cancellare: se sale, il gioco si fa piu' facile
+   mentre va avanti.                                                     */
+function bancoCrescita() {
+  const S = O.save();
+  S.modo = 'corsa'; S.asc = S.ascSel = 0; S.runes = MAZZO_PIENO.slice();
+  S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
+  O.reset('vega', 1111, 'corsa', false);
+  G.state = 'play';
+  const dt = 1 / 60;
+  const conto = {}, primaAscesi = { t: 0 };
+  /* le carte si scelgono come le sceglie il banco, ma qui si contano */
+  const scegliConta = () => {
+    let giri = 0;
+    while (G.pending > 0 && giri++ < 40) {
+      const ch = O.roll(3);
+      /* ── come scegliere come un giocatore ────────────────────────
+         `scegli()`, il criterio condiviso degli altri banchi, mette le rune
+         nuove subito dopo le trasformazioni: ad anello pieno le prende
+         comunque, e ogni presa SOSTITUISCE una runa. Misurato: 36 carte su
+         43 erano rune nuove, l'anello restava a livello 1-2 per tutta la
+         corsa e la potenza non cresceva. E' un difetto dello strumento, non
+         del gioco — nessuno gioca cosi'. Qui una runa nuova la si prende
+         solo se c'e' un alloggiamento libero. */
+      const vuoto = G.ring.some((r, i) => !r && i < G.slots);
+      const c = ch.find(x => x.t === 'evo')
+             || (vuoto ? ch.find(x => x.t === 'rnew') : null)
+             || ch.find(x => x.t === 'rup') || ch.find(x => x.t === 'pas') || ch[0];
+      conto[c.t] = (conto[c.t] || 0) + 1;
+      if (c.t === 'ascesi' && !primaAscesi.t) primaAscesi.t = Math.round(G.t);
+      const serve = O.apply(c);
+      G.pending--;
+      if (serve === true) {
+        let slot = -1, best = -1;
+        for (let i = 0; i < G.slots; i++) {
+          if (G.ring[i]) continue;
+          const a = G.ring[(i - 1 + G.slots) % G.slots], b = G.ring[(i + 1) % G.slots];
+          const el = O.RUNES[c.id].el;
+          let pt = 0;
+          if (a && (a.el === el || a.el === 'iride' || el === 'iride')) pt++;
+          if (b && (b.el === el || b.el === 'iride' || el === 'iride')) pt++;
+          if (pt > best) { best = pt; slot = i; }
+        }
+        if (slot >= 0) O.place(c.id, slot);
+      }
+      if (serve === 'diss' || serve === 'ritempra') { /* il banco non riordina */ }
+    }
+    G.pending = 0;
+  };
+  const potenza = () => {
+    let p = 0;
+    for (const r of G.ring) {
+      if (!r) continue;
+      const st = O.runeStats(r);
+      p += st.dmg * Math.max(1, st.count || 1) / Math.max(.1, st.cd || .5);
+    }
+    return p;
+  };
+  /* la vita di un vagante a questo minuto, chiesta al gioco e non a una
+     formula riscritta a mano */
+  const vitaComune = () => {
+    /* la mediana dei nemici comuni in campo: il tipo cambia con le ondate,
+       quindi chiedere sempre il Vagante lasciava buchi nella tabella */
+    const v = G.enemies.filter(x => !x.elite && !x.boss && x.hp > 0).map(x => x.maxHp).sort((a, b) => a - b);
+    return v.length ? v[v.length >> 1] : 0;
+  };
+  console.log('minuto  liv  potenza   vita comune  nemici/s  rune (livelli)        passivi  ascesi');
+  const tappe = [60, 300, 600, 900, 1140];
+  let k = 0;
+  for (let i = 0; i < 60 * 1250 && k < tappe.length; i++) {
+    bot(dt); O.step(dt);
+    if (G.briefing) G.briefing = null;
+    if (G.pending > 0) scegliConta();
+    G.state = 'play'; P.hp = P.maxHp;
+    if (G.t >= tappe[k]) {
+      const pot = potenza(), vita = vitaComune();
+      const lv = G.ring.filter(Boolean).map(r => r.lv).join('');
+      const pas = Object.values(G.passives).reduce((a, b) => a + b, 0);
+      console.log(String(Math.round(G.t / 60)).padEnd(7), String(G.level).padEnd(4),
+        String(Math.round(pot)).padEnd(9), String(Math.round(vita)).padEnd(12),
+        (vita ? (pot / vita).toFixed(1) : '—').padEnd(9),
+        (G.ring.filter(Boolean).length + ' rune: ' + lv).padEnd(21),
+        String(pas).padEnd(8), String(conto.ascesi || 0));
+      k++;
+    }
+  }
+  console.log('\ncarte prese per tipo:');
+  const nomi = { rnew: 'rune nuove', rup: 'potenziamenti di runa', pas: 'passivi', evo: 'trasformazioni',
+    ascesi: 'Ascesi (il pavimento)', diss: 'Dissolvi', ritempra: 'Ritempra' };
+  const tot = Object.values(conto).reduce((a, b) => a + b, 0);
+  for (const t of Object.keys(conto).sort((a, b) => conto[b] - conto[a]))
+    console.log('  ' + (nomi[t] || t).padEnd(24) + String(conto[t]).padStart(3) + '  (' + Math.round(conto[t] / tot * 100) + '%)');
+  console.log('  totale                   ' + tot);
+  if (primaAscesi.t) console.log('\nprima Ascesi al minuto ' + (primaAscesi.t / 60).toFixed(1) + ': da li\' il mazzo comincia a non avere piu\' niente da offrire');
+  const runeMax = G.ring.filter(r => r && r.lv >= 8).length;
+  const pasMax = Object.keys(G.passives).filter(id => G.passives[id] >= (O.RUNES[id] ? 0 : 5)).length;
+  console.log('a fine corsa: ' + runeMax + ' rune su ' + G.ring.filter(Boolean).length + ' al livello massimo, ' +
+    Object.keys(G.passives).length + ' passivi toccati');
+}
+
 const quale = process.argv[2] || 'base';
 console.log('— banco: ' + quale + ' —\n');
-({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo, scrigni: bancoScrigni }[quale] || banchoBase)();
+({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo, scrigni: bancoScrigni, crescita: bancoCrescita }[quale] || banchoBase)();

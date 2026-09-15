@@ -255,6 +255,44 @@ solo giocando, e la schermata delle carte ferma il tempo: fra un livello e il su
 sempre partita, non un altro pannello. Un livello non parte nemmeno se c'è già una carta in attesa,
 quindi uno scrigno raccolto un istante prima non diventa una pila.
 
+### Quanto cresce il nucleo, e da dove
+
+`npm run misura -- crescita` segue una corsa intera e chiede, a cinque tappe, cosa ha in mano il
+giocatore: composizione dell'anello, livelli, passivi, e un **indice di potenza** — la somma di
+danno×colpi/ricarica di tutte le rune, coi moltiplicatori dentro — contro la vita di un nemico
+comune a quel minuto.
+
+```
+minuto  liv  potenza  vita comune  nemici/s   rune (livelli)   passivi
+1        3     214         32        6,7      4 rune: 1111        0
+5       13    1089        101       10,8      6 rune: 312223      3
+10      20    1579        194        8,1      6 rune: 333225     11
+15      23    2873       1407        2,0      6 rune: 343245     13
+19      27    3665        719        5,1      6 rune: 354446     13
+```
+
+Due cose che questa tabella dice e che nessuno aveva misurato:
+
+- **la potenza cresce diciassette volte** in diciannove minuti, e la vita dei nemici ventidue: il
+  rapporto resta grosso modo piatto. Il gioco **non** si fa più facile mentre va avanti;
+- ma **la build ha ancora posto**: a fine corsa le rune stanno fra il 3 e il 6 su 8, e i passivi a
+  13 livelli su 47. Quarantatré carte ci stanno dentro — quindi il problema non è la capienza.
+
+E una terza, la più scomoda, che si vede solo confrontando due corse identiche in cui cambia solo
+il giocatore (stesso seme, nessuno dei due muore):
+
+```
+                 tempo  livello  uccisioni  carte  scrigni  potenza  vinta
+bot che gioca     1101     40      14184      52      13      4514    sì
+bot immobile      1128     23      10017      28       6       933    sì
+```
+
+Giocare raddoppia le carte e moltiplica per cinque la potenza — quindi la crescita **è** premio
+del gioco. Ma il **pavimento è alto**: chi non si muove mai, non raccoglie mai niente, non
+insegue un evento e non schiva, arriva comunque a 28 carte, al livello 23 e **abbatte l'ultimo
+guardiano**. L'anello gioca da solo; quello che fa il giocatore è un moltiplicatore sopra un
+pavimento che già basta.
+
 ### Quante volte la partita si ferma
 
 Ogni carta è una schermata, e ogni schermata è il gioco che si ferma. Metà del conto sono i
