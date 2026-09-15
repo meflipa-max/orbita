@@ -546,6 +546,16 @@ h2.ttl{font:800 clamp(24px,6vw,34px)/1 var(--disp);letter-spacing:-.015em;margin
 .slot.inerte{opacity:.34}
 .tagslot{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;
   font:700 8px/1 var(--ui);letter-spacing:.14em;color:var(--c,#fff);pointer-events:none}
+/* Il numero dell'alloggiamento. Sta fuori dall'anello, dalla parte opposta
+   al centro: non ruba spazio al glifo e non si accavalla col livello, che
+   sta nell'angolo in basso a destra del riquadro. Tenue apposta — serve
+   quando lo cerchi, e non deve competere con niente di quello che l'anello
+   dice davvero. Sull'anello compatto della schermata delle carte sparisce:
+   li' non si tocca niente, quindi non c'e' nessun numero da eseguire. */
+.slotn{position:absolute;transform:translate(-50%,-50%);pointer-events:none;
+  font:700 9px/1 var(--ui);color:rgba(190,178,255,.42);letter-spacing:.04em;transition:color .15s}
+.slotn.sel{color:#fff;font-size:11px}
+.ringmini .slotn{display:none}
 
 /* anello compatto sulla schermata di scelta: la domanda "questa runa si
    incastra?" va posta con l'anello sotto gli occhi */

@@ -116,6 +116,15 @@ Fulgore sdoppia la catena a ogni salto; il Mietitore risucchia i nemici lungo il
 l'Alba spazza con due fasci opposti. La condizione è **posizionale**: obbliga a progettare
 l'anello dal primo minuto.
 
+L'anello dice sempre cosa manca, e da quando lo dice **si può anche eseguire**. Il consiglio
+più azionabile del gioco è *«Scintilla: manca risuonare da entrambi i lati — spostala
+nell'alloggiamento 3»*, e nominava due cose che l'interfaccia non mostrava: quale dei sei glifi
+fosse la Scintilla — il nome di una runa compariva una volta sola, sulla carta che te l'aveva
+offerta, e poi mai più — e quale alloggiamento fosse il 3, che si poteva solo contare in senso
+orario dall'alto sperando di partire da uno e non da zero. Adesso ogni alloggiamento porta il
+suo numero, fuori dall'anello, e toccare una runa scrive chi è: **nome, elemento, forma,
+livello e se risuona**.
+
 La runa **si tiene il livello**. Il numero era scritto a mano — 5 — ed era quello giusto quando
 la soglia per trasformarsi era 8: si scendeva di tre gradini e in cambio si compravano i numeri
 della forma evoluta. Poi la soglia è scesa a 6, e quel 5 è rimasto: chi ci arrivava al 6
@@ -888,7 +897,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 141 controlli sul gioco vero, headless
+npm run collaudo       # 150 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna

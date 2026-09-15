@@ -911,6 +911,21 @@ const UI = {
       const vuoto = !r;
       const dentro = r ? svg(r.id)
         : '<svg viewBox="0 0 24 24" class="plus" aria-hidden="true"><path d="M12 7v10M7 12h10"/></svg>';
+      /* ── il numero dell'alloggiamento ──────────────────────────
+         evoLine() dice «spostala nell'alloggiamento 3» — e' il consiglio
+         piu' azionabile del gioco, quello che trasforma la regola
+         posizionale da segreto in mossa — ma nessun alloggiamento portava
+         scritto il proprio numero. L'istruzione nominava una cosa che
+         l'interfaccia non mostrava, quindi non si poteva eseguire: si
+         poteva solo contare in senso orario partendo dall'alto e sperare
+         di partire da uno e non da zero.
+         Sta FUORI dall'anello, dalla parte opposta al centro, cosi' non
+         ruba spazio al glifo ne' si accavalla col livello. */
+      const nx = 50 + Math.cos(a) * (R + 15), ny = 50 + Math.sin(a) * (R + 15);
+      /* il numero di quello scelto si accende: «tocca due rune per
+         scambiarle» ha bisogno che si veda quale hai gia' in mano, e il
+         contorno bianco e' gia' preso da «trasformabile» */
+      slots += '<span class="slotn' + (this.sel === i ? ' sel' : '') + '" style="left:' + nx.toFixed(2) + '%;top:' + ny.toFixed(2) + '%">' + (i + 1) + '</span>';
       slots += '<button class="slot' + (vuoto ? ' empty' : '') + good + evoCls + (this.sel === i ? ' sel' : '') + (highlight === i ? ' sel' : '') + (vuoto && pel ? ' aperto' : '') + '"' +
         (interactive ? ' data-a="slot" data-i="' + i + '"' : ' disabled tabindex="-1"') +
         ' style="left:' + x.toFixed(2) + '%;top:' + y.toFixed(2) + '%;--c:' + c + '">' +
@@ -923,6 +938,29 @@ const UI = {
       '<svg class="arcs" viewBox="0 0 100 100"><circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(158,138,255,.16)" stroke-width="1"/>' + arcs + '</svg>' +
       '<div class="ringcore"><div><div class="n">' + aw + '</div><div class="l">RISVEGLI</div></div></div>' +
       slots + '</div>';
+  },
+
+  /* ── chi e' la runa che hai in mano ─────────────────────────────
+     L'anello e' l'interfaccia del gioco, ma di una runa mostra un glifo
+     di ventiquattro pixel e basta: il nome compare una volta sola, sulla
+     carta che te l'ha offerta, e poi mai piu'. Le righe qui sotto pero'
+     parlano per nome — «Scintilla: manca risuonare da entrambi i lati,
+     spostala nell'alloggiamento 3» — quindi per eseguire il consiglio
+     dovevi indovinare quale dei sei glifi fosse la Scintilla.
+     Toccando un alloggiamento, adesso, il gioco dice di chi si tratta:
+     nome, elemento, livello e se risuona. Il resto — cosa le manca per
+     trasformarsi — lo dice gia' evoLine(), e non si riscrive qui: una
+     regola, un posto solo. */
+  runaLine() {
+    const r = this.sel >= 0 ? G.ring[this.sel] : null;
+    if (!r) return '';
+    const d = RUNES[r.id], c = EL[r.el].c;
+    const ris = r.res >= 2 ? 'risuona da <b>entrambi</b> i lati'
+      : r.res === 1 ? 'risuona da <b>un lato solo</b>'
+      : '<b>non risuona</b> con le vicine';
+    return '<span style="color:' + c + '"><b>' + d.n + '</b></span> · ' +
+      (r.el === 'iride' ? 'Iride' : EL[r.el].n) + ' · ' + d.tag +
+      ' · livello ' + r.lv + ' · ' + ris + '<br>';
   },
 
   /* Cosa manca per trasformare. È l'informazione più importante dell'anello
@@ -1213,7 +1251,7 @@ const UI = {
       '<h2 class="ttl">' + (this.ritemprando ? 'Ritempra' : this.dissolving ? 'Dissoluzione' : this.placing ? 'Collocazione' : 'Riordina') + '</h2>' +
       '<p class="sub" style="margin-top:-8px">' + t + '</p>' +
       this.ringHTML(true) +
-      '<div class="hint" id="ringinfo">' + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
+      '<div class="hint" id="ringinfo">' + this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '') + '</div>' +
       (this.placing || this.dissolving || this.ritemprando ? '' : '<button class="btn primary clip" style="max-width:280px;margin:0 auto" data-a="ringdone"><span class="face">Fatto</span></button>')
     );
   },
@@ -1222,7 +1260,7 @@ const UI = {
     const w = SCR.querySelector('.ringwrap');
     if (w) w.outerHTML = this.ringHTML(true);
     const inf = SCR.querySelector('#ringinfo');
-    if (inf) inf.innerHTML = this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
+    if (inf) inf.innerHTML = this.runaLine() + this.awakeLine() + this.catenaLine() + (this.evoLine() ? '<br>' + this.evoLine() : '');
   },
 
   /* ── pausa ──────────────────────────────────────────────── */

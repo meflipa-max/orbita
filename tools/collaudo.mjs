@@ -826,5 +826,43 @@ sez('il record si legge prima di scriverlo');
   ok(S().rec.corsa.t === 900 && S().rec.incursione.t === 0, 'quel record diventa quello della Corsa, e l’Incursione riparte');
 }
 
+sez('l’anello dice di chi sta parlando');
+/* evoLine() da' il consiglio piu' azionabile del gioco — «Scintilla: manca
+   risuonare da entrambi i lati, spostala nell'alloggiamento 3» — e nomina
+   due cose che l'interfaccia non mostrava: quale dei sei glifi sia la
+   Scintilla, e quale alloggiamento sia il 3. Un'istruzione che nomina cose
+   invisibili non si puo' eseguire: si poteva solo contare in senso orario
+   partendo dall'alto e sperare di partire da uno e non da zero.           */
+{
+  O.reset('vega', 61, 'corsa', false); G.state = 'play'; G.slots = 6;
+  const mk = (id, lv) => ({ id, el: O.RUNES[id].el, lv, cd: 0, res: 0, st: {} });
+  G.ring = [mk('pira', 6), mk('scintilla', 6), mk('nova', 3), mk('sciame', 2), null, null];
+  for (let i = 0; i < 6; i++) if (G.ring[i]) G.ring[i].slot = i;
+  O.recalcRing(false);
+  O.UI.ringEdit(null);
+  const h = O.schermo();
+  /* ogni alloggiamento porta scritto il proprio numero, da 1 a G.slots */
+  const numeri = [...h.matchAll(/class="slotn[^"]*"[^>]*>(\d+)</g)].map(m => +m[1]);
+  ok(numeri.length === G.slots, 'ogni alloggiamento ha il suo numero (' + numeri.length + ' su ' + G.slots + ')');
+  ok(numeri.join(',') === [1, 2, 3, 4, 5, 6].join(','), 'numerati da 1, in ordine: ' + numeri.join(','));
+  /* e il consiglio parla proprio di quei numeri */
+  ok(!/alloggiamento 0/.test(h), 'e il consiglio non nomina un alloggiamento 0');
+
+  /* toccando una runa, l'anello dice di chi si tratta */
+  ok(!/Scintilla<\/b><\/span> ·/.test(O.UI.runaLine()), 'senza selezione non dice niente');
+  O.UI.sel = 1;
+  const l = O.UI.runaLine();
+  ok(/Scintilla/.test(l), 'toccata, dice il nome: ' + l.replace(/<[^>]+>/g, '').trim());
+  ok(/Fuoco/.test(l) && /livello 6/.test(l), 'con elemento e livello');
+  ok(/risuona/.test(l), 'e se risuona');
+  /* il numero di quella scelta si accende: il contorno bianco e' gia' preso
+     da «trasformabile», quindi senza questo non si vede quale hai in mano */
+  O.UI.sel = 2;
+  const h2 = O.UI.ringHTML(true);
+  ok(/class="slotn sel"[^>]*>3</.test(h2), 'e il suo numero e’ marcato');
+  ok((h2.match(/class="slotn sel"/g) || []).length === 1, 'uno solo alla volta');
+  O.UI.sel = -1;
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
