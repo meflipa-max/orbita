@@ -906,10 +906,23 @@ function sagomaNucleo(sk, r) {
 
 function drawPlayer() {
   const p = G.p, sl = G.slots;
-  /* anello di orbita */
+  /* anello di orbita. Il raggio e' quello vivo: col Perigeo l'anello si
+     stringe addosso al nucleo, ed e' il segnale piu' leggibile del gioco —
+     l'anello E' l'interfaccia, quindi la difesa si vede senza una sola
+     parola addosso allo schermo. */
   ctx.globalCompositeOperation = 'lighter';
   ctx.strokeStyle = 'rgba(160,190,255,.13)'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.arc(p.x, p.y, RING_R, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(p.x, p.y, G.ringR, 0, TAU); ctx.stroke();
+  /* chiuso: l'anello diventa un guscio, e piu' ha tenuto piu' e' carico */
+  if (G.peri > 0) {
+    const f = G.peri / PERI_DUR, car = Math.min(1, (G.periAss | 0) / PERI_ASS_MAX);
+    ctx.strokeStyle = rgba(PERI_C, .3 + .45 * f + car * .25);
+    ctx.lineWidth = 2.5 + car * 4;
+    ctx.beginPath(); ctx.arc(p.x, p.y, G.ringR + 4, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = rgba('#ffffff', .12 + car * .3);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, G.ringR + 8 + car * 3, 0, TAU); ctx.stroke();
+  }
 
   /* archi di risonanza — spezzati dove un Dissonante ha agganciato */
   for (let i = 0; i < sl; i++) {
@@ -922,7 +935,7 @@ function drawPlayer() {
     ctx.strokeStyle = rotto ? 'rgba(224,208,255,.30)' : rgba(EL[el].c, pulse);
     ctx.lineWidth = rotto ? 2 : 3.4;
     if (rotto) ctx.setLineDash([4, 9]);
-    ctx.beginPath(); ctx.arc(p.x, p.y, RING_R, a1, a2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x, p.y, G.ringR, a1, a2); ctx.stroke();
     if (rotto) ctx.setLineDash([]);
   }
 

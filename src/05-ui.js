@@ -6,7 +6,7 @@ const SCR = $('#screens'), HUD = $('#hud');
 const elLv = $('#lvnum'), elXp = $('#xpfill'), elXpLine = $('#xpline'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
   elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip'),
-  elCulm = $('#culm'), elCombo = $('#combo');
+  elCulm = $('#culm'), elPeri = $('#peri'), elCombo = $('#combo');
 
 /* dito o tastiera? Deciso a ogni partita, non al caricamento:
    così regge anche i portatili con schermo touch e i cambi di contesto. */
@@ -144,7 +144,14 @@ const UI = {
           /* La prima volta in assoluto: il Culmine e' l'unica abilita'
              attiva del gioco e finora si presentava da solo, con un
              pulsante che cambiava colore in un angolo. */
-          if (!visto('culmine')) {
+          /* ── una barra, due atti ─────────────────────────────
+             Da quando la stessa carica si puo' spendere in due modi opposti,
+             il momento in cui si riempie non e' piu' un avviso: e' una
+             domanda, e va posta per intero e una volta sola. Il briefing
+             vale anche per chi gioca da prima — il Culmine lo conosce, il
+             Perigeo no, e senza questo non lo scoprirebbe mai. */
+          if (!visto('perigeo')) this.primaVolta('perigeo'), G.briefing = 'perigeo';
+          else if (!visto('culmine')) {
             this.primaVolta('culmine');
             this.toast('CULMINE PRONTO', isCoarse() ? 'Toccalo: l’anello spara tutto insieme' : 'Spazio: l’anello spara tutto insieme', '#ffe9b0');
           }
@@ -161,6 +168,20 @@ const UI = {
       elCulm.style.setProperty('--f', att ? 1 - G.culm / (CULM_DUR * G.cg.culmDur) : clamp(G.charge, 0, 1));
       elCulm.querySelector('.lab').textContent = att ? Math.ceil(G.culm) + 's'
         : (pieno ? (isCoarse() ? 'TOCCA' : 'SPAZIO') : Math.round(G.charge * 100) + '%');
+    }
+    /* ── il Perigeo, nell'angolo opposto ────────────────────────────
+       Stessa barra del Culmine, quindi stesso riempimento: quando sono pronti
+       lo sono tutti e due, ed e' li' che comincia la scelta. Da chiuso
+       l'etichetta mostra QUANTO HA TENUTO, che e' il numero da cui dipende
+       l'onda del rilascio — l'unica cosa del gioco che il giocatore deve
+       guardare mentre decide se resistere ancora un momento. */
+    if (elPeri) {
+      const pronto = G.charge >= 1, att = G.peri > 0;
+      elPeri.className = 'on ' + (att ? 'attivo' : pronto ? 'pronto' : 'carica');
+      elPeri.style.setProperty('--f', att ? G.peri / PERI_DUR : clamp(G.charge, 0, 1));
+      const l = elPeri.querySelector('.lab');
+      if (l) l.textContent = att ? (G.periAss | 0) + ' TENUTI'
+        : (pronto ? (isCoarse() ? 'TOCCA' : 'MAIUSC') : Math.round(G.charge * 100) + '%');
     }
     if (elCombo) {
       if (G.combo >= 6) {
@@ -432,11 +453,13 @@ const UI = {
            tempo fra una morte e la partita dopo e' la leva di ritenzione piu'
            forte del genere. Erano due tasti che il gioco ascoltava e che non
            stavano scritti in nessun punto dell'interfaccia. */
-        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> o <kbd>P</kbd> per la pausa, <kbd>Spazio</kbd> per il Culmine, <kbd>R</kbd> sulla schermata di fine per ripartire subito. Le rune sparano da sole: tu schivi, e decidi <b>quando scatenare il Culmine</b>.')) +
+        p('Trascina ovunque sullo schermo per muoverti: la levetta compare sotto il dito, con la destra o con la sinistra. Da tastiera <kbd>WASD</kbd> o le frecce, <kbd>Esc</kbd> o <kbd>P</kbd> per la pausa, <kbd>Spazio</kbd> per il <b>Culmine</b>, <kbd>Maiusc</kbd> per il <b>Perigeo</b>, <kbd>R</kbd> sulla schermata di fine per ripartire subito. Le rune sparano da sole: tu schivi, e decidi <b>come spendere la carica</b>.')) +
 
-      sec('Il Culmine',
-        p('In basso a destra c’è un anello che si riempie <b>uccidendo</b>. Quando è pieno, premi <kbd>Spazio</kbd> (o toccalo) e per ' + culmDurataIt() + ' succede tutto insieme: l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>.') +
-        p('Non accende Risvegli nuovi: moltiplica quelli che hai costruito. Tenerlo in tasca non serve a niente — si ricarica in fretta.')) +
+      sec('Una carica, due atti',
+        p('In basso c’è un indicatore che si riempie <b>uccidendo</b>. Quando è pieno hai <b>una scelta</b>, non un bottone: puoi aprire l’anello o chiuderlo, e costano tutti e due la carica intera.') +
+        p('<b>Culmine</b> (a destra, <kbd>Spazio</kbd>): per ' + culmDurataIt() + ' l’anello <b>spara tutto in una volta</b>, le ricariche vanno quasi al doppio, e <b>ogni Risveglio acceso sale di un grado</b>. Non ne accende di nuovi: moltiplica quelli che hai costruito.') +
+        p('<b>Perigeo</b> (a sinistra, <kbd>Maiusc</kbd>): per poco più di due secondi l’anello <b>si chiude addosso a te</b> e diventa un muro — spegne i colpi nemici e respinge la folla, <em>ma non i guardiani</em>. Il prezzo è che <b>per quei due secondi non spari</b>.') +
+        p('Il Perigeo non fa danno mentre è chiuso: lo <b>accumula</b>. Ogni colpo spento e ogni nemico tenuto fuori valgono un punto — il numero sul pulsante — e riaprendosi l’anello li restituisce tutti insieme in un’onda. Per questo <b>premerlo tardi rende</b>, e premerlo per paura no.')) +
 
       sec('L’anello',
         p('Ogni livello scegli una runa e <em>dove metterla</em>. Due rune vicine dello stesso elemento <em>risuonano</em>: <b>+30% danno a ciascuna</b>. Lontane fra loro, zero. L’anello è <b>circolare</b>: l’ultimo alloggiamento confina col primo.')) +
@@ -1513,8 +1536,8 @@ const UI = {
           '</div>'
         : '') +
       '<div class="hint">' + (isCoarse()
-        ? 'Trascina ovunque per muoverti · le rune sparano da sole'
-        : '<kbd>WASD</kbd> o frecce per muoverti · <kbd>Esc</kbd> pausa · le rune sparano da sole') + '</div>' +
+        ? 'Trascina ovunque per muoverti · le rune sparano da sole · la carica si spende a destra (Culmine) o a sinistra (Perigeo)'
+        : '<kbd>WASD</kbd> o frecce per muoverti · <kbd>Esc</kbd> pausa · <kbd>Spazio</kbd> Culmine · <kbd>Maiusc</kbd> Perigeo') + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">' +
       '<button class="btn primary clip" data-a="resume"><span class="face">Riprendi</span></button>' +
       '<button class="btn clip" data-a="ringedit2"><span class="face">Riordina l’anello</span></button>' +
@@ -1601,9 +1624,13 @@ const UI = {
          (Ardore, Sovraccarico, Collasso) e il colore del suo elemento. */
       const risv = k.slice(0, 3) === 'aw:' ? k.slice(3) : null;
       const el = risv ? risv : RUNES[k] ? RUNES[k].el : 'iride';
-      const nome = risv ? EL[risv].aw : k === 'nucleo' ? G.char.n : RUNES[k] ? RUNES[k].n : k;
+      /* l'onda del Perigeo non la fa ne' una runa ne' un Risveglio: la fa
+         l'anello, e ha la sua riga — se no comparirebbe in fondo all'elenco
+         scritta «perigeo» in minuscolo, che e' il modo in cui si riconosce
+         una chiave finita a schermo per sbaglio */
+      const nome = risv ? EL[risv].aw : k === 'nucleo' ? G.char.n : k === 'perigeo' ? 'Perigeo' : RUNES[k] ? RUNES[k].n : k;
       const pct = v / tot * 100;
-      return '<div class="dmgrow" style="--c:' + (k === 'nucleo' ? G.char.c : EL[el].c) + '">' +
+      return '<div class="dmgrow" style="--c:' + (k === 'nucleo' ? G.char.c : k === 'perigeo' ? PERI_C : EL[el].c) + '">' +
         '<span class="dn">' + nome + '</span>' +
         '<span class="db"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
         '<span class="dp">' + (pct < 1 ? '<1' : Math.round(pct)) + '%</span></div>';
@@ -2140,6 +2167,13 @@ function resetRun(charId, seed, modoId, giorno) {
      quando la corsa finisce due volte), a che minuto e' arrivata, se e'
      proseguita nel senza fine e se e' stata abbandonata invece che persa */
   G.vintaContata = 0; G.vintaT = 0; G.oltre = 0; G.abbandonata = 0;
+  /* il Perigeo: l'anello riparte aperto, e i contatori del suo assorbimento
+     non devono sopravvivere alla corsa di prima */
+  G.peri = 0; G.periAss = 0; G.peris = 0; G.ringR = RING_R;
+  /* una spiegazione rimasta in sospeso non appartiene alla corsa nuova:
+     `G.briefing` sopravviveva a resetRun, e chi ricomincia si ritrovava
+     fermo su una schermata della partita di prima */
+  G.briefing = null;
   G.raggio = RAGGIO_MIRA; G.tenacia = 1; G.chiarezza = 1; G.kps = 0; G.kAcc = 0;
   G.raffN = 0; G.raffX = 0; G.raffY = 0; G.raffR = 0; G.popIdx = 0; G.popT = 0; G.raffFin = 0; G.raffCd = 0;
   G.awaken = { fuoco: 0, gelo: 0, fulmine: 0, vuoto: 0, luce: 0 };

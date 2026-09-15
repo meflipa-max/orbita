@@ -107,6 +107,37 @@ const ELKEYS = ['fuoco', 'gelo', 'fulmine', 'vuoto', 'luce'];
    l'ha costruito bene.                                                   */
 const CULM_DUR = 5.5;
 const CULM_CD = 1.85;
+/* ── Perigeo: l'altro modo di spendere la carica ─────────────────
+   Il Culmine e' il punto piu' alto di un'orbita; il Perigeo e' il punto piu'
+   vicino. Stessa barra, due atti opposti: l'anello si APRE — spara tutto
+   insieme e ogni Risveglio sale di un grado — oppure si CHIUDE addosso al
+   nucleo e diventa un muro.
+   Non e' uno scudo, ed e' importante che non lo sia: uno scudo rende
+   recuperabile l'errore che oggi si paga, cioe' toglie tensione. Il Perigeo
+   costa TUTTO il danno per la sua durata (le rune non sparano) e non rende
+   invulnerabili: tiene fuori la folla e i colpi, non i guardiani — un
+   guardiano sfonda gli asteroidi, figurarsi sei rune.
+   E non fa danno mentre e' chiuso: lo ACCUMULA. Ogni colpo spento e ogni
+   nemico tenuto fuori valgono un punto, e riaprendosi l'anello li restituisce
+   tutti insieme in un'onda. Quindi la giocata giusta non e' premere appena si
+   ha paura: e' premere tardi, dentro al mucchio, e tenere i nervi. Chi lo usa
+   per scappare ottiene un buco nel proprio danno e un'onda da niente.
+   La barra e' la stessa e il prezzo e' lo stesso — la carica intera — cosi'
+   non c'e' una risorsa nuova da bilanciare: c'e' una domanda in piu' ogni
+   volta che la barra si riempie. */
+const PERI_DUR = 2.2;
+const RING_R = 64;        /* il raggio dell'anello aperto */
+const PERI_R = 26;        /* e quello serrato: dentro ci sta il nucleo e basta */
+/* Quanto si puo' accumulare: un anello circondato da otto nemici per tutta la
+   durata arriva a una quarantina di punti, ed e' li' che il tetto sta. Senza,
+   in mezzo a trecento nemici l'onda sarebbe una bomba. */
+const PERI_ASS_MAX = 40;
+const PERI_TICK = .3;     /* ogni quanto un nemico tenuto vale un punto */
+const PERI_C = '#9ec6ff'; /* il colore del riparo: gia' quello dell'asteroide che assorbe un colpo */
+/* L'onda del rilascio. Tarata per restituire meno di quello che il buco nel
+   danno e' costato: il Perigeo deve convenire per quello che EVITA, non per
+   quello che fa. Se convenisse anche come attacco, il Culmine sparirebbe. */
+const PERI_ONDA = 24, PERI_ONDA_ASS = 16;
 /* Quante uccisioni riempiono l'indicatore, al secondo `t`.
    ── era acceso un quarto della partita ────────────────────────────
    Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in
@@ -1015,6 +1046,18 @@ const BRIEFING = {
     p: ['Non vuole la tua vita: <b>aggancia una runa e la tiene zitta</b>. Vedi il filo che parte da lui e la runa che si spegne — non è un difetto, è il suo attacco.',
         'Prende sempre la tua runa migliore, e <b>tiene le distanze</b> apposta: per liberarla devi smettere di mietere e <b>andarlo a prendere</b>. Non possono zittirtene più di due insieme.']
   },
+  /* ── la prima volta che la barra e' piena ────────────────────
+     Da quando la stessa carica si spende in due modi opposti, il momento in
+     cui si riempie non e' un avviso: e' una domanda. E va posta per intero,
+     perche' e' l'unica cosa che in questo gioco si fa con le mani oltre a
+     schivare. Vale anche per chi gioca da prima: il Culmine lo conosce, il
+     Perigeo no. */
+  perigeo: {
+    n: 'Perigeo', k: 'La stessa carica, l’altro atto', ico: 'orbita', c: PERI_C,
+    p: ['La barra è piena, e si può spendere in <b>due modi opposti</b>. A destra il <b>Culmine</b> <em>apre</em> l’anello: spara tutto insieme e ogni Risveglio sale di un grado. A sinistra il <b>Perigeo</b> lo <em>chiude</em> addosso a te.',
+        'Chiuso, l’anello è un muro: spegne i colpi nemici e respinge la folla — ma <b>non i guardiani</b>, e per quei due secondi <b>non spari più</b>. Non fa danno mentre è chiuso: lo <b>accumula</b>. Ogni colpo spento e ogni nemico tenuto valgono un punto, e riaprendosi l’anello li restituisce tutti insieme in un’onda.',
+        'Quindi non conviene premerlo appena hai paura: conviene <b>premerlo tardi</b>, dentro al mucchio, e resistere un momento in più. Una carica sola: o apri, o chiudi.']
+  },
   corazza: {
     n: 'Corazza elementale', k: 'Dal secondo guardiano', ico: 'corazza', c: '#9c93c6',
     p: ['Il cerchio tratteggiato attorno al guardiano porta scritto un <b>elemento</b>: i colpi di quell’elemento gli fanno <b>metà danno</b>. Tutti gli altri, danno pieno.',
@@ -1055,7 +1098,9 @@ function lessico() {
       ['Apertura', 'La runa da cui parti, scelta nell’Osservatorio. Decide quale sarà la tua prima catena, ed è sempre pescabile.']
     ] },
     { t: 'In campo', v: [
-      ['Culmine', 'L’anello in basso a destra si riempie <b>uccidendo</b>. Pieno, premilo: per ' + culmDurataIt() + ' l’anello spara tutto insieme e <b>ogni Risveglio acceso sale di un grado</b>. Non accende Risvegli nuovi: moltiplica quelli che hai.'],
+      ['Culmine', 'L’indicatore in basso a destra si riempie <b>uccidendo</b>. Pieno, premilo: per ' + culmDurataIt() + ' l’anello <b>si apre</b> — spara tutto insieme e <b>ogni Risveglio acceso sale di un grado</b>. Non accende Risvegli nuovi: moltiplica quelli che hai.'],
+      ['Perigeo', 'L’altro modo di spendere <b>la stessa carica</b>: l’anello <b>si chiude</b> addosso a te e diventa un muro che spegne i colpi e respinge la folla — non i guardiani. Mentre è chiuso <b>non spari</b>, e il danno non lo fa: lo <b>accumula</b>. Riaprendosi restituisce tutto insieme quello che ha tenuto, quindi premerlo tardi rende più che premerlo per paura.'],
+      ['Tenuti', 'Il numero sul pulsante del Perigeo: quanti colpi e quanti nemici l’anello ha tenuto fuori finora. È quello che decide l’onda del rilascio.'],
       ['Raffica', 'Stai uccidendo molto in fretta. È solo un contatore: dice il ritmo, non aggiunge regole.'],
       ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere.'],
       ['Frammenti', 'La valuta che <b>resta fra una partita e l’altra</b>. Si spende nell’Osservatorio.'],

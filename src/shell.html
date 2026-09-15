@@ -245,6 +245,47 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
    fermo), e il NUCLEO che pulsa dietro al glifo. Da carico invece sta
    zitto: e' un indicatore, e un indicatore che lampeggia sempre non dice
    piu' quando. */
+/* ---------- Perigeo ----------
+   L'angolo opposto al Culmine, perche' sono due atti opposti che spendono la
+   stessa barra: quello a destra apre l'anello, quello a sinistra lo chiude.
+   Stessa regola del Culmine sui tocchi: esiste solo da carico, se no sarebbe
+   un pezzo di schermo in cui non si puo' cominciare a trascinare. Il colore
+   e' quello dell'asteroide che assorbe un colpo — il riparo, in questo gioco,
+   e' gia' azzurro. */
+#peri{position:absolute;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(18px + var(--sab));
+  width:74px;height:74px;--cut:14px;pointer-events:none;cursor:pointer;display:none;
+  place-items:center;background:none;border:0;padding:0;color:#9ec6ff;--f:0;z-index:6}
+#peri.on{display:grid}
+#peri.pronto,#peri.attivo{pointer-events:auto}
+#peri>*{grid-area:1/1}
+#peri .halo{width:136%;height:136%;border-radius:50%;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle,rgba(158,198,255,.6) 0 26%,rgba(120,170,255,.26) 48%,transparent 68%);
+  filter:blur(7px);transition:opacity .25s}
+#peri.pronto .halo{opacity:1;animation:culmAlone 1.4s ease-in-out infinite}
+#peri.attivo .halo{opacity:1;background:radial-gradient(circle,rgba(255,255,255,.6) 0 30%,rgba(158,198,255,.3) 52%,transparent 70%);animation:none}
+#peri .face{position:relative;width:100%;height:100%;display:grid;place-items:center;
+  border:1px solid rgba(158,198,255,.26);background:rgba(12,10,30,.66);
+  backdrop-filter:blur(6px);transition:border-color .2s,background .2s}
+#peri.pronto .face{border-color:#9ec6ff;background:rgba(10,20,40,.78)}
+#peri.attivo .face{border-color:#fff;background:rgba(16,34,64,.85)}
+/* l'anello di carica, e da chiuso il tempo che resta: gira al contrario del
+   Culmine, perche' il Perigeo si consuma invece di accendersi */
+#peri .arc{position:absolute;inset:4px;border-radius:50%;
+  background:conic-gradient(from -90deg,#9ec6ff calc(var(--f)*360deg),rgba(158,198,255,.10) 0);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);mask:radial-gradient(circle,transparent 60%,#000 62%);
+  opacity:.9}
+#peri .core{position:absolute;width:34px;height:34px;border-radius:50%;opacity:0;filter:blur(5px);
+  background:radial-gradient(circle,color-mix(in srgb,#9ec6ff 42%,transparent),transparent 70%)}
+#peri.pronto .core{opacity:1;animation:culmCuore 1.4s ease-in-out infinite}
+#peri.attivo .core{opacity:.8;background:radial-gradient(circle,rgba(255,255,255,.45),transparent 70%)}
+#peri .stack{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1}
+#peri .glif{font:400 22px/1 var(--disp);color:rgba(158,198,255,.42);transition:color .2s,transform .2s,text-shadow .2s}
+#peri .lab{font:700 7.5px/1 var(--ui);letter-spacing:.03em;color:var(--faint);white-space:nowrap;transition:color .2s}
+#peri.pronto .glif,#peri.attivo .glif{color:#fff;text-shadow:0 0 14px #9ec6ff,0 0 28px rgba(158,198,255,.7)}
+#peri.pronto .lab,#peri.attivo .lab{color:#fff;text-shadow:0 0 8px rgba(158,198,255,.9)}
+/* da chiuso il glifo si stringe: e' la stessa cosa che sta facendo l'anello */
+#peri.attivo .glif{transform:scale(.72)}
+
 #culm{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(18px + var(--sab));
   width:74px;height:74px;--cut:14px;pointer-events:none;cursor:pointer;display:none;
   place-items:center;background:none;border:0;padding:0;color:#ffe9b0;--f:0;z-index:6}
@@ -1261,6 +1302,13 @@ ul.lista b{color:#fff;font-weight:600}
     <div id="nodochip"></div>
   </div>
 
+  <button id="peri" aria-label="Perigeo">
+    <span class="halo"></span>
+    <span class="face clip">
+      <span class="arc"></span><span class="core"></span>
+      <span class="stack"><span class="glif">&#9678;</span><span class="lab">0%</span></span>
+    </span>
+  </button>
   <button id="culm" aria-label="Culmine">
     <span class="halo"></span>
     <span class="onda"></span><span class="onda due"></span>

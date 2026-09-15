@@ -16,6 +16,53 @@ Due formati: la **Corsa** da 20 minuti con cinque guardiani, poi modalità senza
 l'**Incursione** da 8 minuti con tre. I **frammenti** restano fra una partita e l'altra e si
 spendono nell'Osservatorio in potenziamenti permanenti, nuclei e reliquie.
 
+### Perigeo — l'altro modo di spendere la carica
+
+Il gioco aveva **un verbo** — schivare — e **un bottone**. Ma la difesa, qui, esiste già ed è il
+movimento: un bottone che desse scudo, cura o invulnerabilità non aggiungerebbe difesa,
+toglierebbe **tensione**, perché renderebbe recuperabile l'errore che oggi si paga.
+
+Quello che mancava non era un'abilità difensiva: era una **seconda decisione con un costo**. Il
+**Culmine** è il punto più alto di un'orbita; il **Perigeo** è il punto più vicino. Stessa
+barra, stesso prezzo — la carica intera — e due atti opposti: l'anello si **apre** oppure si
+**chiude**.
+
+Chiuso, per poco più di due secondi, l'anello è un muro addosso al nucleo: spegne i colpi
+nemici come fa un asteroide, e respinge la folla. **Non i guardiani** — un guardiano sfonda gli
+asteroidi, figurarsi sei rune — e non è invulnerabilità: chi entra lo stesso fa danno come
+sempre. Il prezzo è che **per quei due secondi non spari**.
+
+E non fa danno mentre è chiuso: lo **accumula**. Ogni colpo spento e ogni nemico tenuto fuori
+valgono un punto — il numero scritto sul pulsante — e riaprendosi l'anello li restituisce tutti
+insieme in un'onda che cresce con loro. Quindi la giocata giusta non è premere appena si ha
+paura: è **premere tardi**, dentro al mucchio, e resistere un momento in più. Chi lo usa per
+scappare ottiene un buco nel proprio danno e un'onda da niente.
+
+**Non rende il gioco più facile, e si può misurare.** `npm run misura -- perigeo` mette in fila
+il danno al secondo di un anello vero e quello che l'onda restituisce:
+
+| minuto | danno/s | il buco (2,2 s) | onda a 40 punti | ripaga |
+|---|---|---|---|---|
+| 5 | 429 | 943 | 664 | 70% |
+| 10 | 571 | 1257 | 664 | 53% |
+| 15 | 823 | 1811 | 664 | 37% |
+
+L'onda resta sempre **sotto** il buco che lascia, e la distanza cresce con la build: il Perigeo
+conviene per quello che **evita**, mai per quello che fa. Ed è la ragione per cui il Culmine non
+diventa mai la scelta sbagliata — 5,5 secondi a cadenza quasi doppia con ogni Risveglio di un
+grado più alto valgono molto più di 664 — quindi ogni barra piena è davvero una domanda:
+*apro o chiudo?*
+
+Una cosa che questo non può misurare, e va detta: **il bot del banco non prende danno**, quindi
+il prezzo del Perigeo è misurato e il suo beneficio no. Il bilanciamento di quanto *salvi* è
+l'unica cosa qui dentro che resta da verificare giocando.
+
+L'altra idea che era sul tavolo — una seconda risorsa caricata **sfiorando** il pericolo — è
+stata scartata, e per una ragione misurata: la prossimità in questo gioco ha la stessa
+patologia che il Culmine aveva prima di questa sessione, perché il ritmo delle uccisioni passa
+da 1 al secondo a 25. Una barra che si riempie con la folla sarebbe vuota quando serve e piena
+quando non serve — e col banco cieco al danno non sarebbe nemmeno tarabile.
+
 ### Il lessico
 
 Un giocatore vede apparire scritte e **nomi di cose che accadono** senza capirne il

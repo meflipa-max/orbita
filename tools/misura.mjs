@@ -218,6 +218,42 @@ function bancoSoldi() {
   }
 }
 
+/* ── il prezzo del Perigeo ───────────────────────────────────────
+   Chiudere l'anello costa TUTTO il danno per la sua durata e restituisce
+   un'onda che vale quanto ha tenuto. Le due cose vanno lette insieme, o non
+   si sa se il Perigeo sia una scelta o un regalo: qui si misura il danno al
+   secondo di un anello vero a tre tappe della corsa, e accanto si mette
+   quello che l'onda restituisce con zero, venti e quaranta punti assorbiti.
+   L'onda deve restare SOTTO il buco che lascia: il Perigeo deve convenire
+   per quello che evita, non per quello che fa.                          */
+function bancoPerigeo() {
+  const S = O.save();
+  S.modo = 'corsa'; S.asc = S.ascSel = 0; S.runes = MAZZO_PIENO.slice();
+  S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
+  O.reset('vega', 1111, 'corsa', false);
+  G.state = 'play';
+  const dt = 1 / 60, tappe = [300, 600, 900];
+  const passo = n => { for (let j = 0; j < n; j++) {
+    bot(dt); O.step(dt);
+    if (G.briefing) G.briefing = null;
+    if (G.pending > 0) scegli();
+    G.state = 'play'; P.hp = P.maxHp;
+  } };
+  console.log('minuto   danno/s   il buco (2,2s)   onda a 0   a 20   a 40   il buco lo ripaga?');
+  for (const t of tappe) {
+    while (G.t < t) passo(60);
+    const d0 = G.dmgDone, t0 = G.t;
+    passo(600);
+    const dps = (G.dmgDone - d0) / (G.t - t0);
+    const buco = dps * 2.2;
+    const onda = n => Math.round((24 + 16 * Math.min(40, n)) * P.dmgMul);
+    console.log(String(Math.round(t / 60)).padEnd(8), String(Math.round(dps)).padEnd(9),
+      String(Math.round(buco)).padEnd(16), String(onda(0)).padEnd(10), String(onda(20)).padEnd(6),
+      String(onda(40)).padEnd(6), (onda(40) / buco * 100).toFixed(0) + '%');
+  }
+  console.log('\n(il bot non prende danno: qui si misura il prezzo, non quanto il Perigeo salvi)');
+}
+
 const quale = process.argv[2] || 'base';
 console.log('— banco: ' + quale + ' —\n');
-({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi }[quale] || banchoBase)();
+({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo }[quale] || banchoBase)();

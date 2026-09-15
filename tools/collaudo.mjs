@@ -1418,5 +1418,160 @@ sez('il traguardo della Corsa si vede');
   ok(true, 'e la barra dei guardiani si disegna senza lanciare');
 }
 
+sez('Perigeo: una carica, due atti');
+/* Il gioco aveva un verbo — schivare — e un bottone. Il secondo atto non
+   aggiunge potere: aggiunge una DOMANDA sulla carica che c'era gia'. Il
+   Perigeo chiude l'anello addosso al nucleo, e il suo prezzo e' tutto il
+   danno per la sua durata: se fosse uno scudo renderebbe recuperabile
+   l'errore che oggi si paga, cioe' toglierebbe tensione invece di darne. */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 930, 'corsa', false); G.state = 'play';
+  G.charge = 1; G.culm = 0; G.peri = 0;
+  ok(O.attivaPerigeo(), 'con la barra piena l’anello si puo’ chiudere');
+  ok(G.charge === 0, 'e costa la carica intera');
+  ok(!O.attivaCulmine(), 'quindi il Culmine non si puo’ piu’ usare: o apri o chiudi');
+  ok(G.peri > 2 && G.peri <= 2.3, 'dura poco piu’ di due secondi (' + G.peri.toFixed(1) + ')');
+  /* e l'anello si stringe davvero */
+  const r0 = G.ringR;
+  for (let i = 0; i < 30; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(G.ringR < r0 * .6, 'l’anello si stringe addosso al nucleo (' + Math.round(r0) + ' → ' + Math.round(G.ringR) + 'px)');
+  /* e si riapre da solo */
+  for (let i = 0; i < 180; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(G.peri === 0 && G.ringR > r0 * .95, 'e si riapre da solo (' + Math.round(G.ringR) + 'px)');
+}
+
+sez('l’anello chiuso non spara');
+/* E' il prezzo, ed e' quello che impedisce al Perigeo di rendere il gioco
+   piu' facile: due secondi senza danno, mentre il calendario delle ondate e
+   il direttore continuano a salire. Le ricariche pero' scorrono lo stesso e
+   si fermano a zero, cosi' riaprendosi l'anello scarica insieme. */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 931, 'corsa', false); G.state = 'play';
+  G.ring = new Array(G.slots).fill(null);
+  for (let i = 0; i < 3; i++) {
+    G.ring[i] = { id: ['scintilla', 'sciame', 'prisma'][i], el: ['fuoco', 'vuoto', 'luce'][i], lv: 4, cd: 0, res: 0, slot: i, st: {} };
+  }
+  O.recalcRing(false);
+  gioca(2);
+  ok(G.bullets.length > 0, 'ad anello aperto le rune sparano');
+  /* `gioca()` lascia lo stato su 'level' appena sale un livello, e i due atti
+     si possono spendere solo in partita */
+  G.state = 'play'; G.charge = 1;
+  ok(O.attivaPerigeo(), 'l’anello si chiude');
+  G.bullets.length = 0;
+  for (let i = 0; i < 100; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(G.peri > 0, 'l’anello e’ ancora chiuso');
+  ok(G.bullets.length === 0, 'e non e’ uscito un solo colpo (' + G.bullets.length + ')');
+  /* riaperto, riparte */
+  for (let i = 0; i < 90; i++) { O.step(1 / 60); P.hp = P.maxHp; G.pending = 0; }
+  ok(G.bullets.length > 0, 'riaprendosi torna a sparare (' + G.bullets.length + ' colpi)');
+}
+
+sez('l’anello chiuso è riparo, e quello che tiene se lo segna');
+/* Stessa regola dell'asteroide: il colpo nemico si spegne contro il campo.
+   Ma il Perigeo non fa danno mentre e' chiuso — lo ACCUMULA, e lo restituisce
+   riaprendosi. E' questo a rendere la giocata «resisti un momento in piu’»
+   invece di «premi appena hai paura». */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 932, 'corsa', false); G.state = 'play';
+  G.enemies.length = 0; G.ebul.length = 0; G.bullets.length = 0;
+  G.charge = 1; O.attivaPerigeo();
+  for (let i = 0; i < 20; i++) O.step(1 / 60);       /* lascia chiudere l'anello */
+  const vitaPrima = P.hp;
+  /* tre colpi nemici in arrivo sul nucleo */
+  for (let k = 0; k < 3; k++)
+    G.ebul.push({ x: G.p.x + 120, y: G.p.y + k * 4, vx: -600, vy: 0, dmg: 20, r: 6, c: '#f00', t: 0, life: 3, fonte: 'prova' });
+  for (let i = 0; i < 30; i++) O.step(1 / 60);
+  ok(G.ebul.length === 0, 'i colpi nemici si spengono contro l’anello');
+  ok(P.hp === vitaPrima, 'e non tolgono vita');
+  ok(G.periAss >= 3, 'e ognuno vale un punto dell’onda (' + G.periAss + ')');
+}
+
+sez('il Perigeo tiene la folla, non i guardiani');
+/* Un guardiano sfonda gli asteroidi: sei rune non lo fermano, e non devono —
+   se no il Perigeo diventerebbe il modo di non giocare lo scontro che il
+   gioco costruisce da venti minuti. E non e' invulnerabilita': chi entra lo
+   stesso fa danno come sempre. */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 933, 'corsa', false); G.state = 'play';
+  G.enemies.length = 0; G.ebul.length = 0;
+  G.charge = 1; O.attivaPerigeo();
+  for (let i = 0; i < 20; i++) O.step(1 / 60);
+  /* un nemico comune addosso al nucleo */
+  const mob = { type: 'vagante', x: G.p.x + 6, y: G.p.y, vx: 0, vy: 0, r: 13, c: '#fff', shape: 'dia',
+    hp: 999, maxHp: 999, spd: 0, dmg: 10, xp: 1, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0,
+    froze: 0, kb: 0, kbx: 0, kby: 0, elite: false, boss: null, ten: 1, dead: false };
+  G.enemies.push(mob);
+  /* senza togliere l'invulnerabilita' d'apertura si misurerebbe quella */
+  G.p.inv = 0;
+  const v1 = P.hp;
+  for (let i = 0; i < 30; i++) O.step(1 / 60);
+  const dist = Math.hypot(mob.x - G.p.x, mob.y - G.p.y);
+  ok(dist > G.ringR, 'il nemico comune viene respinto oltre l’anello (' + Math.round(dist) + 'px)');
+  ok(P.hp === v1, 'e non fa danno da li’');
+  /* un guardiano no */
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 934, 'corsa', false); G.state = 'play';
+  G.enemies.length = 0; G.charge = 1; O.attivaPerigeo();
+  for (let i = 0; i < 20; i++) O.step(1 / 60);
+  const guard = { type: 'boss', x: G.p.x + 6, y: G.p.y, vx: 0, vy: 0, r: 44, c: '#f00', shape: 'boss',
+    hp: 9e5, maxHp: 9e5, spd: 0, passo: .8, dmg: 30, xp: 1, flash: 0, slow: 0, slowT: 0, burn: 0, burnT: 0,
+    froze: 0, kb: 0, kbx: 0, kby: 0, elite: false, ten: 1, dead: false, ph: 0, atk: 99, atk2: 99,
+    charge: 0, cdir: 0, mod: { spd: 1 }, corazza: null, boss: { n: 'PROVA', c: '#f00', pat: 'summon', fine: 0, r: 44, dmg: 30 } };
+  G.enemies.push(guard); G.bosses.push(guard); G.boss = guard;
+  /* la corsa comincia con qualche istante di invulnerabilita': senza
+     toglierla si misurerebbe quella, non il Perigeo */
+  G.p.inv = 0;
+  const v2 = P.hp;
+  for (let i = 0; i < 40; i++) O.step(1 / 60);
+  ok(P.hp < v2, 'un guardiano passa lo stesso: il Perigeo non e’ invulnerabilita’');
+}
+
+sez('l’onda del rilascio vale quanto ha tenuto');
+/* Premere appena si ha paura deve rendere poco; resistere dentro al mucchio
+   deve rendere molto. E il tetto esiste perche' in mezzo a trecento nemici
+   l'onda sarebbe una bomba. */
+{
+  const onda = ass => {
+    S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 935, 'corsa', false); G.state = 'play';
+    G.enemies.length = 0; G.zones.length = 0;
+    G.charge = 1; O.attivaPerigeo();
+    G.periAss = ass; G.peri = .001;
+    O.step(1 / 60);
+    const z = G.zones.find(x => x.src === 'perigeo');
+    return z ? { dmg: z.dmg, r: z.r1 } : { dmg: 0, r: 0 };
+  };
+  const vuoto = onda(0), pieno = onda(30), oltre = onda(500);
+  ok(vuoto.dmg > 0 && pieno.dmg > vuoto.dmg * 8, 'chi ha tenuto trenta colpi rilascia molto piu’ di chi non ha tenuto niente (' +
+     Math.round(vuoto.dmg) + ' → ' + Math.round(pieno.dmg) + ')');
+  ok(pieno.r > vuoto.r * 1.8, 'e l’onda e’ anche piu’ larga (' + Math.round(vuoto.r) + ' → ' + Math.round(pieno.r) + 'px)');
+  ok(oltre.dmg === onda(40).dmg, 'oltre il tetto non cresce piu’: in mezzo a trecento nemici sarebbe una bomba');
+}
+
+sez('la prima barra piena spiega che gli atti sono due');
+/* Il momento in cui la carica si riempie non e' piu' un avviso: e' una
+   domanda. Vale anche per chi gioca da prima — il Culmine lo conosce, il
+   Perigeo no, e senza questo non lo scoprirebbe mai. */
+{
+  ok(!!O.BRIEFING.perigeo, 'il briefing esiste');
+  const t = O.BRIEFING.perigeo.p.join(' ');
+  ok(/Culmine/.test(t) && /Perigeo/.test(t), 'e nomina tutti e due gli atti');
+  ok(/non spari/.test(t), 'e dice il prezzo');
+  ok(/guardiani/.test(t), 'e il limite');
+  O.importSave(b64({ shards: 0, visti: ['culmine'] }));   /* chi gioca da prima */
+  O.reset('vega', 936, 'corsa', false); G.state = 'play';
+  G.briefing = null; G.charge = 1; G.culm = 0; G.peri = 0;
+  O.UI.hud();
+  ok(G.briefing === 'perigeo', 'e si apre alla prima barra piena anche a chi conosce gia’ il Culmine');
+  G.briefing = null;
+  O.UI.hud();
+  ok(G.briefing === null, 'una volta sola');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

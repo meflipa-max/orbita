@@ -546,6 +546,9 @@ addEventListener('keydown', e => {
   /* Spazio: Culmine. È l'unico tasto d'azione del gioco, quindi è il più
      grande e il più a portata di pollice della tastiera. */
   if (k === ' ' && G.state === 'play') { e.preventDefault(); attivaCulmine(); }
+  /* Maiusc: Perigeo. Sta sotto la mano che non preme lo spazio, e i due atti
+     spendono la stessa barra: o apri o chiudi. */
+  if ((k === 'shift' || k === 'e') && G.state === 'play') { e.preventDefault(); attivaPerigeo(); }
   /* R sulla schermata di fine: si riparte senza passare da nessun menu. Il
      tempo fra una morte e la partita dopo è la leva di ritenzione più forte
      che esista nel genere, e va tenuto sotto il secondo. */
@@ -658,6 +661,10 @@ const G = {
   /* consuntivo: quale runa ha fatto il danno, e chi ti ha ucciso */
   dmgSrc: {}, killer: null,
   spawnAcc: 0, eliteT: ELITE_T, bossIdx: 0, boss: null, bosses: [], eliteHint: 0, revives: 0, healCd: 0, gemT: 1.5, cadT: 0, dissolto: 0, maxT: 0, maxHint: 0,
+  /* il Perigeo: quanto gli resta, quanto ha assorbito, quante volte l'hai
+     speso, e il raggio dell'anello — che da quando l'anello si chiude non e'
+     piu' una costante */
+  peri: 0, periAss: 0, peris: 0, ringR: RING_R,
   starfield: [], flashT: 0, flashC: HPC, victory: false, q: 1, diff: 0, hint: 0, hintOff: 0, asc: ascMods(0), ascLv: 0, ev: null, evT: 70, evUltimo: null, form: null, fireBoost: 1,
   evoCount: 0, reorders: 0, awakeMax: 0, awakeAt: 0, lowHp: 0, pieno: 0, rocks: [], nodo: null, nodoK: null, biasX: 0, biasY: 0, rerolls: 2,
   /* il direttore: vedi updateSpawns. raggio = a che distanza muoiono i
@@ -1404,7 +1411,9 @@ function risveglioFx(e, tier) {
 /* ── Culmine ────────────────────────────────────────────────────
    Tre effetti insieme: l'anello spara tutto in una volta, le ricariche vanno
    quasi al doppio, e ogni Risveglio acceso sale di un grado. */
-function puoCulmine() { return G.state === 'play' && G.culm <= 0 && G.charge >= 1; }
+/* `G.peri <= 0`: aprire l'anello mentre lo stai chiudendo non vuol dire
+   niente, e la carica e' gia' spesa comunque */
+function puoCulmine() { return G.state === 'play' && G.culm <= 0 && G.peri <= 0 && G.charge >= 1; }
 function attivaCulmine() {
   if (!puoCulmine()) return false;
   G.charge = 0; G.chargeAnn = 0; G.culm = CULM_DUR * G.cg.culmDur; G.culms++;
@@ -1436,6 +1445,54 @@ function attivaCulmine() {
   UI.culmineFx();
   return true;
 }
+/* ── Perigeo ────────────────────────────────────────────────────
+   L'altro modo di spendere la stessa carica: l'anello si chiude addosso al
+   nucleo invece di aprirsi. Vedi il commento su PERI_DUR in 01-data.       */
+function puoPerigeo() { return G.state === 'play' && G.peri <= 0 && G.culm <= 0 && G.charge >= 1; }
+function attivaPerigeo() {
+  if (!puoPerigeo()) return false;
+  G.charge = 0; G.chargeAnn = 0; G.peri = PERI_DUR; G.periAss = 0; G.peris++;
+  /* Niente nome a schermo pieno come il Culmine: il Perigeo dura due secondi
+     e in quei due secondi bisogna GUARDARE il campo per decidere quando
+     conviene riaprirsi. Il Culmine grida, il Perigeo e' un fiato trattenuto:
+     l'anello che si stringe e' gia' il segnale piu' leggibile del gioco. */
+  G.hitstop = Math.max(G.hitstop, .1);
+  G.shake = Math.max(G.shake, 9);
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: RING_R * 2.4, r1: PERI_R, t: 0, dur: .3, c: PERI_C });
+  burstPart(G.p.x, G.p.y, 14, PERI_C, 190, 3, .5);
+  AU.play('awake');
+  return true;
+}
+/* Riaprendosi, l'anello restituisce quello che ha tenuto fuori. */
+function rilasciaPerigeo() {
+  const n = Math.min(PERI_ASS_MAX, G.periAss | 0);
+  const dmg = (PERI_ONDA + PERI_ONDA_ASS * n) * P.dmgMul;
+  const r1 = (150 + n * 9) * P.areaMul;
+  G.zones.push({ src: 'perigeo', k: 'nova', x: G.p.x, y: G.p.y, r0: G.ringR, r1,
+    t: 0, dur: .45, dmg, hit: new Set(), c: PERI_C, kb: 380 });
+  G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: PERI_R, r1: r1 * 1.1, t: 0, dur: .5, c: '#ffffff' });
+  G.shake = Math.max(G.shake, 8 + Math.min(14, n * .4));
+  burstPart(G.p.x, G.p.y, 10 + Math.min(20, n), PERI_C, 260, 3.4, .55);
+  AU.play('blast');
+  /* quanto ha tenuto, in una parola: senza, il numero che decide l'onda
+     resta l'unica cosa del gioco che non si vede mai */
+  if (n) addFloat(G.p.x, G.p.y - 34, n + ' TENUTI', PERI_C, n >= 12);
+  G.periAss = 0;
+}
+function updatePerigeo(dt) {
+  /* il raggio insegue il bersaglio: si chiude in fretta, si riapre piu'
+     morbido — chiudersi e' un gesto, riaprirsi e' una conseguenza */
+  const meta = G.peri > 0 ? PERI_R : RING_R;
+  G.ringR += (meta - G.ringR) * Math.min(1, dt * (G.peri > 0 ? 22 : 11));
+  if (G.peri <= 0) return;
+  G.peri -= dt;
+  if (cchance(dt * 30)) {
+    const a = crand(TAU), d = G.ringR + crand(10);
+    addPart(G.p.x + Math.cos(a) * d, G.p.y + Math.sin(a) * d, -Math.cos(a) * 60, -Math.sin(a) * 60, .35, crand(3, 1.6), PERI_C);
+  }
+  if (G.peri <= 0) { G.peri = 0; rilasciaPerigeo(); }
+}
+
 function updateCulmine(dt) {
   if (G.culm > 0) {
     G.culm -= dt;

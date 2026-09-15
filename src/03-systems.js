@@ -2,7 +2,8 @@
    ORBITA — rune, nemici, simulazione.
    ═══════════════════════════════════════════════════════════════ */
 
-const RING_R = 64;
+/* RING_R sta in 01-data accanto a PERI_R: sono i due raggi dell'anello,
+   aperto e serrato, e un numero solo dei due non vuol dire niente. */
 
 function nearest(x, y, maxR, skip) {
   GRID.near(x, y, maxR, _q);
@@ -426,8 +427,19 @@ function updateRunes(dt) {
   for (let i = 0; i < sl; i++) {
     const r = G.ring[i]; if (!r) continue;
     const a = G.ringRot + i / sl * TAU;
-    r.wa = a; r.wx = G.p.x + Math.cos(a) * RING_R; r.wy = G.p.y + Math.sin(a) * RING_R;
+    r.wa = a; r.wx = G.p.x + Math.cos(a) * G.ringR; r.wy = G.p.y + Math.sin(a) * G.ringR;
     const s = runeStats(r);
+    /* ── anello chiuso, anello muto ──────────────────────────────
+       E' il prezzo del Perigeo, ed e' il motivo per cui non e' uno scudo: per
+       due secondi non esce niente. Le ricariche pero' scorrono lo stesso e si
+       fermano a zero, cosi' riaprendosi l'anello scarica insieme tutto quello
+       che era pronto — come fa il Culmine. */
+    const chiuso = G.peri > 0;
+    if (chiuso && ORBITANTI.indexOf(r.id) < 0) {
+      r.cd = Math.max(0, r.cd - dt * G.fireBoost);
+      if (FARI.indexOf(r.id) >= 0) r.st.a = (r.st.a || 0) + dt * s.spd;
+      continue;
+    }
     if (FARI.indexOf(r.id) >= 0) { r.st.a = (r.st.a || 0) + dt * s.spd; }
     if (ORBITANTI.indexOf(r.id) >= 0) {
       if (r.mutata) continue;
@@ -440,7 +452,10 @@ function updateRunes(dt) {
         o.x = G.p.x + Math.cos(o.p + a) * orbR; o.y = G.p.y + Math.sin(o.p + a) * orbR;
         const list = GRID.near(o.x, o.y, s.size + 26, []);
         for (let n = 0; n < list.length; n++) {
-          const e = list[n]; if (e.hp <= 0 || (e.cryCd || 0) > 0) continue;
+          /* l'anello chiuso non fa danno nemmeno con le schegge orbitanti:
+             continuano a girare — fermarle le lascerebbe appese nel vuoto —
+             ma per due secondi non toccano niente */
+          const e = list[n]; if (chiuso || e.hp <= 0 || (e.cryCd || 0) > 0) continue;
           const dx = e.x - o.x, dy = e.y - o.y, rr = e.r + s.size;
           if (dx * dx + dy * dy < rr * rr) {
             e.cryCd = gelido ? .17 : .34;
@@ -991,6 +1006,30 @@ function updateEnemies(dt) {
        fine. Cioe' toccare il Corriere, che e' esattamente quello che la
        caccia ti chiede di fare, si vedeva e si sentiva come una botta. */
     const dx = px - e.x, dy = py - e.y, rr = e.r + G.p.r;
+    /* ── l'anello serrato tiene fuori la folla, non i guardiani ───
+       Un guardiano sfonda gli asteroidi: sei rune non lo fermano, e non deve
+       fermarlo — se no il Perigeo diventerebbe il modo di non schivare lo
+       scontro che il gioco costruisce da venti minuti. Tutto il resto viene
+       respinto oltre il bordo dell'anello, e ogni nemico tenuto vale un punto
+       dell'onda del rilascio.
+       Il contatto NON viene annullato per decreto: e' la spinta a togliere il
+       nemico da dosso. Chi entra lo stesso — un guardiano, o qualcosa di piu'
+       veloce della spinta — fa danno come sempre. */
+    if (G.peri > 0 && !e.boss && e.dmg > 0) {
+      const soglia = G.ringR + e.r;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < soglia * soglia) {
+        const d = Math.sqrt(d2) || 1;
+        e.x = px - dx / d * soglia; e.y = py - dy / d * soglia;
+        e.kbx = -dx / d; e.kby = -dy / d; e.kb = .12;
+        e.periCd = (e.periCd || 0) - dt;
+        if (e.periCd <= 0) {
+          e.periCd = PERI_TICK; G.periAss++;
+          addPart(e.x, e.y, 0, 0, .3, 3, PERI_C);
+        }
+        continue;
+      }
+    }
     if (e.dmg > 0 && dx * dx + dy * dy < rr * rr) hurtPlayer(e.dmg, e.boss ? e.boss.n : (MOBS[e.type] ? MOBS[e.type].n : 'contatto'));
   }
 }
@@ -1010,7 +1049,22 @@ function updateEBullets(dt) {
       burstPart(b.x, b.y, 5, '#9ec6ff', 150, 2.8, .34);
       B.splice(i, 1); continue;
     }
-    const dx = G.p.x - b.x, dy = G.p.y - b.y, rr = b.r + G.p.r * .8;
+    const dx = G.p.x - b.x, dy = G.p.y - b.y;
+    /* ── l'anello serrato e' riparo ──────────────────────────────
+       Stessa regola dell'asteroide, e stesso segnale: il colpo si spegne
+       contro il campo con l'arco luminoso nel punto d'impatto. Ogni colpo
+       spento vale un punto dell'onda che l'anello restituisce riaprendosi. */
+    if (G.peri > 0) {
+      const d = Math.hypot(dx, dy);
+      if (d <= G.ringR + b.r + 8 && d > G.p.r * .7) {
+        G.zones.push({ k: 'scudo', x: G.p.x, y: G.p.y, r: G.ringR,
+          a: Math.atan2(b.y - G.p.y, b.x - G.p.x), t: 0, dur: .4 });
+        burstPart(b.x, b.y, 5, PERI_C, 150, 2.8, .34);
+        G.periAss++;
+        B.splice(i, 1); continue;
+      }
+    }
+    const rr = b.r + G.p.r * .8;
     if (dx * dx + dy * dy < rr * rr) { hurtPlayer(b.dmg, b.fonte || 'un colpo nemico'); B.splice(i, 1); }
   }
 }
