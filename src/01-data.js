@@ -784,8 +784,38 @@ const SFIDE = [
    eccesso NON si perde — resta nella barra, che si vede piena — e il livello
    dopo arriva dopo LV_PAUSA secondi di gioco vero. La pausa scorre solo
    giocando: la schermata delle carte ferma il tempo, quindi fra un livello e
-   il successivo c'e' sempre del gioco, non un altro pannello. */
-const LV_PAUSA = 1.2;
+   il successivo c'e' sempre del gioco, non un altro pannello.
+   ── quanto lunga, la pausa ──
+   Era 1,2 secondi, e non bastava: «in un minuto dieci schermate che mi
+   propongono che il nucleo cresce». Un secondo di partita fra due carte non
+   e' un momento, e' la stessa pila di prima consegnata a rate. Misurato sul
+   banco il MINUTO PEGGIORE di una corsa — non la media, che era sempre
+   rassicurante: 5 livelli in Corsa, 6 nell'Incursione, 8 con l'Avidita'
+   comprata e le gemme lasciate indietro per tornare a prenderle dopo, 10
+   aggiungendoci la Sapienza — e a grappoli: quattro o cinque livelli a
+   meno di quattro secondi l'uno dall'altro. La pausa e' un tetto al
+   ritmo, ed e' un tetto vero solo se e' lunga: con dieci secondi non
+   possono essere piu' di sei al minuto, e in pratica sono tre o quattro.
+   Non piu' lunga, perche' l'Incursione consegna un livello ogni quindici
+   secondi per formato: a sedici la barra resta piena e i livelli arrivano
+   dall'orologio invece che dalle uccisioni. */
+const LV_PAUSA = 10;
+
+/* ── il tetto della banca ────────────────────────────────────────
+   Le gemme lontane si fondono in poche gemme grosse (vedi updateGems), e
+   quelle tenevano TUTTO quello che restava indietro, per sempre. Misurato:
+   il 79% dell'esperienza di una Corsa entra da li', e una gemma sola
+   arrivava a valere quattro o cinque livelli consegnati in un secondo — e
+   con la sola pausa allungata, che lascia la banca crescere piu' a lungo,
+   undici nell'Incursione: «il nucleo cresce ogni dieci secondi per due
+   minuti», cioe' lo stesso difetto allungato. Il ritmo non basta: serve un
+   tetto alla scorta.
+   Insieme, le gemme fuse valgono al massimo questo, in livelli CORRENTI: il
+   resto si spegne. Costa solo a chi lascia indietro piu' di un livello e
+   mezzo — le gemme vicine, quelle che si raccolgono combattendo, non hanno
+   nessun tetto — e in cambio una gemma grossa consegna al massimo due
+   carte, dieci secondi l'una dall'altra. */
+const BANCA_MAX = 1.5;
 
 /* ── un rubinetto solo per la crescita ───────────────────────────
    La crescita del nucleo usciva da OTTO sorgenti che non si parlavano fra
@@ -1163,7 +1193,8 @@ function lessico() {
       ['Perigeo', 'L’altro modo di spendere <b>la stessa carica</b>: l’anello <b>si chiude</b> addosso a te e diventa un muro che spegne i colpi e respinge la folla — non i guardiani. Mentre è chiuso <b>non spari</b>, e il danno non lo fa: lo <b>accumula</b>. Riaprendosi restituisce tutto insieme quello che ha tenuto, quindi premerlo tardi rende più che premerlo per paura.'],
       ['Tenuti', 'Il numero sul pulsante del Perigeo: quanti colpi e quanti nemici l’anello ha tenuto fuori finora. È quello che decide l’onda del rilascio.'],
       ['Raffica', 'Stai uccidendo molto in fretta. È solo un contatore: dice il ritmo, non aggiunge regole.'],
-      ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere.'],
+      ['Schegge', 'Quelle turchesi che lasciano i nemici sono <b>esperienza</b>: riempiono la barra in cima, e ogni barra piena è una carta da scegliere — <b>una ogni ' + LV_PAUSA + ' secondi</b> al massimo: quelle già pagate aspettano, ed è il <b>+N</b> accanto al livello.'],
+      ['Gemma grossa', 'Le schegge che lasci <b>lontane</b> si fondono in poche gemme grosse, una per direzione. Insieme valgono <b>al massimo ' + String(BANCA_MAX).replace('.', ',') + ' livelli</b>: il resto si spegne. Quelle vicine, che raccogli combattendo, non hanno tetto.'],
       ['Frammenti', 'La valuta che <b>resta fra una partita e l’altra</b>. Si spende nell’Osservatorio.'],
       ['Scrigno', 'Una carta in più, subito. <b>La lascia solo un guardiano abbattuto</b>: è l’unico traguardo che vale una schermata. Elite ed eventi d’arena pagano invece in esperienza e frammenti.'],
       ['Annichilimento', 'La bomba a terra non colpisce i dintorni: <b>uccide ogni nemico della mappa</b>, guardiani esclusi.'],

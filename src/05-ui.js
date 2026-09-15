@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 const SCR = $('#screens'), HUD = $('#hud');
-const elLv = $('#lvnum'), elXp = $('#xpfill'), elXpLine = $('#xpline'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
+const elLv = $('#lvnum'), elLvPiu = $('#lvpiu'), elXp = $('#xpfill'), elXpLine = $('#xpline'), elHpF = $('#hpfill'), elHpG = $('#hpghost'),
   elHpT = $('#hptxt'), elClock = $('#clock'), elKills = $('#kills'), elAwake = $('#awake'),
   elFlash = $('#flash'), elToasts = $('#toasts'), elHint = $('#movehint'), elNext = $('#nextboss'), elAsc = $('#ascchip'), elNodo = $('#nodochip'),
   elCulm = $('#culm'), elPeri = $('#peri'), elCombo = $('#combo');
@@ -197,6 +197,9 @@ const UI = {
        dice: pulsa finche' non ha finito di consegnare. */
     const carico = G.xp >= G.xpNeed && G.state === 'play';
     if (carico !== this._carico) { this._carico = carico; elXpLine.classList.toggle('carico', carico); }
+    /* e quanti ne aspettano, sul chip del livello: vedi .lvchip i */
+    const attesa = carico ? livelliInAttesa() : 0;
+    if (attesa !== this._attesa) { this._attesa = attesa; elLvPiu.hidden = !attesa; elLvPiu.textContent = '+' + attesa; }
     const f = clamp(P.hp / P.maxHp, 0, 1);
     elHpF.style.transform = 'scaleX(' + f + ')';
     elHpG.style.transform = 'scaleX(' + f + ')';
@@ -1346,6 +1349,14 @@ const UI = {
     const lvCarte = pila - scrigni;
     const lvQui = Math.max(1, G.level - lvCarte + 1);
     const altre = Math.max(0, pila - 1);
+    /* I livelli gia' pagati e non ancora consegnati (vedi LV_PAUSA): non sono
+       una pila — arrivano uno ogni dieci secondi di partita — ma chi legge
+       «Livello 21» e dieci secondi dopo rivede questa schermata deve sapere
+       che era previsto, e quanti ne restano. Sulla carta di uno scrigno non
+       si dice: quella non e' un livello. */
+    const inArrivo = (!chest && !altre) ? livelliInAttesa() : 0;
+    const arrivo = !inArrivo ? '' : inArrivo === 1 ? ' · un altro fra ' + LV_PAUSA + ' s'
+      : ' · altri ' + inArrivo + ' in arrivo, uno ogni ' + LV_PAUSA + ' s';
     /* Ventaglio: quattro carte invece di tre, ma solo nei primi tre livelli.
        È lì che la scelta conta di più — decide le prime due catene — ed è lì
        che un pescato brutto costa una partita intera. Dopo tornano tre: una
@@ -1356,7 +1367,7 @@ const UI = {
     const cards = ch.map((c, i) => this.cardHTML(c, i)).join('');
     this.open('level',
       '<div class="eyebrow">' + (chest ? 'Scrigno stellare' : 'Livello ' + lvQui) +
-      (altre ? (altre === 1 ? ' · poi un’altra' : ' · poi altre ' + altre) : '') + '</div>' +
+      (altre ? (altre === 1 ? ' · poi un’altra' : ' · poi altre ' + altre) : '') + arrivo + '</div>' +
       '<h2 class="ttl">' + (chest ? 'Un dono dal vuoto' : 'Il nucleo cresce') + '</h2>' +
       /* La domanda che questa schermata pone è "questa runa si incastra?", e
          si poneva tenendo l'anello fuori vista, dietro un altro tocco. */

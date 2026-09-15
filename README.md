@@ -266,6 +266,75 @@ solo giocando, e la schermata delle carte ferma il tempo: fra un livello e il su
 sempre partita, non un altro pannello. Un livello non parte nemmeno se c'è già una carta in attesa,
 quindi uno scrigno raccolto un istante prima non diventa una pila.
 
+### Dieci schermate in un minuto
+
+«Mi rispondi sempre che la crescita di livello è equilibrata, ma non è così: a volte in un solo
+minuto mi escono dieci schermate che mi propongono che il nucleo cresce.» Aveva ragione, e la
+misura che diceva il contrario era **sbagliata nel modo più banale**: guardava la media. «Una
+schermata ogni 35 secondi» era vero, e nascondeva il minuto in cui ne arrivano dieci. Da questa
+sessione `npm run misura -- scrigni` riporta il **minuto peggiore**, quante carte arrivano a meno di
+dieci secondi dalla precedente, e la più grossa entrata di esperienza in un secondo.
+
+Il primo tentativo — un livello per volta, con 1,2 secondi di partita in mezzo — non aveva tolto
+la pila: l'aveva consegnata a rate. Un secondo di gioco fra due carte non è un momento. Misurato
+con un bot che gioca come si gioca davvero, cioè che a tratti scappa e le gemme le lascia indietro
+(«a meno di 6 s» conta le carte arrivate a meno di sei secondi dalla precedente):
+
+```
+                                                   minuto peggiore  a meno di 6s  catena (<4s)  entrata max/1s
+Corsa, bot                                                5              6             4         5,7 livelli
+Incursione, bot                                           6              5             3         2,0 livelli
+Incursione, lascia le gemme e torna a prenderle           6             10             5         2,8 livelli
+…con l'Avidità comprata al massimo (+32% esperienza)      8              9             5         5,8 livelli
+```
+
+Il minuto peggiore di una corsa faceva **il doppio della media** e le carte arrivavano a grappoli:
+dieci coppie a meno di sei secondi in un'Incursione da venti carte.
+
+Le cause erano due, e una sola non basta.
+
+1. **La pausa.** È un tetto al ritmo, ma è un tetto vero solo se è lunga: `LV_PAUSA` passa da 1,2 a
+   **10 secondi**. Più di sei livelli al minuto non possono arrivare; in pratica sono tre o quattro.
+   Non di più, perché l'Incursione consegna un livello ogni quindici secondi *per formato*: a
+   sedici secondi la barra resta piena e i livelli arriverebbero dall'orologio invece che dalle
+   uccisioni.
+2. **La banca.** Le gemme lontane si fondono in poche gemme grosse, e quelle tenevano *tutto* quello
+   che restava indietro, per sempre. Misurato: il **79%** dell'esperienza di una Corsa entra da lì,
+   e una gemma sola arrivava a valere quattro o cinque livelli consegnati in un secondo — e con la
+   sola pausa allungata, che lascia la banca crescere più a lungo, *undici* nell'Incursione: «il
+   nucleo cresce ogni dieci secondi per due minuti», lo stesso difetto, allungato. Ora le gemme fuse
+   valgono **insieme al massimo un livello e mezzo** (`BANCA_MAX`), in livelli correnti: il resto si
+   spegne. Costa solo a chi lascia indietro più di un livello e mezzo; le gemme vicine, quelle che si
+   raccolgono combattendo, non hanno tetto, e nemmeno i frammenti.
+
+Non è l'idea scartata più sotto — «far scadere le gemme lontane» — che serviva a un altro scopo
+(costringere a muoversi) e non avrebbe funzionato per quello. Qui il tetto non tocca il pavimento e
+non chiede niente a chi si muove: taglia solo il lumpo.
+
+Dopo, stessi semi e stesso bot:
+
+```
+                                                   minuto peggiore  a meno di 6s  catena (<4s)  entrata max/1s  livello finale
+Corsa, bot                                                4              0             1         1,4 livelli     29 → 30
+Incursione, bot                                           6              0             1         1,5 livelli     19 → 22
+Incursione, lascia le gemme e torna a prenderle           6              0             1         1,2 livelli     21 → 19
+…con l'Avidità comprata al massimo (+32% esperienza)      6              0             1         2,5 livelli     21 → 23
+```
+
+Nessuna catena: due livelli non arrivano mai a meno di dieci secondi l'uno dall'altro, per
+costruzione, e il minuto peggiore non supera il tetto della pausa. Il livello finale non cambia
+(29 → 30 nella Corsa): il tetto della banca toglie i lumpi, non la crescita — quello che una gemma
+grossa teneva oltre il livello e mezzo era esperienza che arrivava tutta insieme, non esperienza in
+più. L'Incursione resta fitta nei primi minuti — quattro carte al minuto — ma è il formato: un
+livello ogni quindici secondi *per costruzione*, e la manopola è `xp` in `MODI`, non la pausa.
+L'entrata da 2,5 livelli che resta è al secondo minuto, quando un livello costa quaranta punti:
+sono le gemme *vicine*, che non hanno tetto, ed è la pausa a consegnarle una per volta.
+
+Siccome adesso la barra può restare piena per un po', lo dice in due posti: il chip del livello
+mostra **+N** (i livelli già pagati e non ancora consegnati, che scende a ogni carta), e la
+schermata delle carte scrive *«Livello 21 · altri 2 in arrivo, uno ogni 10 s»* — chi la rivede
+dieci secondi dopo deve sapere che era previsto.
+
 ### Quanto cresce il nucleo, e da dove
 
 `npm run misura -- crescita` segue una corsa intera e chiede, a cinque tappe, cosa ha in mano il

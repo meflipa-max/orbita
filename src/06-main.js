@@ -351,7 +351,7 @@ function boot() {
   tastoAzione($('#culm'), attivaCulmine);
   tastoAzione($('#peri'), attivaPerigeo);
   /* handle di debug: utile per collaudo e bilanciamento */
-  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, META, CHARS, SFIDE, ASC, EVO, lessico, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, congMods, rosterGuardiani, metaCost, culmineCost, contrattoPremio, attivaPerigeo, statoPartita, semeDelGiorno, tettoNemici, attivaCulmine, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, runeStats, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave,
+  window.ORBITA = { G, P, UI, AU, RUNES, EL, MODI, CONGIUNZIONI, SBLOCCHI, CONTRATTI, RELIQUIE, BRIEFING, META, CHARS, SFIDE, ASC, EVO, lessico, save: () => SAVE, start: startRun, reset: resetRun, endRun, payout, salvaCorsa, leggiCorsa, scordaCorsa, riprendiCorsa, congiunzioneDi, congMods, rosterGuardiani, metaCost, culmineCost, contrattoPremio, attivaPerigeo, statoPartita, semeDelGiorno, tettoNemici, attivaCulmine, step, place: placeRune, roll: rollChoices, apply: applyChoice, recalc, recalcRing, srand, nextRand, seed: () => G.seed, runeStats, render, dpr: () => DPR, storeOk: () => STORE_OK, exportSave, importSave, wipeSave, storeSave, loadSave, livelliInAttesa,
     /* cosa c'e' davvero scritto sullo schermo: serve al collaudo, che
        altrimenti puo' solo verificare che una schermata non lanci —
        non che dica la cosa giusta */

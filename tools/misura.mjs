@@ -288,12 +288,24 @@ function unaCorsa(modo) {
   const dt = 1 / 60;
   let lv = G.level, scr = G.chests | 0;
   let livelli = 0, scrigni = 0, pilaMax = 0;
-  const perMin = [];
+  const perMin = [], tempi = [];
+  /* ── il minuto peggiore, non la media ─────────────────────────────
+     «Una schermata ogni 35 secondi» era vero e non diceva niente: la media
+     di una corsa nasconde il minuto in cui ne arrivano dieci. Da qui in poi
+     il banco conta anche il peggior minuto scorrevole, quante carte
+     arrivano a meno di dieci secondi dalla precedente, e la piu' grossa
+     entrata di esperienza in un secondo — cioe' i lumpi delle gemme fuse. */
+  const entrate = []; let lumpo = 0, lumpoT = 0;
   for (let i = 0; i < 60 * 1300; i++) {
+    const xp0 = G.xp, lv0 = G.level;
     bot(dt); O.step(dt);
     if (G.briefing) G.briefing = null;
-    if (G.level > lv) { const n = G.level - lv; livelli += n; segna(n, 0); lv = G.level; }
-    if ((G.chests | 0) > scr) { const n = (G.chests | 0) - scr; scrigni += n; segna(n, 1); }
+    entrate.push((G.xp - xp0 + (G.level > lv0 ? G.xpNeed : 0)) / G.xpNeed);
+    if (entrate.length > 60) entrate.shift();
+    const sec = entrate.reduce((a, b) => a + b, 0);
+    if (sec > lumpo) { lumpo = sec; lumpoT = G.t; }
+    if (G.level > lv) { const n = G.level - lv; livelli += n; segna(n, 0); lv = G.level; for (let k = 0; k < n; k++) tempi.push(G.t); }
+    if ((G.chests | 0) > scr) { const n = (G.chests | 0) - scr; scrigni += n; segna(n, 1); for (let k = 0; k < n; k++) tempi.push(G.t); }
     if (G.pending > pilaMax) pilaMax = G.pending;
     if (G.pending > 0) scegli();
     scr = G.chests | 0;
@@ -312,7 +324,18 @@ function unaCorsa(modo) {
   console.log('  di cui scrigni    ' + scrigni + '  (' + Math.round(scrigni / carte * 100) + '%)');
   console.log('  guardiani abbattuti ' + G.bossKills);
   console.log('  una schermata ogni ' + (G.t / carte).toFixed(1) + 's');
-  console.log('  pila massima      ' + pilaMax + ' carte insieme\n');
+  console.log('  pila massima      ' + pilaMax + ' carte insieme');
+  /* il peggior minuto scorrevole, e le carte troppo vicine alla precedente */
+  let peggio = 0, peggioT = 0, vicine = 0;
+  for (let a = 0; a < tempi.length; a++) {
+    let n = 0;
+    for (let b = a; b < tempi.length && tempi[b] - tempi[a] <= 60; b++) n++;
+    if (n > peggio) { peggio = n; peggioT = tempi[a]; }
+    if (a && tempi[a] - tempi[a - 1] < 10) vicine++;
+  }
+  console.log('  il minuto peggiore ' + peggio + ' carte (da ' + Math.floor(peggioT / 60) + ':' + String(Math.floor(peggioT % 60)).padStart(2, '0') + ')');
+  console.log('  a meno di 10s dalla precedente: ' + vicine);
+  console.log('  la piu\' grossa entrata in un secondo: ' + lumpo.toFixed(1) + ' livelli (a ' + Math.floor(lumpoT / 60) + ':' + String(Math.floor(lumpoT % 60)).padStart(2, '0') + ')\n');
   const mm = [];
   for (let m = 0; m <= Math.floor(G.t / 60); m++) mm.push(perMin[m] || { l: 0, s: 0 });
   console.log('  minuto:   ' + mm.map((o, i) => String(i).padStart(2)).join(' '));

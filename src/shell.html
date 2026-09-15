@@ -70,6 +70,13 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   color:var(--xp);background:rgba(111,242,196,.09);border:1px solid rgba(111,242,196,.35);
   padding:5px 9px;--cut:6px}
 .lvchip b{font:700 14px/1 var(--disp);color:#fff}
+/* I livelli gia' pagati e non ancora consegnati: la barra e' piena e
+   pulsa, ma «piena» non dice QUANTI ne aspettano. Con la pausa di dieci
+   secondi fra un livello e l'altro (vedi LV_PAUSA) possono essere due o
+   tre, e un numero che scende a ogni carta dice che la fila si sta
+   smaltendo — non che il gioco si e' inceppato. */
+.lvchip i{font:700 11px/1 var(--ui);font-style:normal;color:var(--xp);animation:lvPiu .7s ease-in-out infinite}
+@keyframes lvPiu{0%,100%{opacity:1}50%{opacity:.45}}
 
 #hpwrap{width:min(46vw,290px)}
 #hpbar{position:relative;height:16px;background:rgba(255,61,110,.10);border:1px solid rgba(255,61,110,.32);--cut:5px;overflow:hidden}
@@ -1299,7 +1306,7 @@ ul.lista b{color:#fff;font-weight:600}
     <div id="xpline"><div id="xpfill"></div></div>
     <div id="topbar">
       <div class="hudL">
-        <div><span class="lvchip clip">LIV <b id="lvnum">1</b></span></div>
+        <div><span class="lvchip clip">LIV <b id="lvnum">1</b><i id="lvpiu" hidden></i></span></div>
         <div id="hpwrap"><div id="hpbar" class="clip">
           <div id="hpghost"></div><div id="hpfill"></div><div id="hptxt">100 / 100</div>
         </div></div>
