@@ -1243,17 +1243,48 @@ const UI = {
       '<span class="pips">' + pips + '</span></span></span></button>';
   },
 
+  /* ── cosa compri davvero con questo livello ─────────────────────
+     E' la carta che si preme piu' di ogni altra cosa — una trentina di
+     volte per corsa — e i suoi numeri venivano da una curva che il gioco
+     non usa piu'. Due errori, tutti e due perche' la riga se li calcolava
+     per conto suo invece di chiedere a runeStats.
+     Il primo: la percentuale di danno era `g.dmg / base.dmg`, cioe' un
+     numero FISSO, uguale a ogni livello. La Scintilla prometteva «+44%
+     danno» dal primo all'ottavo, mentre il guadagno vero scende da +59% a
+     +13% — a meta' corsa la carta prometteva il triplo di quello che dava.
+     Manca sia GROWTH (1,35, che moltiplica ogni passo) sia il fatto che
+     l'aumento va misurato sul danno di ADESSO, non su quello base.
+     Il secondo, peggiore: «+1 proiettili» e «+1 perforazione» erano
+     calcolati senza GROWTH, quindi su una curva diversa da quella che il
+     gioco percorre. Non era un'imprecisione, era il gradino sbagliato: la
+     Scintilla dal 3 al 4 guadagna un proiettile E una perforazione e la
+     carta diceva «+velocita'»; dal 4 al 5 non guadagna niente e la carta
+     prometteva «+1 proiettili». Lo Sciame dall'1 al 2 guadagna un dardo e
+     la carta non lo diceva.
+     Adesso i due livelli si chiedono a runeStats — la stessa funzione che
+     li usa in campo — e si sottraggono. I moltiplicatori del giocatore
+     stanno in tutti e due i termini e si semplificano; quello che resta e'
+     il gradino vero. */
   upgradeText(id, lv) {
-    const d = RUNES[id], g = d.g || {}, bits = [];
-    const lbl = { dmg: 'danno', cd: 'ricarica', count: 'proiettili', area: 'area', spd: 'velocità', pierce: 'perforazione', dur: 'durata', size: 'raggio', heal: 'cura' };
-    for (const k in g) {
-      if (!g[k]) continue;
-      if (k === 'count' || k === 'pierce') {
-        const a = Math.floor(d.base[k] + g[k] * (lv - 1)), b = Math.floor(d.base[k] + g[k] * lv);
-        if (b > a) bits.push('+1 ' + lbl[k]);
-      } else if (k === 'cd') bits.push('ricarica più rapida');
-      else if (k === 'dmg') bits.push('+' + Math.round(g[k] / d.base.dmg * 100) + '% danno');
-      else if (bits.length < 3) bits.push('+' + lbl[k]);
+    const d = RUNES[id];
+    const st = n => runeStats({ id, el: d.el, lv: n, res: 0, st: {} });
+    const a = st(lv), b = st(lv + 1), bits = [];
+    const dd = Math.round((b.dmg / a.dmg - 1) * 100);
+    if (dd > 0) bits.push('+' + dd + '% danno');
+    const piu = (k, uno, molti) => {
+      if (b[k] === undefined || b[k] <= a[k]) return;
+      const n = Math.round(b[k] - a[k]);
+      if (n > 0) bits.push('+' + n + ' ' + (n > 1 ? molti : uno));
+    };
+    piu('count', 'proiettile', 'proiettili');
+    piu('pierce', 'perforazione', 'perforazioni');
+    /* la ricarica scende fino a un pavimento: quando ci e' arrivata non
+       migliora piu', e prometterlo sarebbe la stessa bugia di prima */
+    if (b.cd !== undefined && b.cd < a.cd - 1e-6) bits.push('ricarica più rapida');
+    const altri = { area: 'area', dur: 'durata', size: 'raggio', heal: 'cura', spd: 'velocità' };
+    for (const k in altri) {
+      if (bits.length >= 3) break;
+      if (b[k] !== undefined && b[k] > a[k] + 1e-6) bits.push('+' + altri[k]);
     }
     return '<em>Livello ' + (lv + 1) + '</em> · ' + bits.slice(0, 3).join(', ') + '.';
   },

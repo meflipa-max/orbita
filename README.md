@@ -788,6 +788,20 @@ Un giro di correzioni tutte della stessa famiglia: una regola scritta in due pos
 secondo che racconta quella sbagliata. Nessuna si vedeva leggendo il gioco — si vedono
 misurandolo, ed è per questo che ognuna adesso porta il suo controllo in `collaudo`.
 
+**La carta di potenziamento prometteva i numeri di un'altra curva.** È la carta che si preme
+più di ogni altra cosa — una trentina di volte per corsa — e si calcolava i numeri per conto
+suo invece di chiedere a `runeStats`. La percentuale di danno era `g.dmg / base.dmg`, cioè un
+numero **fisso**: la Scintilla prometteva «+44% danno» dal primo all'ottavo livello, mentre il
+guadagno vero scende da **+59% a +13%** — a metà corsa la carta prometteva il triplo di quello
+che dava. Mancava sia `GROWTH` (1,35, che moltiplica ogni passo) sia il fatto che l'aumento va
+misurato sul danno di *adesso*. Peggio: «+1 proiettili» e «+1 perforazione» erano calcolati
+senza `GROWTH`, quindi sul gradino sbagliato — la Scintilla dal 3 al 4 guadagna un proiettile
+*e* una perforazione e la carta diceva «+velocità»; dal 4 al 5 non guadagna niente e la carta
+prometteva un proiettile. Adesso i due livelli si chiedono a `runeStats`, la stessa funzione che
+li usa in campo, e si sottraggono: i moltiplicatori del giocatore stanno in entrambi i termini e
+si semplificano. Il controllo verifica tutte e **224** le carte, runa per runa e livello per
+livello.
+
 **Il terzo grado non contava quando a farlo era il Culmine.** «Porta un Risveglio al terzo
 grado» è un contratto da 540 frammenti e una sfida da 600, e il contatore leggeva `G.awaken` —
 il grado *costruito con l'anello*. Ma il Culmine alza di un grado ogni Risveglio acceso, che è
@@ -905,7 +919,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 156 controlli sul gioco vero, headless
+npm run collaudo       # 158 controlli sul gioco vero, headless
 npm run misura         # partite simulate: una corsa e un'incursione
 npm run misura -- asc  # la scala di difficoltà dei due formati
 npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
@@ -990,7 +1004,7 @@ In console è esposto `window.ORBITA` con `G` (stato), `P` (statistiche derivate
 `start()`, `reset()`, `endRun()`, `payout()`, `roll()`, `apply()`, `place()`, `recalc()`,
 `recalcRing()`, più le tabelle nuove (`MODI`, `CONGIUNZIONI`, `SBLOCCHI`, `CONTRATTI`,
 `RELIQUIE`) e `congiunzioneDi()`, `congMods()`, `rosterGuardiani()`, `metaCost()`, `contrattoPremio()`,
-`statoPartita()`, `semeDelGiorno()`, `attivaCulmine()`. Serve a far girare partite simulate senza renderizzare,
+`statoPartita()`, `semeDelGiorno()`, `attivaCulmine()`, `runeStats()`. Serve a far girare partite simulate senza renderizzare,
 che è come sono state misurate e bilanciate le rune, i formati e le congiunzioni.
 
 `reset(nucleo, seme, formato)` prepara una partita senza avviare l'interfaccia, quindi si può

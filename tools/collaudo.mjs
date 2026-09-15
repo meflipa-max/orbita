@@ -896,5 +896,48 @@ sez('la pausa dice cosa fanno i Risvegli accesi');
   G.culm = 0;
 }
 
+sez('la carta di potenziamento dice il gradino vero');
+/* E' la carta che si preme piu' di ogni altra cosa, una trentina di volte
+   per corsa, e i suoi numeri venivano da una curva che il gioco non usa
+   piu': se li calcolava per conto suo invece di chiedere a runeStats.
+   La percentuale di danno era `g.dmg / base.dmg`, un numero FISSO: la
+   Scintilla prometteva «+44% danno» dal primo all'ottavo livello mentre il
+   guadagno vero scende da +59% a +13%. E «+1 proiettili» era calcolato
+   senza GROWTH, cioe' sul gradino sbagliato: la Scintilla dal 3 al 4
+   guadagna un proiettile e una perforazione e la carta diceva
+   «+velocita'»; dal 4 al 5 non guadagna niente e la carta prometteva un
+   proiettile.                                                            */
+{
+  O.reset('vega', 12, 'corsa', false); G.state = 'play';
+  const st = (id, lv) => O.runeStats({ id, el: O.RUNES[id].el, lv, res: 0, st: {} });
+  let righe = 0, sbagliate = 0, esempio = '';
+  for (const id of Object.keys(O.RUNES)) {
+    for (let lv = 1; lv <= 7; lv++) {
+      const a = st(id, lv), b = st(id, lv + 1);
+      const testo = O.UI.upgradeText(id, lv).replace(/<[^>]+>/g, '');
+      righe++;
+      const guai = [];
+      /* il danno: quello scritto e' quello che si guadagna davvero */
+      const atteso = Math.round((b.dmg / a.dmg - 1) * 100);
+      const m = testo.match(/\+(\d+)% danno/);
+      if (atteso > 0 && (!m || +m[1] !== atteso)) guai.push('danno ' + (m ? m[1] : '—') + ' invece di ' + atteso);
+      /* i proiettili e la perforazione: il gradino o c'e' o non c'e' */
+      for (const [k, par] of [['count', 'proiettil'], ['pierce', 'perforazion']]) {
+        const vero = (b[k] === undefined ? 0 : b[k] - a[k]);
+        const detto = new RegExp('\\+\\d+ ' + par).test(testo);
+        if (vero > 0 && !detto) guai.push(k + ': guadagna e non lo dice');
+        if (vero <= 0 && detto) guai.push(k + ': lo dice e non lo guadagna');
+      }
+      if (guai.length) { sbagliate++; if (!esempio) esempio = O.RUNES[id].n + ' lv' + lv + '→' + (lv + 1) + ': ' + guai.join('; '); }
+    }
+  }
+  ok(sbagliate === 0, 'su ' + righe + ' carte, nessuna promette un gradino diverso da quello vero' + (esempio ? ' (' + esempio + ')' : ''));
+  /* il caso che rendeva il difetto visibile a occhio: la percentuale era
+     la stessa a ogni livello */
+  const p1 = O.UI.upgradeText('scintilla', 1).match(/\+(\d+)% danno/);
+  const p7 = O.UI.upgradeText('scintilla', 7).match(/\+(\d+)% danno/);
+  ok(p1 && p7 && +p1[1] > +p7[1] + 20, 'il primo livello rende molto piu’ dell’ultimo (' + p1[1] + '% contro ' + p7[1] + '%)');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);
