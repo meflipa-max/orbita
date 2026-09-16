@@ -1274,15 +1274,16 @@ davvero bianca.
 Misurato leggendo i pixel del canvas, su un fondo di 11 di luminosità media: il pop alza la
 media del riquadro di **11** e il suo pixel più luminoso di **+110 su 255** per due fotogrammi,
 poi lascia un contorno che si allarga per 200 ms. (La prima versione alzava la media di 3,5 e
-il picco di **2**: era un velo, non un lampo — e infatti non si notava.) Nel fotogramma
-peggiore di una partita — 14 gusci in volo con 48 nemici a schermo — i pixel saturi sono
-l'**1,99%** contro l'1,56% di un fotogramma senza morti: lo schermo non si sbianca.
+il picco di **2**: era un velo, non un lampo — e infatti non si notava.) In un fotogramma
+carico — 14 gusci in volo con 48 nemici a schermo — i pixel saturi sono l'**1,99%** contro
+l'1,56% di un fotogramma senza morti: lo schermo non si sbianca.
 
 In partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 secondi, in media **2
 gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti uccisioni al
 secondo lo schermo non si fermerebbe più.
 
-Quel «2 gusci a schermo» però è una media, e la media qui nascondeva il caso peggiore. Le
+Quella misura — «in media 2 gusci», «un fotogramma carico ne ha 14» — descriveva il gioco
+normale, che è esattamente il posto in cui il caso peggiore non si vede. Le
 particelle hanno il tetto da sempre — `addPart` si ferma a 460, perché una strage non deve
 allagare la pozza — le **zone** no, e costano molto di più: ognuna è una sagoma disegnata, non
 un quadratino. Misurata la distribuzione su una Corsa intera, 70.149 fotogrammi:
