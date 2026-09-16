@@ -453,14 +453,18 @@ cioè dopo anche la pausa fra i livelli, che è arrivata subito dopo:
 ```
 — prima —      43 carte: 24 livelli + 19 scrigni (44%) · una ogni 27,5s
   scrigni:   1  0  0  2  2  0  1  1  1  0  3  0  0  2  1  1  1  1  1  1
-— oggi —       27 carte: 22 livelli +  5 scrigni (19%) · una ogni 40,6s
-  scrigni:   0  0  1  0  0  0  1  0  0  0  1  0  0  0  1  0  0  0  1
+— oggi —       25 carte: 20 livelli +  5 scrigni (20%) · una ogni 46,2s
+  scrigni:   0  0  1  0  0  0  0  1  0  0  0  1  0  1  0  0  0  0  0  1
 ```
 
 La riga degli scrigni si appiattisce — uno ogni tre o quattro minuti, sempre un guardiano — e non
-si ammucchia mai più con niente. La quota resta al 19% e non al 13% misurato il giorno prima solo
+si ammucchia mai più con niente. La quota resta al 20% e non al 13% misurato il giorno prima solo
 perché i livelli sono scesi a loro volta: gli scrigni sono gli stessi quattro o cinque, è il
-denominatore che si è ristretto.
+denominatore che si è ristretto. Rimisurata dopo ogni correzione successiva, la pila massima è
+**1 carta** e nessuna coppia arriva a meno di dieci secondi dall'altra; il minuto peggiore ne ha
+tre. L'Incursione, che comprime tutto in otto minuti, resta l'estremo per costruzione: 25 carte,
+una ogni 17,3 secondi, e il minuto peggiore ne ha sei — cinque livelli, che è il tetto della sua
+pausa da dodici secondi, più uno scrigno.
 
 Da leggere insieme a **«Dieci schermate in un minuto»** qui sopra: «una ogni 40 secondi» è una
 media, e una media nasconde il minuto in cui ne arrivano quattro. Il minuto peggiore, il tetto
