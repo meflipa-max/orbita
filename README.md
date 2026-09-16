@@ -222,9 +222,19 @@ runa nuova a ogni occasione anche ad anello pieno, cioè se le sostituiva addoss
 faceva 6832 uccisioni invece di 11066. Con lo strumento sano i pesi sono scesi ancora: **3121 e
 3164 per una Corsa vinta, cioè il negozio in dodici partite e mezza**. Ricalcolando i pesi di
 partenza sulla stessa corsa, senza il bot che giocava male, erano dodicimila frammenti: **tre
-partite** e il negozio era finito. E la prima corsa — cinque minuti, persa, mazzo base — ne paga
-ancora 469-579, che basta per le prime due regole del negozio (110 e 160). Un'economia si sbaglia
-in due modi, e quello è l'altro. `npm run misura -- soldi` rimisura i due capi insieme.
+partite** e il negozio era finito.
+
+Poi sono arrivate le limature alla crescita — la pausa fra i livelli, il tetto alla banca, la
+carta che la paga solo il guardiano — e hanno spostato anche questo, perché la paga dipende da
+quanto uccidi e quanto sali. Rimisurato con tutto dentro: **1988 di media, cioè il negozio in
+19,6 partite** (2039 e 3483 in Corsa, 1098 e 1330 in Incursione). Non è una manopola che è
+stata girata: è la conseguenza, ed è nella direzione giusta — da tre partite a diciannove e
+mezza. `npm run misura -- soldi` rimisura i due capi insieme, e va riletto dopo ogni modifica
+alla crescita, perché è lì che questo numero si muove senza che nessuno lo tocchi.
+
+E la prima corsa — cinque minuti, persa, mazzo base — ne paga ancora 473-528, che basta per le
+prime due regole del negozio (110 e 160): un'economia si sbaglia in due modi, e quello è
+l'altro. Il capo lungo può allungarsi, quello corto no.
 
 ### Sei o otto
 
