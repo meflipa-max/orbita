@@ -179,15 +179,17 @@ schermo porta scritto `· ULTIMO`.
 
 ### Il Culmine torna a essere un momento
 
-Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in 18:44, spendendolo appena
-pronto): **cinquantuno Culmini, uno ogni ventidue secondi**. Ne dura cinque e mezzo, quindi il
-Culmine era acceso per un quarto della corsa — e una cosa che succede ogni venti secondi non è
-un momento, è uno stato.
+`npm run misura -- culmine` registra il ritmo vero con cui si uccide in una corsa e integra:
+quante volte l'indicatore si riempirebbe, spendendolo appena pronto. Su una Corsa intera —
+11.066 uccisioni in 18:40 — la curva di prima dava **sessantadue Culmini, uno ogni diciotto
+secondi**. Ne dura cinque e mezzo, quindi il Culmine era acceso per un terzo della corsa: una
+cosa che succede ogni diciotto secondi non è un momento, è uno stato.
 
 Il difetto stava nella pendenza: il costo saliva di `.085` al secondo mentre il ritmo delle
 uccisioni, misurato, sale da una al secondo a venticinque. Cioè il prezzo cresceva trenta volte
 più piano di quello che lo paga, e più avanti andava la corsa più spesso arrivava. Con
-`65 + t·.55` la stessa corsa ne dà **ventidue**, uno ogni cinquanta secondi circa, e il primo
+`65 + t·.55` la stessa corsa ne dà **ventisette**, uno ogni quarantun secondi — e da quando la
+stessa barra paga anche il Perigeo sono ventisette *scelte*, non ventisette Culmini. Il primo
 arriva ancora entro il primo minuto.
 
 E adesso che costa può **valere**: fermo immagine vero, velo d'oro (il rosa è il male, il
@@ -540,8 +542,8 @@ Quiete**:
 
 | | asc 0 | asc 4 | asc 8 | asc 12 |
 |---|---|---|---|---|
-| Corsa | 4/4 | 4/4 | 0/4 | 0/4 |
-| Incursione | 4/4 | 4/4 | 2/4 | 0/4 |
+| Corsa | 4/4 | 4/4 | 1/4 | 0/4 |
+| Incursione | 4/4 | 4/4 | 3/4 | 0/4 |
 
 «In Quiete» non è un dettaglio: è la riparazione di una misura che mentiva. La congiunzione
 esce dal **seme**, quindi quattro semi fissi si portavano dentro anche la regola che quel seme
@@ -552,6 +554,11 @@ perché il Vetro dimezza la vita su un'ascensione che la dimezza già. Sembrava 
 fosse diventato impossibile: era la misura a essere cambiata sotto i piedi. Adesso `partita()`
 accetta `quiete: true` e il banco delle ascensioni misura **una** cosa sola; la congiunzione ha
 il suo banco.
+
+Questa tabella è stata **rimisurata da capo** quando il banco ha smesso di giocare male (vedi
+sotto): prima dava 0/4 e 2/4 nella colonna asc 8. Un bot che si sostituiva le rune addosso
+moriva prima, e la differenza è tutta lì — la *forma* non cambia: comoda a 0 e 4, che cede a 8,
+fuori portata a 12.
 
 Lo stesso banco sul gioco di prima dei due eventi d'arena nuovi dà 4/4, 3/4, 0/4, 0/4 e 4/4,
 4/4, 0/4, 0/4: la curva è la stessa. A quattro semi però una singola cella **non si può
@@ -1325,11 +1332,35 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 170 controlli sul gioco vero, headless
-npm run misura         # partite simulate: una corsa e un'incursione
-npm run misura -- asc  # la scala di difficoltà dei due formati
-npm run misura -- cong # ogni congiunzione, novanta secondi ciascuna
+npm run collaudo       # 292 controlli sul gioco vero, headless
+npm run rami           # niente è rimasto fuori da main
 ```
+
+I sei banchi di misura. Ognuno risponde a **una** domanda, e ogni numero del
+bilanciamento in questo README esce da uno di loro:
+
+```bash
+npm run misura              # gira: una corsa e un'incursione, chi vince
+npm run misura -- asc       # la scala di difficoltà dei due formati, in Quiete
+npm run misura -- cong      # ogni congiunzione, novanta secondi ciascuna
+npm run misura -- soldi     # quanto rende una corsa, e quanto costa il negozio
+npm run misura -- scrigni   # quante volte la partita si ferma, e per cosa
+npm run misura -- crescita  # quanto cresce il nucleo, e se ha dove crescere
+npm run misura -- culmine   # ogni quanto arriva il Culmine, con altre curve
+npm run misura -- perigeo   # quanto costa chiudere l'anello, e quanto rende
+```
+
+**Il bot del banco giocava male, e per un po' l'ha fatto in silenzio.** Prendeva
+una runa nuova a ogni occasione anche ad anello pieno — e lì una runa nuova
+*sostituisce* quella che c'era: 36 carte su 43 erano rune nuove, l'anello
+restava a livello 1-2 per tutta la corsa e la potenza non cresceva mai. Il banco
+misurava una build che nessuno costruisce. Due tarature fatte con lui (l'economia
+e l'onda del Perigeo) sono andate rifatte, e la tabella delle ascensioni
+rimisurata. Resta un limite noto, scritto anche dove serve: **il bot non prende
+danno** (`hurtPlayer` esce subito quando lo stato non è `play`, e il banco lo
+lascia su `level` dopo una salita di livello), quindi misura la coerenza di una
+curva, non la difficoltà percepita — e di una meccanica difensiva sa dire il
+prezzo, non il beneficio.
 
 `build.mjs` (Node, cross-platform) e `build.ps1` (Windows) producono output identico.
 

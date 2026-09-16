@@ -426,6 +426,53 @@ function bancoCrescita() {
     Object.keys(G.passives).length + ' passivi toccati');
 }
 
+/* ── ogni quanto arriva il Culmine ───────────────────────────────
+   L'unica cosa che si preme in tutta la partita: se arriva ogni venti secondi
+   non e' un momento, e' uno stato. La carica la pagano le uccisioni, quindi la
+   cadenza non si legge dalla curva — si legge dal ritmo con cui si uccide, che
+   misurato sale da una al secondo a venticinque. Qui si registra il ritmo vero
+   di una corsa e si integra: quante volte l'indicatore si riempirebbe,
+   spendendolo appena pronto, con questa curva e con altre.
+   La prima taratura era stata fatta su una corsa del banco che giocava male
+   (10.145 uccisioni); con lo strumento sano ne fa dodicimila e passa, e questo
+   banco esiste per non rifare quell'errore.                              */
+function bancoCulmine() {
+  const S = O.save();
+  S.modo = 'corsa'; S.asc = S.ascSel = 0; S.runes = MAZZO_PIENO.slice();
+  S.visti = Object.keys(O.BRIEFING).concat(['gemme', 'raffica', 'culmine']);
+  O.reset('vega', 1111, 'corsa', false);
+  G.state = 'play';
+  const dt = 1 / 60, camp = [];
+  let last = 0, lastT = 0;
+  for (let i = 0; i < 60 * 1250; i++) {
+    bot(dt); O.step(dt);
+    if (G.briefing) G.briefing = null;
+    if (G.pending > 0) scegli();
+    G.state = 'play'; P.hp = P.maxHp;
+    if (G.t - lastT >= 10) { camp.push([Math.round(G.t), G.kills - last]); last = G.kills; lastT = G.t; }
+    if (G.victory) break;
+  }
+  /* quante attivazioni darebbe una curva, spendendolo appena pronto: mentre e'
+     acceso non carica, quindi ogni spesa si porta via CULM_DUR di raccolta */
+  const prova = (a, b) => {
+    let acc = 0, n = 0, pausa = 0;
+    for (const [t, dk] of camp) {
+      if (pausa > 0) { pausa = Math.max(0, pausa - 10); continue; }
+      acc += dk / (a + t * b);
+      while (acc >= 1) { acc -= 1; n++; pausa += 5.5; }
+    }
+    return n;
+  };
+  console.log('corsa di ' + Math.round(G.t) + 's, ' + G.kills + ' uccisioni, livello ' + G.level + '\n');
+  console.log('curva del costo      attivazioni  una ogni');
+  for (const [a, b] of [[42, .085], [65, .55], [80, .7], [100, .9], [120, 1.1]]) {
+    const n = prova(a, b);
+    console.log(('costo = ' + a + ' + t·' + b).padEnd(21), String(n).padEnd(12),
+      (G.t / Math.max(1, n)).toFixed(0) + 's' + (a === 65 && b === .55 ? '   ← quella in vigore' : ''));
+  }
+  console.log('\nuccisioni per decina di secondi:\n  ' + camp.map(c => c[1]).join(' '));
+}
+
 const quale = process.argv[2] || 'base';
 console.log('— banco: ' + quale + ' —\n');
-({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo, scrigni: bancoScrigni, crescita: bancoCrescita }[quale] || banchoBase)();
+({ base: banchoBase, asc: bancoAsc, cong: bancoCong, soldi: bancoSoldi, perigeo: bancoPerigeo, scrigni: bancoScrigni, crescita: bancoCrescita, culmine: bancoCulmine }[quale] || banchoBase)();

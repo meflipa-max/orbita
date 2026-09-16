@@ -149,20 +149,25 @@ const PERI_C = '#9ec6ff'; /* il colore del riparo: gia' quello dell'asteroide ch
    il Culmine sparirebbe. */
 const PERI_QUOTA = .6;
 /* Quante uccisioni riempiono l'indicatore, al secondo `t`.
-   ── era acceso un quarto della partita ────────────────────────────
-   Misurato col bot su una Corsa intera (seme 1111, 10.145 uccisioni in
-   18:44, spendendolo appena pronto): CINQUANTUNO Culmini, uno ogni ventidue
-   secondi. Ne dura cinque e mezzo, quindi il Culmine era acceso per un
-   quarto della corsa — e una cosa che succede ogni venti secondi non e' un
-   momento, e' uno stato. L'unica cosa che premi in tutta la partita valeva
-   quanto premere un tasto qualunque.
+   ── era acceso un terzo della partita ─────────────────────────────
+   `npm run misura -- culmine` registra il ritmo vero con cui si uccide in una
+   corsa e integra quante volte l'indicatore si riempirebbe, spendendolo appena
+   pronto. Su una Corsa intera — 11.066 uccisioni in 18:40 — la curva di prima
+   dava SESSANTADUE Culmini, uno ogni diciotto secondi. Ne dura cinque e mezzo,
+   quindi era acceso per un terzo della corsa: una cosa che succede ogni
+   diciotto secondi non e' un momento, e' uno stato. L'unica cosa che premi in
+   tutta la partita valeva quanto premere un tasto qualunque.
    Il difetto stava nella pendenza: il costo saliva di .085 al secondo mentre
    il ritmo delle uccisioni, misurato, sale da una al secondo a venticinque —
    cioe' il costo cresceva trenta volte piu' piano di quello che lo paga, e
    piu' avanti andava la corsa piu' spesso arrivava.
-   Con questa curva la stessa corsa ne da' VENTIDUE, uno ogni cinquanta
-   secondi circa, e il primo arriva ancora entro il primo minuto: resta il
-   momento che decidi tu, e torna a essere un momento. */
+   Con questa curva la stessa corsa ne da' VENTISETTE, uno ogni quarantun
+   secondi, e il primo arriva ancora entro il primo minuto: resta il momento
+   che decidi tu, e torna a essere un momento. E da quando la stessa barra paga
+   anche il Perigeo sono ventisette SCELTE, non ventisette Culmini.
+   (I primi numeri erano stati presi su una corsa del banco che giocava male —
+   6832 uccisioni invece di 11.066 — e dicevano cinquantuno e ventidue: la
+   forma era quella, le cifre no.) */
 function culmineCost(t) { return 65 + t * .55; }
 /* Quanto dura, in cifre e in parole. «Cinque secondi e mezzo» stava scritto
    a mano nella guida, nel lessico e nel banner: tre copie di un numero che
