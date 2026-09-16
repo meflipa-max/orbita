@@ -185,11 +185,16 @@ quante volte l'indicatore si riempirebbe, spendendolo appena pronto. Su una Cors
 secondi**. Ne dura cinque e mezzo, quindi il Culmine era acceso per un terzo della corsa: una
 cosa che succede ogni diciotto secondi non è un momento, è uno stato.
 
+E questo numero **si muove da solo**: la carica la pagano le uccisioni, le uccisioni vengono dalla
+build, quindi ogni limatura alla crescita sposta anche la cadenza del Culmine. Rimisurato dopo la
+pausa fra i livelli, la stessa curva è passata da ventisette a ventuno attivazioni. Va riguardato
+ogni volta che si tocca la crescita — `npm run misura -- culmine` costa un minuto.
+
 Il difetto stava nella pendenza: il costo saliva di `.085` al secondo mentre il ritmo delle
 uccisioni, misurato, sale da una al secondo a venticinque. Cioè il prezzo cresceva trenta volte
 più piano di quello che lo paga, e più avanti andava la corsa più spesso arrivava. Con
-`65 + t·.55` la stessa corsa ne dà **ventisette**, uno ogni quarantun secondi — e da quando la
-stessa barra paga anche il Perigeo sono ventisette *scelte*, non ventisette Culmini. Il primo
+`65 + t·.55` la stessa corsa ne dà **ventuno**, uno ogni cinquantadue secondi — e da quando la
+stessa barra paga anche il Perigeo sono ventuno *scelte*, non ventuno Culmini. Il primo
 arriva ancora entro il primo minuto.
 
 E adesso che costa può **valere**: fermo immagine vero, velo d'oro (il rosa è il male, il
@@ -319,7 +324,7 @@ Le cause erano due, e una sola non basta.
 
 Non è l'idea scartata più sotto — «far scadere le gemme lontane» — che serviva a un altro scopo
 (costringere a muoversi) e non avrebbe funzionato per quello. Qui il tetto non tocca il pavimento e
-non chiede niente a chi si muove: taglia solo il lumpo.
+non chiede niente a chi si muove: taglia solo il grumo.
 
 Dopo, stessi semi e stesso bot:
 
@@ -355,21 +360,35 @@ danno×colpi/ricarica di tutte le rune, coi moltiplicatori dentro — contro la 
 comune a quel minuto.
 
 ```
-minuto  liv  potenza  vita comune  nemici/s   rune (livelli)   passivi
-1        4     324         12       26,0      4 rune: 1111        0
-5       13     940         98        9,6      6 rune: 113232      2
-10      21    1762        361        4,9      6 rune: 234343      5
-15      25    1867        607        3,1      6 rune: 334343      9
-19      31    3978       1863        2,1      6 rune: 454544      9
+                         ← prima delle tre limature →      ← dopo, oggi →
+minuto  liv  potenza  vita comune   rune            liv  potenza  rune
+1        4     324         12       1111             3     142    111
+5       13     940         98       113232          11     246    112222
+10      21    1762        361       234343          16     301    212322
+15      25    1867        607       334343          20     553    312523
+19      31    3978       1863       454544          23    1003    413543
 ```
 
-Due cose che questa tabella dice e che nessuno aveva misurato:
+Due cose che la colonna di sinistra diceva e che nessuno aveva misurato:
 
 - la potenza cresce **dodici volte** in diciannove minuti e la vita dei nemici **centocinquanta**:
   il rapporto *scende*. Il gioco non si fa più facile mentre va avanti — si fa più duro, ed è il
   direttore che lo decide (vedi «Il campo si adatta a te»);
-- ma **la build ha ancora posto**: a fine corsa le rune stanno fra il 3 e il 5 su 8, i passivi a 9
-  livelli su 47. Le carte ci stanno dentro, quindi il problema non era la capienza.
+- ma **la build ha ancora posto**: le rune stanno fra il 3 e il 5 su 8, i passivi a 9 livelli su
+  47. Le carte ci stanno dentro, quindi il problema non era la capienza.
+
+E una che si vede solo mettendo le due colonne accanto. In due giorni la crescita è stata limata
+**tre volte** — la carta che la paga solo il guardiano, la pausa fra i livelli, il tetto alla
+banca delle gemme — e ogni limatura è stata misurata contro lo stato *prima di sé*: undici carte
+in meno, poi sei livelli in meno, poi l'esperienza rimasta indietro che non si accumula più.
+Nessuna delle tre, da sola, sembrava grossa. Insieme portano la potenza a fine corsa da **3978 a
+1003**: un quarto.
+
+La corsa resta vinta — cinque guardiani su cinque, e la scala delle ascensioni tiene la forma —
+perché il direttore se ne accorge e molla la presa: la vita di un nemico comune al quindicesimo
+minuto sale a 1347 e al diciannovesimo *scende* a 843, che è lui che allenta. Ma è il numero da
+tenere d'occhio: se il finale di corsa comincia a sembrare una camminata nel fango, la prima
+manopola da restituire è `pausaLv` della Corsa, e questa è la tabella su cui leggerlo.
 
 E una terza, la più scomoda, che si vede solo confrontando due corse identiche in cui cambia solo
 il giocatore (stesso seme, nessuno dei due muore):
@@ -420,19 +439,25 @@ una gemma sola, grossa e visibile, che vale una quota del livello *corrente*, co
 anche al diciottesimo minuto — e in frammenti. Restano ricompense, ma rientrano nell'unico
 rubinetto che decelera e che dipende da quanto stai uccidendo.
 
-`npm run misura -- scrigni` conta tutto, minuto per minuto. Prima e dopo, stesso seme:
+`npm run misura -- scrigni` conta tutto, minuto per minuto. Prima di questa modifica, e oggi —
+cioè dopo anche la pausa fra i livelli, che è arrivata subito dopo:
 
 ```
-— prima —      43 carte: 24 livelli + 19 scrigni · una ogni 27,5s
+— prima —      43 carte: 24 livelli + 19 scrigni (44%) · una ogni 27,5s
   scrigni:   1  0  0  2  2  0  1  1  1  0  3  0  0  2  1  1  1  1  1  1
-— dopo —       32 carte: 28 livelli +  4 scrigni · una ogni 35,0s
-  scrigni:   0  0  1  0  0  0  1  0  0  1  0  0  0  0  1  0  0  0  0
+— oggi —       27 carte: 22 livelli +  5 scrigni (19%) · una ogni 40,6s
+  scrigni:   0  0  1  0  0  0  1  0  0  0  1  0  0  0  1  0  0  0  1
 ```
 
-Gli scrigni scendono dal **44% al 13%** della crescita, le interruzioni da una ogni 27 secondi a
-una ogni 35, e la corsa resta vinta su tutti e quattro i semi del banco. I livelli *salgono* da 24
-a 28, perché l'esperienza degli elite e degli eventi rientra da lì: il totale scende di undici
-carte, non di quindici, e la potenza a fine corsa non cambia. Cambia da dove viene.
+La riga degli scrigni si appiattisce — uno ogni tre o quattro minuti, sempre un guardiano — e non
+si ammucchia mai più con niente. La quota resta al 19% e non al 13% misurato il giorno prima solo
+perché i livelli sono scesi a loro volta: gli scrigni sono gli stessi quattro o cinque, è il
+denominatore che si è ristretto.
+
+Da leggere insieme a **«Dieci schermate in un minuto»** qui sopra: «una ogni 40 secondi» è una
+media, e una media nasconde il minuto in cui ne arrivano quattro. Il minuto peggiore, il tetto
+della pausa e le catene sotto i sei secondi li riporta lo stesso banco, ed è quella la riga che
+dice se il ritmo è giusto.
 
 E una sorgente che pagasse uno scrigno **per ogni fotogramma** in cui la sua condizione è vera non
 si vedrebbe in nessuna media: si vedrebbe solo come «arrivano troppi scrigni». Le quattro
@@ -621,8 +646,8 @@ Quiete**:
 
 | | asc 0 | asc 4 | asc 8 | asc 12 |
 |---|---|---|---|---|
-| Corsa | 4/4 | 4/4 | 1/4 | 0/4 |
-| Incursione | 4/4 | 4/4 | 3/4 | 0/4 |
+| Corsa | 4/4 | 4/4 | 0/4 | 0/4 |
+| Incursione | 4/4 | 4/4 | 4/4 | 1/4 |
 
 «In Quiete» non è un dettaglio: è la riparazione di una misura che mentiva. La congiunzione
 esce dal **seme**, quindi quattro semi fissi si portavano dentro anche la regola che quel seme
@@ -634,10 +659,12 @@ fosse diventato impossibile: era la misura a essere cambiata sotto i piedi. Ades
 accetta `quiete: true` e il banco delle ascensioni misura **una** cosa sola; la congiunzione ha
 il suo banco.
 
-Questa tabella è stata **rimisurata da capo** quando il banco ha smesso di giocare male (vedi
-sotto): prima dava 0/4 e 2/4 nella colonna asc 8. Un bot che si sostituiva le rune addosso
-moriva prima, e la differenza è tutta lì — la *forma* non cambia: comoda a 0 e 4, che cede a 8,
-fuori portata a 12.
+Questa tabella è stata **rimisurata due volte in due giorni**, e le due volte per ragioni diverse.
+La prima quando il banco ha smesso di giocare male (vedi «Sviluppo»): un bot che si sostituiva le
+rune addosso moriva prima, e la colonna asc 8 è passata da 0/4 e 2/4 a **1/4 e 3/4**. La seconda
+dopo la pausa fra i livelli, che toglie build: la Corsa torna a 0/4 e l'Incursione — che ha la
+pausa più corta — sale a 4/4. La *forma* non si è mai mossa: comoda a 0 e 4, che cede a 8, fuori
+portata a 12. È la forma che questa tabella serve a leggere, non la cella.
 
 Lo stesso banco sul gioco di prima dei due eventi d'arena nuovi dà 4/4, 3/4, 0/4, 0/4 e 4/4,
 4/4, 0/4, 0/4: la curva è la stessa. A quattro semi però una singola cella **non si può
@@ -1411,7 +1438,7 @@ Le rune sparano da sole. L'unica cosa che fai con le mani è schivare.
 ```bash
 npm run build          # genera orbita.html e dist/index.html
 npm run dev            # build + server statico su http://localhost:5173
-npm run collaudo       # 292 controlli sul gioco vero, headless
+npm run collaudo       # 308 controlli sul gioco vero, headless
 npm run rami           # niente è rimasto fuori da main
 ```
 
