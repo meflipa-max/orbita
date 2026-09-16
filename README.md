@@ -1002,7 +1002,17 @@ alla riapertura il titolo offre `Riprendi · 12:34` al posto di `Gioca`. Nella p
 differenza è scritta.
 
 Si annota il **progresso**, non il mondo: seme, formato, orologio, anello, passivi, vita, e
-tutti i contatori che pagano sfide e contratti. L'arena si rigenera identica dallo stesso seme,
+tutti i contatori che pagano sfide e contratti — e l'elenco è cresciuto ogni volta che qualcuno
+è andato a guardare cosa sopravvive *davvero*, perché un campo dimenticato non si vede: si
+vede solo come «riprendere mi ha rubato qualcosa», e mesi dopo. Dopo l'Ascesi, le carte in
+attesa e l'elemento della Ritempra, gli ultimi due erano uno per verso. La **carica del
+Culmine** — che è anche quella del Perigeo — non era annotata: misurato, riprendere la portava
+da 93% a zero, ed è progresso pagato con le uccisioni che costa sempre di più col passare
+della corsa, quindi al ventesimo minuto una barra quasi piena vale centinaia di nemici. La
+**pausa fra due livelli** nemmeno, e lì il regalo andava dall'altra parte: azzerandola, uscire
+e rientrare saltava l'attesa e faceva consegnare subito la carta. Entrambi i numeri passano da
+un limite quando si rileggono, perché l'annotazione sta in `localStorage` ed è scrivibile a
+mano: una carica vale al massimo uno, una pausa sta fra zero e `pausaLv`. L'arena si rigenera identica dallo stesso seme,
 perché `genRocks` pesca dal flusso col seme; i nemici no, e per non regalare un'arena sgombra a
 chi esce e rientra ne ricompare subito una quota pari al 55% del tetto del momento — altrimenti
 uscire diventava un pulsante per ripulire lo schermo. Sta in una chiave sua (`orbita.run.v1`) e

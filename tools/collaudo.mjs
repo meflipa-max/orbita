@@ -1999,5 +1999,43 @@ sez('una strage non allaga la pozza degli effetti');
   ok(G.zones.length > prima, 'e le sue zone si aggiungono davvero (' + prima + ' → ' + G.zones.length + ')');
 }
 
+sez('riprendere una corsa non regala niente e non toglie niente');
+/* L'annotazione della corsa ha gia' una storia lunga di campi dimenticati —
+   l'Ascesi, le carte in attesa, l'elemento della Ritempra — e ne restavano
+   due, uno per verso. La CARICA del Culmine (che e' anche quella del
+   Perigeo) non era annotata: misurato, riprendere la portava da 93% a zero,
+   e costa sempre di piu' col passare della corsa, quindi al ventesimo minuto
+   una barra quasi piena vale centinaia di uccisioni. La PAUSA fra due
+   livelli nemmeno, e li' il regalo va dall'altra parte: azzerandola, uscire
+   e rientrare saltava l'attesa e faceva consegnare subito la carta.
+   Rimettendo indietro la correzione, le prime due righe leggono 0 e 0.   */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 777, 'corsa', false); G.state = 'play';
+  for (let i = 0; i < 60 * 20; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; }
+  G.charge = .93; G.chargeAnn = 0; G.lvCd = 17;
+  O.salvaCorsa();
+  const r = O.leggiCorsa();
+  O.reset('vega', 1, 'corsa', false);
+  O.riprendiCorsa(r);
+  ok(Math.abs(G.charge - .93) < 1e-6, 'la carica del Culmine sopravvive all’uscita (' + G.charge.toFixed(2) + ' di 0,93)');
+  ok(Math.abs(G.lvCd - 17) < 1e-6, 'e la pausa fra due livelli anche (' + G.lvCd + ' di 17)');
+  /* con la barra piena l'annuncio non deve ripartire: il pulsante lo dice gia' */
+  ok(!!G.chargeAnn === false, 'una barra non piena non si annuncia da sola');
+
+  /* l'annotazione sta in localStorage, cioe' e' scrivibile a mano */
+  r.car = 9; r.lvc = -50;
+  O.reset('vega', 1, 'corsa', false);
+  O.riprendiCorsa(r);
+  ok(G.charge === 1, 'una carica manomessa vale al massimo una (' + G.charge + ')');
+  ok(G.lvCd === 0, 'e una pausa negativa vale zero (' + G.lvCd + ')');
+
+  /* un'annotazione di ieri non ha i due campi: deve valere zero, non NaN */
+  delete r.car; delete r.lvc;
+  O.reset('vega', 1, 'corsa', false);
+  O.riprendiCorsa(r);
+  ok(G.charge === 0 && G.lvCd === 0, 'un’annotazione vecchia riparte da zero senza NaN');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

@@ -298,6 +298,20 @@ function salvaCorsa() {
          ne riceveva una NUOVA a ogni ripresa, cioe' un potenziamento
          gratis per ogni volta che usciva dal gioco. */
       asc2: G.ascesi | 0, pend: G.pending | 0, chs: G.chests | 0, cul: G.culms | 0,
+      /* ── la carica e la pausa fra i livelli ────────────────────
+         Stessa famiglia dell'Ascesi qui sopra, trovata rileggendo cosa
+         sopravvive davvero a «esci e riprendi dopo»: due numeri, uno per
+         verso.
+         `car` e' l'indicatore del Culmine e del Perigeo. Riprendere lo
+         azzerava: misurato, 93% → 0. E' progresso pagato con le uccisioni,
+         e costa sempre di piu' col passare della corsa (culmineCost cresce
+         nel tempo), quindi al ventesimo minuto una barra quasi piena vale
+         centinaia di uccisioni. Perderla per una notifica e' esattamente
+         quello che «la corsa non si perde» esiste per evitare.
+         `lvc` e' quanto manca al prossimo livello concesso. Qui il verso e'
+         opposto: azzerandola, uscire e rientrare SALTAVA la pausa, cioe'
+         era un modo per farsi dare subito la carta in attesa. */
+      car: G.charge, lvc: G.lvCd,
       /* da dove e' venuto il danno: senza, la schermata di fine di una
          corsa ripresa racconta solo l'ultimo tratto */
       src: G.dmgSrc

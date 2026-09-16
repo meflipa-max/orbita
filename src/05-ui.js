@@ -2273,6 +2273,13 @@ function riprendiCorsa(r) {
      resetRun ha appena messo: con la Semenza quello vale 1, cioe' ogni
      ripresa regalava una carta. */
   G.ascesi = r.asc2 | 0; G.culms = r.cul | 0; G.pending = r.pend | 0; G.chests = r.chs | 0;
+  /* la carica e la pausa: vedi salvaCorsa. I limiti servono perche'
+     l'annotazione sta in localStorage, cioe' e' scrivibile: senza, una
+     carica a 9 varrebbe nove Culmini e una pausa negativa non finirebbe mai.
+     Un'annotazione vecchia non ha i due campi, e allora vale zero — come
+     prima, cioe' come oggi si comporta chi ha salvato ieri. */
+  G.charge = clamp(+r.car || 0, 0, 1); G.chargeAnn = G.charge >= 1 ? 1 : 0;
+  G.lvCd = clamp(+r.lvc || 0, 0, G.modo.pausaLv);
   G.dmgSrc = (r.src && typeof r.src === 'object' && !Array.isArray(r.src)) ? Object.assign({}, r.src) : {};
   G.passives = Object.assign({}, r.pas || {});
   G.ring = new Array(G.slots).fill(null);
