@@ -863,12 +863,18 @@ function drawPickups() {
   for (const d of G.drops) {
     const c = d.k === 'chest' ? '#ffc857' : d.k === 'cuore' ? '#ff3d6e' : '#ffffff';
     const bob = Math.sin(G.t * 3 + d.t) * 4, s = 13, y = d.y + bob;
-    ctx.globalAlpha = .6; ctx.drawImage(glowTex(c, 40), d.x - 46, y - 46, 92, 92); ctx.globalAlpha = 1;
+    /* sta per svanire: lampeggia. Un dono che sparisce senza averlo detto si
+       legge come un difetto — e la scelta («vado adesso o lo lascio?») esiste
+       solo se si vede quanto resta. */
+    const resta = d.k === 'chest' ? 99 : DONO_DUR - d.t;
+    const lampo = resta < DONO_LAMPO ? .45 + .55 * Math.abs(Math.sin(G.t * 6)) : 1;
+    ctx.globalAlpha = .6 * lampo; ctx.drawImage(glowTex(c, 40), d.x - 46, y - 46, 92, 92); ctx.globalAlpha = 1;
     /* anello che si espande: dice "vieni a prendermi" a colpo d'occhio */
     const ph = (G.t * .9 + d.t) % 1;
     ctx.strokeStyle = rgba(c, (1 - ph) * .55); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(d.x, y, s + ph * 26, 0, TAU); ctx.stroke();
     ctx.save(); ctx.translate(d.x, y); ctx.rotate(G.t * .8);
+    ctx.globalAlpha = lampo;
     ctx.fillStyle = c;
     ctx.beginPath();
     if (d.k === 'cuore') ctx.arc(0, 0, s * .78, 0, TAU);
@@ -876,6 +882,7 @@ function drawPickups() {
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(0, 0, s * .34, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.restore();
     /* Una losanga bianca che gira non dice cosa fa, e la bomba fa la cosa
        piu' grossa del gioco: spazza l'intera mappa. Una parola sotto toglie

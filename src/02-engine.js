@@ -1051,6 +1051,17 @@ function addGem(x, y, v, kind, big) {
    dire «questo e' il premio», non sembrare una scheggia in mezzo alle altre. */
 function premioEsperienza(quota, x, y) {
   addGem(x, y, Math.max(1, Math.round(G.xpNeed * quota)), 0, 1);
+  /* ── e non finisce nella banca ───────────────────────────────
+     Le gemme lontane si fondono in gemme grosse e insieme valgono al massimo
+     BANCA_MAX livelli: l'esperienza lasciata indietro si spegne. Giusto per
+     l'esperienza d'ambiente, sbagliato per QUESTA: un evento completato ha
+     appena detto «esperienza e frammenti», e un premio promesso deve
+     arrivare intero. Misurato prima di questa riga: il premio del Corriere —
+     che muore dove scappava, cioe' lontano — spariva dentro la banca e ne
+     usciva ridotto dal tetto.
+     Un premio per volta o due, quindi non rifanno la banca che il tetto e'
+     li' per svuotare. */
+  G.gems[G.gems.length - 1].premio = 1;
 }
 
 function spawnEnemy(type, x, y, opts) {

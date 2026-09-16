@@ -1086,6 +1086,9 @@ function updateGems(dt) {
     if (g.length > 80) {
       g.sort((a, b) => ((b.x - px) * (b.x - px) + (b.y - py) * (b.y - py)) - ((a.x - px) * (a.x - px) + (a.y - py) * (a.y - py)));
       const far = g.splice(0, g.length - 55);
+      /* i premi promessi restano dove sono e per quello che valgono: vedi
+         premioEsperienza in 02-engine */
+      for (let i = far.length - 1; i >= 0; i--) if (far[i].premio) g.push(far.splice(i, 1)[0]);
       /* per quadrante intorno al nucleo, cosi' l'esperienza resta dov'era
          invece di raccogliersi tutta in un punto medio che magari e'
          proprio dove non sei mai andato */
@@ -1163,6 +1166,10 @@ function updateGems(dt) {
   const D = G.drops;
   for (let i = D.length - 1; i >= 0; i--) {
     const d0 = D[i]; d0.t += dt;
+    /* i doni comuni svaniscono se nessuno viene a prenderli: vedi DONO_DUR in
+       01-data. Lo scrigno resta — e' il premio di un guardiano e ha la sua
+       bussola. */
+    if (d0.k !== 'chest' && d0.t > DONO_DUR) { D.splice(i, 1); continue; }
     const dx = px - d0.x, dy = py - d0.y;
     if (dx * dx + dy * dy < 40 * 40) {
       D.splice(i, 1);

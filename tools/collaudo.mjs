@@ -1884,5 +1884,73 @@ sez('le targhette dei Risvegli non stanno sotto al Perigeo');
   ok(/max-width:calc\(100vw - 196px/.test(aw), 'e la riga lascia libero anche l’angolo del Culmine');
 }
 
+sez('il premio di un evento arriva intero');
+/* Due correzioni fatte lo stesso giorno da due sessioni diverse si sono
+   incontrate qui. Elite ed eventi non pagano piu' una carta ma una gemma
+   grossa d'esperienza; le gemme lontane si fondono in gemme grosse che
+   insieme valgono al massimo BANCA_MAX livelli, e il resto si spegne. Giusto
+   per l'esperienza d'ambiente, sbagliato per un premio PROMESSO: il Corriere
+   muore dove scappava, cioe' lontano, e su un campo affollato il suo premio
+   finiva nella banca e ne usciva tagliato dal tetto — dopo che l'avviso
+   aveva appena detto «esperienza e frammenti».
+   Rimettendo indietro la correzione, la prima riga non trova piu' il premio. */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 960, 'corsa', false); G.state = 'play';
+  G.level = 15; G.xpNeed = 1110; G.gems.length = 0;
+  /* un campo affollato, e una banca ben oltre il tetto: duecento gemme
+     lontane per ottomila punti, contro un tetto di un livello e mezzo */
+  for (let i = 0; i < 200; i++) G.gems.push({ x: G.p.x + 600 + i * 7, y: G.p.y + 600, v: 40, k: 0, t: 5, vx: 0, vy: 0 });
+  const ambientePrima = 200 * 40;
+  const lontano = { x: G.p.x + 900, y: G.p.y + 900 };
+  premioEsperienzaProva(lontano);
+  const valore = (G.gems.find(g => g.premio) || { v: 0 }).v;
+  ok(valore > 0, 'l’evento lascia un premio d’esperienza (' + valore + ' punti)');
+  G.gemT = 0;
+  for (let i = 0; i < 40; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; }
+  const p = G.gems.find(g => g.premio);
+  ok(!!p, 'il premio sopravvive alla fusione delle gemme lontane');
+  ok(!!p && p.v === valore, 'e vale ancora quello che valeva (' + (p ? p.v : 0) + ' di ' + valore + ')');
+  /* dove e' caduto: la gemma rimbalza un attimo appena nasce, non si sposta
+     dall'altra parte dell'arena come farebbe entrando nella banca */
+  ok(!!p && Math.hypot(p.x - lontano.x, p.y - lontano.y) < 80, 'e sta ancora dove e’ caduto');
+  /* mentre l'esperienza d'ambiente il tetto lo prende eccome */
+  const ambiente = G.gems.filter(g => g.k === 0 && !g.premio).reduce((a, g) => a + g.v, 0);
+  ok(ambiente < ambientePrima * .7, 'la banca invece il tetto lo prende (' + Math.round(ambiente) + ' su ' + ambientePrima + ')');
+  function premioEsperienzaProva(dove) {
+    /* la stessa strada del gioco: un evento completato */
+    G.ev = { k: 'caccia', t: 1, dur: 26, e: { x: dove.x, y: dove.y, hp: 0 } };
+    for (let i = 0; i < 4 && G.ev; i++) O.step(1 / 60);
+  }
+}
+
+sez('i doni a terra non si accumulano per tutta la partita');
+/* `G.drops` era l'unico insieme del gioco senza tetto — gemme, nemici,
+   particelle, scie e zone ce l'hanno tutti — e i doni restavano dove erano
+   caduti fino alla fine. Misurato su una Corsa intera, minuto per minuto:
+   0 2 3 7 9 13 17 21 25 29 34 37 38 46 50 48 51 55 60 65. A fine corsa
+   quarantaquattro CUORI (uno cura il 30% della vita massima: tredici vite
+   sparse per l'arena) e ventuno BOMBE, che uccidono ogni nemico della mappa.
+   Una dispensa che non si svuota mai, e la difficolta' non ne sa niente.
+   Rimettendo indietro la correzione, la prima riga conta venti doni invece
+   di zero.                                                                */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 961, 'corsa', false); G.state = 'play';
+  G.enemies.length = 0; G.drops.length = 0;
+  /* venti doni comuni, lontani, e uno scrigno */
+  for (let i = 0; i < 20; i++) G.drops.push({ x: G.p.x + 900, y: G.p.y + 900 + i * 3, k: i % 2 ? 'cuore' : 'bomba', t: 0 });
+  G.drops.push({ x: G.p.x + 900, y: G.p.y - 900, k: 'chest', t: 0 });
+  /* mezzo minuto: ci sono ancora tutti */
+  for (let i = 0; i < 60 * 30; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; G.enemies.length = 0; }
+  const meta = G.drops.filter(d => d.k !== 'chest').length;
+  ok(meta === 20, 'a mezzo minuto i doni ci sono ancora tutti (' + meta + ' su 20)');
+  /* passato il minuto, i doni comuni svaniscono */
+  for (let i = 0; i < 60 * 40; i++) { O.step(1 / 60); G.pending = 0; P.hp = P.maxHp; G.enemies.length = 0; }
+  const restano = G.drops.filter(d => d.k !== 'chest').length;
+  ok(restano === 0, 'dopo un minuto non ne resta nessuno (' + restano + ')');
+  ok(G.drops.some(d => d.k === 'chest'), 'lo scrigno di un guardiano invece aspetta');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

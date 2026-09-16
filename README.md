@@ -322,6 +322,14 @@ Le cause erano due, e una sola non basta.
    spegne. Costa solo a chi lascia indietro più di un livello e mezzo; le gemme vicine, quelle che si
    raccolgono combattendo, non hanno tetto, e nemmeno i frammenti.
 
+Il tetto ha però un'eccezione, trovata misurando l'evento del Corriere. Un evento completato
+annuncia «esperienza e frammenti» e lascia a terra **una gemma grossa**, il premio: quella entrava
+nella fusione come tutte le altre, e il premio promesso spariva dentro la banca per riuscirne
+ridotto dal tetto — peggio proprio nel caso del Corriere, che muore *dove scappava*, cioè lontano.
+Misurato con la correzione tolta: il premio non esisteva più. Adesso una gemma di premio è marcata
+(`premio`) e la fusione la salta: resta dove è caduta e vale quello che valeva. Sono una o due per
+evento, quindi non rifanno il grumo che il tetto è lì per svuotare.
+
 Non è l'idea scartata più sotto — «far scadere le gemme lontane» — che serviva a un altro scopo
 (costringere a muoversi) e non avrebbe funzionato per quello. Qui il tetto non tocca il pavimento e
 non chiede niente a chi si muove: taglia solo il grumo.
@@ -950,6 +958,37 @@ cosa a ogni minuto e su ogni schermo. E resta una valvola, non la manopola: l'in
 marea la fa il ritmo di comparsa — nove al secondo, tutti da una parte sola. Servono a dare un motivo per andare da qualche parte, quindi devono **vedersi da
 lontano**: la breccia ha il suo faro, il Corriere una colonna di luce e un reticolo col conto
 alla rovescia, e finché sono fuori campo una freccia a bordo schermo con distanza e secondi.
+
+### I doni a terra non aspettano per sempre
+
+`G.drops` era **l'unico insieme del gioco senza tetto**. Gemme, nemici, particelle, scie, zone hanno
+tutti un limite; i doni no — cuori e bombe restavano dove erano caduti fino alla fine della partita.
+Misurato su una Corsa intera, minuto per minuto:
+
+```
+— prima —  0  2  3  7  9 13 17 21 25 29 34 37 38 46 50 48 51 55 60 65
+— oggi —   0  2  2  4  2  4  5  4  4  3  6  7 12  3  1  1  1  0  2  2
+```
+
+La riga di prima cresce e basta. A fine corsa vuol dire **quarantaquattro cuori** — uno cura il 30%
+della vita massima, quindi tredici vite intere sparse per l'arena — e **ventuno bombe**, ognuna delle
+quali cancella ogni nemico della mappa. Una dispensa che non si svuota: per male che vada c'è sempre
+una cura a portata di camminata, e la difficoltà non ne sa niente. Era il difetto gemello di quello
+degli scrigni, sull'altra leva: là troppe carte, qui troppa rete di sicurezza.
+
+Un dono è un invito ad **andare** da qualche parte, e un invito che aspetta per sempre non è un
+invito. Adesso un dono comune dura `DONO_DUR` = 60 secondi, e negli ultimi `DONO_LAMPO` = 12
+lampeggia: la scelta — vado adesso o lo lascio? — diventa visibile, che è l'unica cosa che rende
+onesta una scadenza. Lo **scrigno** è escluso: è il premio di un guardiano, ne cade uno ogni tre o
+quattro minuti e porta la sua bussola. Quello aspetta.
+
+Il ritmo con cui i doni cadono non cambia di una virgola — cambia che vanno presi. La riga di oggi
+non ha più una direzione: oscilla fra zero e dodici a seconda di cos'è appena successo sullo
+schermo, che è quello che deve fare il numero di doni a terra. Sale quando ne sono appena caduti
+tanti insieme — il 12 del minuto 12 — e un minuto dopo è tornato a 3: prima sarebbe rimasto lì.
+
+E le corse si vincono ancora: rimisurato dopo, `misura base` le vince tutte e quattro, Corsa e
+Incursione sui due semi.
 
 ### La corsa non si perde
 

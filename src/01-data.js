@@ -834,6 +834,25 @@ const SFIDE = [
    carte, dieci secondi l'una dall'altra. */
 const BANCA_MAX = 1.5;
 
+/* ── i doni a terra non aspettano per sempre ─────────────────────
+   `G.drops` era l'unico insieme del gioco senza tetto: gemme, nemici,
+   particelle, scie, zone hanno tutti un limite, i doni no — restavano dove
+   erano caduti fino alla fine della partita. Misurato su una Corsa intera,
+   minuto per minuto: 0, 2, 3, 7, 9, 13, 17, 21, 25, 29, 34, 37, 38, 46, 50,
+   48, 51, 55, 60, 65. Cresce e basta.
+   A fine corsa vuol dire quarantaquattro CUORI (uno cura il 30% della vita
+   massima: tredici vite intere sparse per l'arena) e ventuno BOMBE, che
+   uccidono ogni nemico della mappa. Una dispensa che non si svuota: per male
+   che vada c'e' sempre una cura a portata di camminata, e la difficolta' non
+   ne sa niente.
+   Un dono e' un invito ad ANDARE da qualche parte, e un invito che aspetta
+   per sempre non e' un invito. Adesso i doni comuni durano DONO_DUR e negli
+   ultimi DONO_LAMPO secondi lampeggiano, cosi' la scelta e' visibile: vado
+   adesso o lo lascio? Lo scrigno no — e' il premio di un guardiano, ne cade
+   uno ogni quattro minuti e porta la sua bussola: quello aspetta.
+   Il ritmo con cui cadono non cambia di una virgola: cambia che vanno presi. */
+const DONO_DUR = 60, DONO_LAMPO = 12;
+
 /* ── un rubinetto solo per la crescita ───────────────────────────
    La crescita del nucleo usciva da OTTO sorgenti che non si parlavano fra
    loro: i livelli, sei che pagano uno scrigno — i cinque guardiani, gli elite
