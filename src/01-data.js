@@ -853,6 +853,23 @@ const BANCA_MAX = 1.5;
    Il ritmo con cui cadono non cambia di una virgola: cambia che vanno presi. */
 const DONO_DUR = 60, DONO_LAMPO = 12;
 
+/* ── il grumo di effetti quando muore mezza mappa ────────────────
+   Le particelle hanno un tetto da sempre (`addPart`, 460): una strage non
+   deve allagare la pozza degli effetti. Le ZONE quello stesso tetto non
+   l'hanno mai avuto, e costano molto di piu' di una particella — ognuna e'
+   una sagoma disegnata, non un quadratino.
+   Misurata la distribuzione su una Corsa intera, 70.149 fotogrammi:
+   mediana 4 zone, al 90% ce ne sono 11, al 99% 23. Poi non c'e' una via di
+   mezzo: al 99,9% sono 341 e il picco e' 662, di cui 659 sono gusci e anelli
+   di morte. E' una bomba, o un Culmine che uccide tutto insieme: trecento
+   sagome che lampeggiano per due decimi di secondo nello stesso fotogramma.
+   Trecento sagome sovrapposte non si vedono — si vede un lampo bianco, che
+   e' quello che si vedrebbe lo stesso con sessanta. Il tetto sta a 60,
+   cioe' quasi il triplo del 99esimo percentile: nel gioco normale non tocca
+   mai niente, e taglia solo il grumo. Guardiani ed elite passano sempre:
+   quelli la loro morte se la meritano intera. */
+const ZONE_FX_MAX = 60;
+
 /* ── un rubinetto solo per la crescita ───────────────────────────
    La crescita del nucleo usciva da OTTO sorgenti che non si parlavano fra
    loro: i livelli, sei che pagano uno scrigno — i cinque guardiani, gli elite

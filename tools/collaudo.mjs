@@ -1952,5 +1952,52 @@ sez('i doni a terra non si accumulano per tutta la partita');
   ok(G.drops.some(d => d.k === 'chest'), 'lo scrigno di un guardiano invece aspetta');
 }
 
+sez('una strage non allaga la pozza degli effetti');
+/* Le particelle hanno il tetto da sempre (`addPart`, 460); le ZONE non
+   l'avevano, e costano di piu' — ognuna e' una sagoma disegnata. Misurata la
+   distribuzione su una Corsa intera, 70.149 fotogrammi: mediana 4 zone, al
+   99% ce ne sono 23, poi si salta al 99,9% con 341 e a un picco di 662, di
+   cui 659 gusci e anelli di morte. E' la bomba, o un Culmine: trecento
+   sagome che lampeggiano insieme per due decimi di secondo, e trecento
+   sovrapposte danno lo stesso lampo bianco che darebbero sessanta.
+   Rimettendo indietro la correzione questa prima riga conta oltre trecento
+   zone invece di sessantasei.                                            */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 404, 'corsa', false); G.state = 'play';
+  G.enemies.length = 0; G.zones.length = 0; G.drops.length = 0;
+  /* duecento nemici comuni e una bomba sotto i piedi: la strage piu' grossa
+     che il gioco sappia fare */
+  const nemico = (dx, dy, elite) => ({ type: 'vagante', x: G.p.x + dx, y: G.p.y + dy, vx: 0, vy: 0,
+    r: 13, c: '#fff', shape: 'dia', hp: 1, maxHp: 30, spd: 0, dmg: 0, xp: 2, flash: 0, slow: 0,
+    slowT: 0, burn: 0, burnT: 0, froze: 0, kb: 0, kbx: 0, kby: 0, elite: !!elite, boss: null,
+    ten: 1, dead: false });
+  for (let i = 0; i < 200; i++) G.enemies.push(nemico(200 + i, 200));
+  G.drops.push({ x: G.p.x, y: G.p.y, k: 'bomba', t: 0 });
+  O.step(1 / 60);
+  ok(G.zones.length < 120, 'duecento morti insieme non fanno piu’ di centoventi zone (' + G.zones.length + ')');
+  /* e la bomba il suo lampo ce l'ha comunque: sono zone sue, spinte a mano */
+  ok(G.zones.filter(z => z.k === 'ring' && z.r1 > 1000).length === 1, 'l’onda della bomba non viene mai saltata');
+
+  /* il tetto non deve toccare il gioco normale: al 99esimo percentile sono 23 */
+  G.enemies.length = 0; G.zones.length = 0;
+  for (let i = 0; i < 12; i++) G.enemies.push(nemico(200 + i * 40, 200));
+  G.drops.push({ x: G.p.x, y: G.p.y, k: 'bomba', t: 0 });
+  O.step(1 / 60);
+  /* dodici gusci + dodici anelli + i due anelli della bomba */
+  ok(G.zones.length >= 26, 'dodici morti in un fotogramma le fanno tutte e ventisei (' + G.zones.length + ')');
+
+  /* un guardiano non viene saltato nemmeno a pozza piena */
+  G.zones.length = 0;
+  for (let i = 0; i < 200; i++) G.zones.push({ k: 'ring', x: 0, y: 0, r0: 1, r1: 2, t: 0, dur: 9, c: '#fff' });
+  const prima = G.zones.length;
+  G.enemies.length = 0;
+  G.enemies.push(nemico(300, 0, true));
+  G.drops.push({ x: G.p.x, y: G.p.y, k: 'bomba', t: 0 });
+  O.step(1 / 60);
+  ok(G.zones.some(z => z.k === 'guscio'), 'un elite muore intero anche con la pozza piena');
+  ok(G.zones.length > prima, 'e le sue zone si aggiungono davvero (' + prima + ' → ' + G.zones.length + ')');
+}
+
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
 process.exit(ko ? 1 : 0);

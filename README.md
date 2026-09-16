@@ -1282,6 +1282,26 @@ In partita: 4–5 pop al secondo (il limite è 16), una raffica ogni 3–10 seco
 gusci a schermo**. Niente sussulto e niente tremore sui nemici comuni: a venti uccisioni al
 secondo lo schermo non si fermerebbe più.
 
+Quel «2 gusci a schermo» però è una media, e la media qui nascondeva il caso peggiore. Le
+particelle hanno il tetto da sempre — `addPart` si ferma a 460, perché una strage non deve
+allagare la pozza — le **zone** no, e costano molto di più: ognuna è una sagoma disegnata, non
+un quadratino. Misurata la distribuzione su una Corsa intera, 70.149 fotogrammi:
+
+| | mediana | 90% | 99% | 99,9% | picco |
+|---|---|---|---|---|---|
+| prima | 4 | 11 | 23 | **341** | **662** |
+| ora | 4 | 11 | 23 | 62 | 66 |
+
+Non c'è una via di mezzo: o è gioco normale (ventitré al novantanovesimo percentile) o è un
+grumo. Del picco di 662, **659** erano gusci e anelli di morte — una bomba, o un Culmine che
+uccide tutto insieme: trecento sagome che lampeggiano nello stesso fotogramma, per due decimi
+di secondo. E trecento sagome sovrapposte non si vedono: si vede un lampo bianco, esattamente
+quello che si vedrebbe con sessanta. Il tetto (`ZONE_FX_MAX`) sta a **60**, quasi il triplo del
+novantanovesimo percentile — le prime tre colonne della tabella non si muovono di un'unità,
+quindi non tocca niente di quello che si gioca davvero. Guardiani ed elite passano sempre, e le
+due onde della bomba sono zone sue, spinte a mano: il segnale non viene mai saltato, solo il
+grumo.
+
 ### Quello che il codice diceva e non faceva
 
 Un giro di correzioni tutte della stessa famiglia: una regola scritta in due posti, e il
@@ -1573,6 +1593,8 @@ Tutti i numeri stanno in `src/01-data.js`. Le manopole della progressione:
 | `RAGGIO_MIRA` | `03-systems.js` → `direttore` | la distanza a cui devono morire i nemici: è **la** manopola della difficoltà |
 | `MODI` | `01-data.js` | i due formati: durata, quanto scorrono ondate (`onda`) e vita nemica (`tempra`), quanto si sale (`xp`), quanta partita come minimo fra un livello e l'altro (`pausaLv`), chi arriva e con quanta vita (`guardiani`), quanto rende (`paga`) |
 | `BANCA_MAX` | `01-data.js` | quanti livelli valgono, insieme, le gemme lontane fuse: il tetto ai lumpi |
+| `DONO_DUR` / `DONO_LAMPO` | `01-data.js` | quanto resta a terra un cuore o una bomba, e per quanto lampeggia prima di sparire (lo scrigno non scade) |
+| `ZONE_FX_MAX` | `01-data.js` | quante zone d'effetto stanno in piedi insieme: il tetto al grumo di gusci quando muore mezza mappa |
 | `CONGIUNZIONI` | `01-data.js` | le undici regole sorteggiate a ogni corsa, col peso `w`: la Quiete pesa quanto tre delle altre |
 | `EVENTI` | `03-systems.js` | i cinque eventi d'arena, e il ritmo con cui si aprono (`G.evT`) |
 | `CATENA_BASE` | `01-data.js` | quante rune in fila accendono un Risveglio; `catenaDi`, `catenaRichiesta` e `gradoCatena` in `02-engine.js` sono gli unici tre posti che lo applicano |

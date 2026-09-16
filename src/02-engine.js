@@ -1006,6 +1006,15 @@ function runeStats(r) {
 }
 
 /* ── entità: creazione ──────────────────────────────────────── */
+/* Una zona d'effetto, con lo stesso tetto che le particelle hanno da sempre:
+   vedi ZONE_FX_MAX in 01-data per la misura che dice perche'. Solo per gli
+   effetti — le zone che fanno qualcosa (la pozza, il raggio, lo scudo) si
+   spingono a mano, o una strage potrebbe cancellare un pezzo di gioco.
+   `sempre` e' per chi non puo' essere saltato: guardiani ed elite. */
+function zonaFx(z, sempre) {
+  if (!sempre && G.zones.length > ZONE_FX_MAX) return;
+  G.zones.push(z);
+}
 function addPart(x, y, vx, vy, life, size, color, kind) {
   if (G.parts.length > 460) return;
   /* cchance e non chance: le scintille sono cosmetiche e non devono
@@ -1343,10 +1352,11 @@ function killEnemy(e, opt) {
      contano. */
   const kbx = (opt && opt.kbx) || 0, kby = (opt && opt.kby) || 0;
   const rot = Math.atan2(G.p.y - e.y, G.p.x - e.x) + PI / 2;
-  G.zones.push({ k: 'guscio', x: e.x, y: e.y, r: e.r, forma: e.shape, rot,
-    t: 0, dur: e.boss ? .38 : e.elite ? .28 : .2, c: e.c, grosso: e.boss ? 2 : e.elite ? 1 : 0 });
+  const contaSempre = !!(e.boss || e.elite);
+  zonaFx({ k: 'guscio', x: e.x, y: e.y, r: e.r, forma: e.shape, rot,
+    t: 0, dur: e.boss ? .38 : e.elite ? .28 : .2, c: e.c, grosso: e.boss ? 2 : e.elite ? 1 : 0 }, contaSempre);
   burstDir(e.x, e.y, e.boss ? 60 : (e.elite ? 24 : 7), e.c, e.boss ? 420 : 250, e.boss ? 6 : 3.4, e.boss ? 1.1 : .46, kbx, kby);
-  G.zones.push({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c });
+  zonaFx({ k: 'ring', x: e.x, y: e.y, r0: e.r * .6, r1: e.r * (e.boss ? 8 : 2.6), t: 0, dur: e.boss ? .7 : .3, c: e.c }, contaSempre);
   /* in coda per il riepilogo di fine fotogramma */
   G.raffN++; G.raffX += e.x; G.raffY += e.y;
   if (e.r > G.raffR) { G.raffR = e.r; G.raffC = e.c; }
