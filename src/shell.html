@@ -70,6 +70,13 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
   color:var(--xp);background:rgba(111,242,196,.09);border:1px solid rgba(111,242,196,.35);
   padding:5px 9px;--cut:6px}
 .lvchip b{font:700 14px/1 var(--disp);color:#fff}
+/* I livelli gia' pagati e non ancora consegnati: la barra e' piena e
+   pulsa, ma «piena» non dice QUANTI ne aspettano. Con venti secondi di
+   pausa fra un livello e l'altro (`pausaLv` in MODI) possono essere due o
+   tre, e un numero che scende a ogni carta dice che la fila si sta
+   smaltendo — non che il gioco si e' inceppato. */
+.lvchip i{font:700 11px/1 var(--ui);font-style:normal;color:var(--xp);animation:lvPiu .7s ease-in-out infinite}
+@keyframes lvPiu{0%,100%{opacity:1}50%{opacity:.45}}
 
 #hpwrap{width:min(46vw,290px)}
 #hpbar{position:relative;height:16px;background:rgba(255,61,110,.10);border:1px solid rgba(255,61,110,.32);--cut:5px;overflow:hidden}
@@ -102,8 +109,16 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
 .iconbtn:hover,.iconbtn:focus-visible{color:#fff;border-color:var(--line-hot);background:rgba(40,32,86,.8)}
 .iconbtn svg{width:19px;height:19px}
 
-/* risvegli attivi */
-#awake{position:absolute;left:12px;bottom:calc(12px + var(--sab));display:flex;gap:6px;flex-wrap:wrap;max-width:60vw}
+/* risvegli attivi.
+   Stavano nell'angolo in basso a sinistra da prima che ci arrivasse il
+   Perigeo: il suo pulsante (74px, a 14px dal bordo) ci si e' appoggiato
+   sopra e le copriva — «Ardore» spariva dietro al pulsante, e di «Gelo 2/3»
+   restava mezza targhetta. Adesso partono dove il pulsante finisce, sulla
+   stessa linea di base, e la larghezza lascia libero anche l'angolo del
+   Culmine: sul telefono le due colonne dei pulsanti si toccano quasi. */
+#awake{position:absolute;left:calc(98px + env(safe-area-inset-left,0px));bottom:calc(18px + var(--sab));
+  display:flex;gap:6px;flex-wrap:wrap;
+  max-width:calc(100vw - 196px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
 .awchip{display:flex;align-items:center;gap:5px;padding:4px 7px;--cut:5px;
   font:600 10px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
   background:rgba(12,10,30,.78);border:1px solid currentColor;backdrop-filter:blur(4px);
@@ -1291,7 +1306,7 @@ ul.lista b{color:#fff;font-weight:600}
     <div id="xpline"><div id="xpfill"></div></div>
     <div id="topbar">
       <div class="hudL">
-        <div><span class="lvchip clip">LIV <b id="lvnum">1</b></span></div>
+        <div><span class="lvchip clip">LIV <b id="lvnum">1</b><i id="lvpiu" hidden></i></span></div>
         <div id="hpwrap"><div id="hpbar" class="clip">
           <div id="hpghost"></div><div id="hpfill"></div><div id="hptxt">100 / 100</div>
         </div></div>

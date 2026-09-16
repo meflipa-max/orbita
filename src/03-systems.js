@@ -1098,7 +1098,20 @@ function updateGems(dt) {
         if (!o) { o = { v: 0, sx: 0, sy: 0, n: 0, k: m.k }; b.set(key, o); }
         o.v += m.v; o.sx += m.x; o.sy += m.y; o.n++;
       }
-      for (const o of b.values()) g.push({ x: o.sx / o.n, y: o.sy / o.n, v: o.v, k: o.k, t: 1, vx: 0, vy: 0, big: 1 });
+      /* ── il tetto della banca ──────────────────────────────────
+         Le gemme fuse tenevano TUTTO quello che restava indietro, per
+         sempre: una banca senza fondo. Misurato: il 79% dell'esperienza di
+         una Corsa entra da qui, e una gemma sola arrivava a valere 4-5
+         livelli consegnati in un secondo — 11 nell'Incursione con la sola
+         pausa allungata — cioe' una schermata di carte dietro l'altra per
+         un minuto. Adesso
+         insieme valgono al massimo BANCA_MAX livelli (vedi 01-data): il
+         resto si spegne. Solo l'esperienza raccolta: i frammenti non
+         fermano la partita e non hanno motivo di avere un tetto. */
+      let tot = 0;
+      for (const o of b.values()) if (o.k === 0) tot += o.v;
+      const tetto = BANCA_MAX * G.xpNeed / P.xpMul, f = tot > tetto ? tetto / tot : 1;
+      for (const o of b.values()) g.push({ x: o.sx / o.n, y: o.sy / o.n, v: o.k === 0 ? o.v * f : o.v, k: o.k, t: 1, vx: 0, vy: 0, big: 1 });
     }
   }
   for (let i = g.length - 1; i >= 0; i--) {
@@ -1177,12 +1190,13 @@ function updateGems(dt) {
 
 /* L'esperienza si accumula e basta: chi decide QUANDO diventa un livello e'
    avanzaLivello, una volta per fotogramma. Qui c'era un `while` che saliva di
-   tutti i livelli coperti insieme — vedi LV_PAUSA in 01-data. */
+   tutti i livelli coperti insieme — vedi «un livello per volta» in 01-data. */
 function gainXP(v) { G.xp += v * P.xpMul; }
 
 /* Un livello per volta, con un po' di partita in mezzo. Tre condizioni:
    la barra e' piena, non c'e' gia' una carta in attesa (uno scrigno raccolto
-   un istante prima non deve diventare una pila), ed e' passato LV_PAUSA di
+   un istante prima non deve diventare una pila), ed e' passata la pausa del
+   formato (`pausaLv`, in MODI) di
    gioco dall'ultimo livello. L'eccesso resta nella barra e non si perde. */
 function avanzaLivello(dt) {
   /* la carta in attesa ferma tutto, la pausa compresa: «un po' di partita in
@@ -1193,8 +1207,17 @@ function avanzaLivello(dt) {
   if (G.lvCd > 0) { G.lvCd -= dt; return; }
   if (G.xp < G.xpNeed) return;
   G.xp -= G.xpNeed; G.level++; G.xpNeed = xpFor(G.level); G.pending++;
-  G.lvCd = LV_PAUSA;
+  G.lvCd = G.modo.pausaLv;
   G.zones.push({ k: 'ring', x: G.p.x, y: G.p.y, r0: 10, r1: 190, t: 0, dur: .5, c: '#6ff2c4' });
+}
+
+/* Quanti livelli copre l'esperienza gia' nella barra: e' il numero che il
+   chip del livello mostra mentre la fila si smaltisce. Segue la stessa
+   curva di avanzaLivello, un livello per volta, e non tocca niente. */
+function livelliInAttesa() {
+  let n = 0, xp = G.xp, need = G.xpNeed, lv = G.level;
+  while (xp >= need && n < 99) { xp -= need; lv++; need = xpFor(lv); n++; }
+  return n;
 }
 
 /* ── particelle ─────────────────────────────────────────────── */

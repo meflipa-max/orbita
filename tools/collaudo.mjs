@@ -1622,11 +1622,101 @@ sez('un livello per volta, con un po’ di partita in mezzo');
   G.pending = 0;
   O.step(1 / 60);
   ok(G.level === 21, 'nemmeno il fotogramma dopo: in mezzo ci va della partita');
-  for (let i = 0; i < 90; i++) { O.step(1 / 60); if (G.pending > 0) break; }
-  ok(G.level === 22 && G.pending === 1, 'poi arriva, uno solo (livello ' + G.level + ', ' + G.pending + ' carta)');
+  /* ── venti secondi, non uno ──
+     La pausa era 1,2 secondi: «in un minuto dieci schermate che mi
+     propongono che il nucleo cresce». Un secondo di partita fra due carte
+     non e' un momento, e' la stessa pila consegnata a rate. Misurato sul
+     banco il minuto peggiore — non la media — di una corsa: 5 livelli in
+     Corsa, 6 nell'Incursione, 8-10 con l'Avidita' comprata e le gemme
+     lasciate indietro, a grappoli di quattro o cinque in pochi secondi.
+     Il primo valore, dieci secondi, ha avuto la stessa risposta («anche una
+     ogni dieci non e' troppo?»), e rendere i livelli piu' cari non e' una
+     leva: triplicando il costo una Corsa perde solo un terzo dei livelli,
+     perche' l'esperienza viene dalle uccisioni e le uccisioni dalla build.
+     Quindi venti secondi nella Corsa — mai piu' di tre al minuto — e dodici
+     nell'Incursione, che comprime tutto in otto minuti (vedi MODI).
+     Rimettendo 1,2 la riga qui sotto conta il livello dopo un secondo e
+     mezzo, e quella successiva ne conta otto in un minuto.              */
+  ok(O.MODI.every(m => m.pausaLv >= 10), 'ogni formato dichiara la sua pausa: ' + O.MODI.map(m => m.n + ' ' + m.pausaLv + 's').join(', '));
+  for (let i = 0; i < 90; i++) O.step(1 / 60);
+  ok(G.level === 21, 'un secondo e mezzo dopo ancora niente: non e’ un momento, e’ una rata');
+  let quando = 0;
+  for (let i = 0; i < 60 * 22; i++) { O.step(1 / 60); if (G.pending > 0) { quando = (i + 90) / 60; break; } }
+  ok(G.level === 22 && G.pending === 1 && quando >= 19.5 && quando <= 20.5,
+     'poi arriva, uno solo, dopo venti secondi di partita (livello ' + G.level + ', a ' + quando.toFixed(1) + 's)');
   /* e il conto torna: niente esperienza sparita per strada */
   const speso = 2024 + 2248;
   ok(Math.abs(G.xp - (7000 - speso)) < 2, 'e l’esperienza spesa e’ esattamente quella dei due livelli');
+  /* una barra che copre otto livelli li consegna a uno ogni venti secondi:
+     in un minuto di partita tre (il primo subito) */
+  G.pending = 0; G.lvCd = 0; G.xp = 30000; G.level = 22; G.xpNeed = 2248;
+  let carte = 0;
+  for (let i = 0; i < 60 * 60; i++) { O.step(1 / 60); if (G.pending > 0) { carte++; G.pending = 0; } }
+  ok(carte === 3, 'trentamila punti in barra: ' + carte + ' carte in un minuto, non dieci');
+  ok(O.livelliInAttesa() >= 4, 'e il chip del livello sa quanti ne aspettano ancora: +' + O.livelliInAttesa());
+  /* e la schermata delle carte lo dice: chi la rivede venti secondi dopo
+     deve sapere che era previsto */
+  G.level = 21; G.xp = 2248 + 2741 + 100; G.xpNeed = 2248; G.pending = 1; G.chests = 0;
+  O.UI.levelup();
+  const occ = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
+  ok(/Livello 21 · altri 2 in arrivo, uno ogni 20 s/.test(occ), 'e la carta dice quanti ne arrivano e ogni quanto: «' + occ + '»');
+  G.xp = 2300; O.UI.levelup();
+  const occ1 = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
+  ok(/un altro fra 20 s/.test(occ1), 'al singolare quando e’ uno: «' + occ1 + '»');
+  G.xp = 100; O.UI.levelup();
+  const occ0 = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
+  ok(occ0 === 'Livello 21', 'e niente quando non ne aspetta nessuno: «' + occ0 + '»');
+  G.pending = 0; O.UI.close && O.UI.close();
+  /* l'Incursione ha la sua pausa, piu' corta: comprime tutto in otto minuti */
+  O.reset('vega', 940, 'incursione', false); G.state = 'play';
+  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.chests = 0; G.lvCd = 0;
+  G.gems.push({ x: G.p.x, y: G.p.y, v: 7000 / P.xpMul, k: 0, t: 1, vx: 0, vy: 0, big: 1 });
+  for (let i = 0; i < 30; i++) O.step(1 / 60);
+  G.pending = 0;
+  let quandoInc = 0;
+  for (let i = 0; i < 60 * 22; i++) { O.step(1 / 60); if (G.pending > 0) { quandoInc = i / 60; break; } }
+  ok(G.level === 22 && quandoInc >= 11.5 && quandoInc <= 12.5,
+     'nell’Incursione il livello dopo arriva a dodici secondi, non venti (a ' + quandoInc.toFixed(1) + 's)');
+  O.UI.levelup();
+  const occI = (O.schermo().match(/class="eyebrow">([^<]*)</) || [])[1] || '';
+  ok(/fra 12 s|ogni 12 s/.test(occI), 'e la carta lo dice con il numero del formato: «' + occI + '»');
+  G.pending = 0; O.UI.close && O.UI.close();
+}
+
+sez('le gemme lontane non sono una banca senza fondo');
+/* Le gemme fuse tenevano TUTTO quello che restava indietro, per sempre.
+   Misurato: il 79% dell'esperienza di una Corsa entra da li', e una gemma
+   sola arrivava a valere 4-5 livelli consegnati in un secondo — 11
+   nell'Incursione con la sola pausa allungata, che lascia la banca crescere
+   piu' a lungo. Con la pausa di dieci secondi diventavano «il nucleo cresce
+   ogni dieci secondi per due minuti»: lo stesso difetto, allungato.
+   Adesso le gemme fuse valgono insieme al massimo BANCA_MAX livelli; le
+   gemme vicine, quelle che si raccolgono combattendo, non hanno tetto, e
+   nemmeno i frammenti. Rimettendo indietro il tetto la prima riga legge
+   dieci livelli.                                                          */
+{
+  S().visti = TUTTI_I_BRIEFING();
+  O.reset('vega', 942, 'corsa', false); G.state = 'play';
+  G.level = 20; G.xp = 0; G.xpNeed = 2024; G.pending = 0; G.lvCd = 0;
+  G.enemies.length = 0; G.gems.length = 0;
+  const raw = 2024 * 10 / P.xpMul;          /* dieci livelli, sparsi lontano */
+  for (let i = 0; i < 300; i++) {
+    const a = i / 300 * Math.PI * 2;
+    G.gems.push({ x: G.p.x + Math.cos(a) * 900, y: G.p.y + Math.sin(a) * 900, v: raw / 300, k: 0, t: 1, vx: 0, vy: 0 });
+  }
+  /* e cinquanta vicine, piu' dei frammenti lontani: quelli non si toccano */
+  const vicine = [];
+  for (let i = 0; i < 50; i++) vicine.push({ x: G.p.x + 200 + i, y: G.p.y + 200, v: 4, k: 0, t: 1, vx: 0, vy: 0 });
+  G.gems.push(...vicine);
+  for (let i = 0; i < 20; i++) G.gems.push({ x: G.p.x - 1000, y: G.p.y + i * 10, v: 30, k: 1, t: 1, vx: 0, vy: 0 });
+  IN.ax = IN.ay = 0; G.gemT = 0;               /* la fusione gira al primo fotogramma */
+  for (let i = 0; i < 60; i++) { O.step(1 / 60); G.enemies.length = 0; }
+  const fuse = G.gems.filter(m => m.big && m.k === 0);
+  const banca = fuse.reduce((a, m) => a + m.v, 0) * P.xpMul / G.xpNeed;
+  ok(fuse.length > 0 && fuse.length <= 4, 'le trecento gemme lontane sono diventate ' + fuse.length + ' gemme grosse');
+  ok(banca <= 1.5 + .01 && banca > 1.4, 'che insieme valgono ' + banca.toFixed(2) + ' livelli, non dieci');
+  ok(vicine.every(m => G.gems.includes(m) && m.v === 4), 'le cinquanta vicine sono ancora tutte li’, intere');
+  ok(Math.round(G.gems.filter(m => m.k === 1).reduce((a, m) => a + m.v, 0)) === 600, 'e i seicento frammenti lontani pure');
 }
 
 sez('una pila di carte dice il livello di ognuna, non quello di arrivo');
@@ -1773,6 +1863,25 @@ sez('i due pulsanti d’azione si premono alzando il dito');
   ok(su > 0 && /if \(fermo\) azione\(\)/.test(corpo), 'l’azione parte dal dito che si alza, e solo se e’ fermo');
   ok(/TAP_MOSSA/.test(corpo) && /joyStart\(/.test(corpo),
      'e un tocco che si muove diventa la levetta invece di perdersi');
+}
+
+sez('le targhette dei Risvegli non stanno sotto al Perigeo');
+/* Le targhette stavano nell'angolo in basso a sinistra da prima che ci
+   arrivasse il pulsante del Perigeo, che ci si e' appoggiato sopra: «Ardore»
+   spariva dietro al pulsante e di «Gelo 2/3» restava mezza targhetta. Il
+   banco non fa layout, quindi il controllo legge i numeri dal foglio di
+   stile: le targhette devono cominciare dove il pulsante finisce, e non
+   allargarsi fin dentro l'angolo del Culmine.                             */
+{
+  const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shell.html'), 'utf8');
+  const regola = id => { const m = css.match(new RegExp('\\n#' + id + '\\{([^}]*)\\}')); return m ? m[1] : ''; };
+  const px = (s, k) => { const m = s.match(new RegExp(k + ':(?:calc\\()?(\\d+)px')); return m ? +m[1] : NaN; };
+  const peri = regola('peri'), aw = regola('awake');
+  const largo = +(peri.match(/width:(\d+)px/) || [])[1];
+  ok(px(peri, 'left') + largo <= px(aw, 'left'),
+     'cominciano a ' + px(aw, 'left') + 'px, e il pulsante finisce a ' + (px(peri, 'left') + largo));
+  ok(px(aw, 'bottom') === px(peri, 'bottom'), 'sulla stessa linea di base del pulsante');
+  ok(/max-width:calc\(100vw - 196px/.test(aw), 'e la riga lascia libero anche l’angolo del Culmine');
 }
 
 console.log('\n' + (ko ? ko + ' CONTROLLI FALLITI su ' + tot : 'tutti i ' + tot + ' controlli passano'));
